@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<style>
+    .table thead th {
+        background-color: #007bff;
+        color: white;
+    }
+    .highlight {
+        background-color: #ffd700;
+    }
+</style>
+<head>
+    <title>DataFrame Table</title>
+    <!-- Optional: Bootstrap for styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net">
+</head>
+<body class="container mt-5">
+    <h2>Mutombo's Heavenly Data ({{ formatted_time }})</h2>
+    <!-- Render the table string -->
+    <h3>Current Week {{ current_week }} (live updates)</h3>
+    {{ current_week_table | safe }}
+    <h3>Season (updated daily)</h3>
+    {{ season_table | safe }}
+    {% if last_week_table %}
+        <h3>Last Week {{ last_week }}</h3>
+        {{ last_week_table | safe }}
+    {% endif %}
+</body>
+</html>

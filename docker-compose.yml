@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    platform: linux/amd64 # Specify the target platform
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code # Mounts your local code to the container for development
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
