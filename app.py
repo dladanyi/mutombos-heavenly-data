@@ -18,7 +18,7 @@ def index():
 
     #print(os.environ)
     league_id=os.environ.get("YAHOO_LEAGUE_ID")
-    game_code=os.environ.get("YAHOO_GAME_CODE")
+    game_code="nba"
 
     # configure the Yahoo Fantasy Sports query (change all_output_as_json_str=True if you want to output JSON strings)
     query = YahooFantasySportsQuery(

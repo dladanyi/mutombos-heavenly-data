@@ -1,11 +1,13 @@
 version: '3.8'
 services:
   web:
-    build: .
+    build:
+      context: . # The directory to use as the build context
+      dockerfile: Dockerfile
     platform: linux/amd64 # Specify the target platform
     env_file: .env
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
       - .:/code # Mounts your local code to the container for development
-    command: ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+    command: ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]

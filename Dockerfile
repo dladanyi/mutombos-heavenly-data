@@ -18,12 +18,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose port 5000 to the host machine
-EXPOSE 8000
+EXPOSE 8080
 
 # Define the command to run the Flask app when the container starts
 # CMD ["python", "app.py"]
 
 # ... other Dockerfile instructions
 #CMD ["flask", "run", "--port", "8080", "--host", "0.0.0.0"]
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
 

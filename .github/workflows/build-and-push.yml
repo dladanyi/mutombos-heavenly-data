@@ -1,0 +1,42 @@
+name: Build and Push Docker Image to GCP Artifact Registry
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for Workload Identity Federation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          # Use the format: 'projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_NAME/providers/PROVIDER_NAME'
+          workload_identity_provider: 'YOUR_WORKLOAD_IDENTITY_PROVIDER'
+          service_account: 'ladanyi77@gmail.com'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Artifact Registry
+        run: |-
+          gcloud auth configure-docker us-west1-docker.pkg.dev
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            us-west1-docker.pkg.dev/mutombo-heavenly-block-party/mutombos-heavenly-data/mutomboheavenlyblockparty-web:latest
+            us-west1-docker.pkg.dev/mutombo-heavenly-block-party/mutombos-heavenly-data/mutomboheavenlyblockparty-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
