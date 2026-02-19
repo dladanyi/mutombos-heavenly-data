@@ -11,6 +11,9 @@ from yfpy import YahooFantasySportsQuery
 
 from pathlib import Path
 
+from datetime import datetime
+import pytz
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -67,7 +70,13 @@ def index():
             index=False
         )
 
-    formatted_time = datetime.datetime.now().strftime("%c")
+
+
+    datetime_pt = datetime.now(pytz.timezone('America/Los_Angeles'))
+    formatted_time = datetime_pt.strftime('%d %b %Y %H:%M:%S %Z %z')
+
+    # Output 2021:07:08 17:53:23 IST +0530
+    # formatted_time = datetime.datetime.now().strftime("%c")
     # print(formatted_time)
 
     return render_template('table_view.html',

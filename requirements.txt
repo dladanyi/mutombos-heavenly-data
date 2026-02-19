@@ -4,3 +4,4 @@ gunicorn~=25.0.3
 jmespath~=1.1.0
 pandas~=3.0.0
 yfpy~=17.0.0
+pytz~=2025.2
