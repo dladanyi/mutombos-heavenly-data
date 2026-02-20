@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mutombo's Heavenly Data</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='halo_ball.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -325,6 +326,9 @@
             .header-img { width: 90px; }
             .header-img img { height: 130px; }
             .header-main { gap: 0.75rem; }
+        }
+        @media (max-width: 768px) and (orientation: portrait) {
+            .header-img { display: none; }
         }
         /* ── Mobile ── */
         @media (max-width: 768px) {
