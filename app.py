@@ -79,7 +79,7 @@ def index():
     # formatted_time = datetime.datetime.now().strftime("%c")
     # print(formatted_time)
 
-    return render_template('table_view.html',
+    return render_template('table_view_fancy.html',
                            current_week_table=current_week_table_html,
                            season_table=season_table_html,
                            last_week_table=last_week_table_html,
