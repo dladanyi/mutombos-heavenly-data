@@ -188,4 +188,7 @@ def teams_to_dataframe(teams):
     return pd.DataFrame(teams_data)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+    app.run(
+    #    debug=True,
+        port=8080
+    )
