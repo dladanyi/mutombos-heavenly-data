@@ -145,12 +145,20 @@ Categories are defined once, in display order:
 | Data | Server TTL |
 |---|---|
 | League metadata, season stats, current-week stats | 5 min |
-| **Final** week: fetched after the week ended (week < current week at fetch time) | Never expires |
+| **Settling** week: ended, but less than 3 full days ago | 1 h |
+| **Final** week: ended at least 3 full days before it was fetched | Never expires |
+| Game-week calendar (start/end date of every week) | Never expires |
 
-- **Final data never changes.** A week's entry is marked final only if the week had already
-  ended *when it was fetched*. An entry fetched while the week was still current stays on the
-  5 min TTL. After the week rolls over, the next fetch replaces it with a final entry. This
-  prevents a mid-week snapshot being frozen forever.
+- **When a week becomes final.** Week end dates come from Yahoo's game-week calendar
+  (`/game/nba/game_weeks`; yfpy exposes this as `get_game_weeks_by_game_id`). A week is final
+  when the fetch happens on a date (America/Los_Angeles) more than 3 days after the week's end
+  date. Example: a week ending Sunday the 9th is final from Thursday the 13th at 00:00 PT.
+  The 3-day wait allows for Yahoo's stat corrections.
+- Finality is decided **at fetch time** and stored on the entry. An entry fetched while the
+  week was current or settling keeps its shorter TTL. The first fetch after the 3 days replaces
+  it with a final entry. This prevents a mid-week or pre-correction snapshot being frozen.
+- If the game-week calendar can't be loaded, no week is treated as final (safe default), and
+  the calendar is retried on the next request.
 - Final entries are never evicted. That's about 25 per season, a few KB each. Only in-memory,
   so they last until the instance shuts down, after which they are refetched once.
 - **Stale on error:** if a fetch fails and an expired entry exists, it is returned with
@@ -189,7 +197,7 @@ like `YahooUnavailable`.
 |---|---|---|
 | `GET /api/league` | name, current_week, start_week, end_week, categories | `max-age=60` |
 | `GET /api/rankings/season` | season-to-date rankings | `max-age=60` |
-| `GET /api/rankings/week/<n>` or `/current` | one week's rankings | `max-age=60` for the current week, `max-age=86400` for final weeks |
+| `GET /api/rankings/week/<n>` or `/current` | one week's rankings | `max-age=60` for the current week, `max-age=300` for settling weeks, `max-age=86400` for final weeks |
 | `GET /healthz` | `ok` (no Yahoo call) | `no-store` |
 
 Final weeks use a 1-day browser cache instead of "forever" (`immutable`). The server cache is
@@ -294,8 +302,10 @@ must pass first.
   reordered keys; a malformed response raises `YahooFormatError`.
 - **`test_rankings.py`:** ties share a rank, TO ranks lower-is-better, null values rank worst,
   plus avg/place/sort-order checks and detail strings.
-- **`test_yahoo_client.py`** (with a fake transport): TTL expiry, final entries never expiring or being evicted, a week fetched while current
-  not becoming final, refresh ignored for final entries,
+- **`test_yahoo_client.py`** (with a fake transport): TTL expiry, final entries never expiring or being evicted, current/settling/final
+  classification around the 3-day boundary (including the Pacific-time date edge), a week
+  fetched while current or settling not becoming final, no week final when the calendar fails,
+  refresh ignored for final entries,
   stale on error, `YahooUnavailable` when nothing is cached, the 30 s refresh throttle, and
   one retry.
 - **`test_api.py`** (with a fake client): response shapes, 503 JSON, 404 for an out-of-range
@@ -312,5 +322,9 @@ must pass first.
    yfpy.
 2. **Request timeouts in yfpy.** If `get_response` doesn't accept a timeout, the client calls
    the OAuth session that yfpy has already authenticated directly, with `timeout=10`.
-3. **Fixture privacy.** Fixtures contain real team names. Check whether the GitHub repo is
+3. **Game-week calendar shape.** Confirm that `game_weeks` returns a start and end date for
+   each week of this league's season (and capture it as a fixture). If the league's weeks
+   differ from the game's calendar, use the league scoreboard's `week_start`/`week_end`
+   instead.
+4. **Fixture privacy.** Fixtures contain real team names. Check whether the GitHub repo is
    public before committing them. If it is, replace the names with placeholders.
