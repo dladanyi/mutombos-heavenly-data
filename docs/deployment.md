@@ -10,6 +10,10 @@ The GitHub repo is connected to a Vercel project.
 - A push to `main` deploys to **production**.
 - Every other branch and every PR gets a **preview deployment** with its own URL.
 - GitHub Actions only runs CI (tests and builds). It does not deploy.
+- `main` is protected by the GitHub ruleset **Protect main**: changes arrive only through a pull
+  request (no approving review required), the CI jobs `backend` and `frontend` must pass, and
+  force pushes and branch deletion are blocked. There are no bypass actors. As the repo admin you
+  can still edit or disable the ruleset under Settings → Rules → Rulesets.
 
 `vercel.json` defines two **Services** in one project:
 
@@ -121,6 +125,8 @@ Promote the previous production deployment: `vercel rollback`, or Dashboard → 
 - **Preview verified** (prebuilt upload and Git-triggered build):
   `/healthz` returns 200, the page loads, the API returns a clean 503 (Yahoo 403, see above),
   unknown `/api` paths return 404 JSON, and the logs are JSON.
+- **GitHub repo:** public since 2026-10-13, so it can use rulesets on the free plan. The ruleset
+  "Protect main" (id 25037399) is active on the default branch.
 
 To deploy a preview by hand (uploads only the build output, never source or `.env`):
 

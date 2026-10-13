@@ -2,6 +2,15 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-13: Public repo and a ruleset on `main`
+
+- **Protect `main` with a repository ruleset.** Pushing to `main` deploys production, so every
+  change goes through a PR with green CI (`backend`, `frontend`). Force pushes and deletion are
+  blocked. No approving review is required because there is one maintainer.
+- **Make the repo public.** GitHub's free plan only allows rulesets on public repos, and the
+  alternative (GitHub Pro) costs money. Before switching, we scanned the history for committed
+  secrets and found none. Secrets live only in Vercel env vars and the git-ignored `.env`.
+
 ## 2026-10-13: Python 3.13
 
 - **Target Python 3.13** (was 3.12) on Vercel (`backend/.python-version`) and in CI, matching the
