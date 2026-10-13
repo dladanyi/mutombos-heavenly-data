@@ -1,7 +1,7 @@
 # Architecture
 
-> **Status:** describes the target design from sub-project 1
-> ([spec](specs/2026-10-12-stability-refactor-design.md)). Not yet implemented.
+> **Status:** implemented on branch `stability-refactor`; not yet deployed
+> ([spec](specs/2026-10-12-stability-refactor-design.md)).
 
 ## Overview
 
@@ -27,6 +27,8 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, place) | config |
 | `api.py` | Flask routes, JSON errors, cache headers, local static serving | all of the above |
 | `logging_setup.py` | JSON log lines (Vercel runtime logs) | - |
+
+`backend/wsgi.py` is the Vercel entrypoint (`app = create_app()`).
 
 `parsing` and `rankings` are pure functions, tested against saved Yahoo responses.
 
