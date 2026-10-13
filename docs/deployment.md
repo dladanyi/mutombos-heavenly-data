@@ -115,10 +115,10 @@ Promote the previous production deployment: `vercel rollback`, or Dashboard → 
   `YAHOO_ACCESS_TOKEN`, `YAHOO_GUID`, `YAHOO_TOKEN_TIME` and `YAHOO_TOKEN_TYPE` were removed.
   The *Development* copies still hold old values and are only used by `vercel dev` / `env pull`.
 - **Deployment Protection:** previews only. The production URL is public.
-- **Git:** linked to `dladanyi/mutombos-heavenly-data`, production branch `main`, but **pushes don't
-  trigger deployments** (none since March). Check that the Vercel GitHub app can access the repo:
-  GitHub → Settings → Applications → Installed GitHub Apps → Vercel → Repository access.
-- **Preview verified:** built locally and deployed with `vercel deploy --prebuilt`.
+- **Git:** linked to `dladanyi/mutombos-heavenly-data`, production branch `main`. Pushes trigger
+  deployments again (fixed 2026-10-13 by restoring the Vercel GitHub app's access to the repo):
+  branches get previews, and `main` deploys to production.
+- **Preview verified** (prebuilt upload and Git-triggered build):
   `/healthz` returns 200, the page loads, the API returns a clean 503 (Yahoo 403, see above),
   unknown `/api` paths return 404 JSON, and the logs are JSON.
 
