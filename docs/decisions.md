@@ -18,8 +18,12 @@ Newest first. Each entry: what we decided, and why.
   change can't leave old JSON stuck in someone's browser.
 - **Drop pandas.** About 150 MB of image size and slower cold starts for about 30 lines of
   ranking logic.
-- **Keep yfpy** for Yahoo OAuth. Replace it only if it can't renew from a refresh token
-  without an interactive login.
+- **Replace yfpy with our own ~60-line Yahoo client** (decided after checking the yfpy
+  source). yfpy 17.0.0 / yahoo-oauth 2.1.1 fall back to an interactive `input()` login
+  prompt when no access token is given, which would hang a Cloud Run request. They also have
+  no request timeout, use up retries permanently per instance, call `sys.exit(1)` on config
+  errors, and renewed the token on every page load in the old app. Our client uses
+  `requests`, renews in memory, and has timeouts and retries. This removes 6 dependencies.
 - **Yahoo secrets in Secret Manager, never written to disk.** The Cloud Run filesystem is
   ephemeral, and writing to `.env` was fragile.
 - **Keep the existing Cloud Run GitHub link for deploys; GitHub Actions only runs CI.** No

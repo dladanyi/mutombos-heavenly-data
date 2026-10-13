@@ -74,18 +74,24 @@ backend/
   app/
     __init__.py        create_app() factory
     config.py          env vars (validated at startup), category definitions
-    yahoo_client.py    yfpy auth, fetch with timeout + 1 retry, TTL cache, refresh throttle
-    parsing.py         Yahoo JSON -> list[TeamStats]
-    rankings.py        list[TeamStats] -> Rankings
+    errors.py          YahooUnavailable, YahooFormatError
+    yahoo_http.py      OAuth token refresh + GET with timeout, retry, 401 handling
+    cache.py           TTL / final cache, stale-on-error, refresh throttle
+    yahoo_client.py    league/season/week/calendar fetches, current/settling/final rules
+    parsing.py         Yahoo JSON -> TeamStats / LeagueInfo / GameWeek
+    rankings.py        list[TeamStats] -> ranked rows
     api.py             Flask blueprint: /api/*, /healthz, static frontend
+    logging_setup.py   JSON log lines for Cloud Logging
   tests/
     fixtures/          real Yahoo responses, captured once
   scripts/
+    get_refresh_token.py   one-time Yahoo login, prints a refresh token
     capture_fixtures.py
-  requirements.txt     flask, gunicorn, yfpy
+  requirements.txt     flask, gunicorn, requests
   requirements-dev.txt pytest
 frontend/
-  public/              halo_ball.png (favicon), header.jpg (renamed 51lCd0RlVSL._AC_.jpg)
+  public/              halo_ball.png (favicon), header-left.jpg and header-right.jpg
+                       (extracted from the base64 images inline in today's template)
   src/
     api.ts             typed fetch functions + types matching docs/api.md
     hooks/useApi.ts    loading / error / data / refetch
@@ -102,7 +108,8 @@ docs/
 ```
 
 Removed: `app.py`, `templates/`, `static/`, root `requirements.txt`, `sample_data_table.txt`,
-`51lCd0RlVSL._AC_.jpg` (moved).
+`51lCd0RlVSL._AC_.jpg` (not referenced by the app; the header images are inline in the
+template and get extracted to `frontend/public/`).
 
 ## 5. Backend
 
@@ -133,13 +140,22 @@ Categories are defined once, in display order:
 | FT% | 8 | yes | 9007006 (FTM/FTA) |
 | TO | 19 | no | |
 
-### 5.2 Yahoo client (`yahoo_client.py`)
+### 5.2 Yahoo access (`yahoo_http.py`, `cache.py`, `yahoo_client.py`)
 
-- Builds yfpy's token JSON in memory from the consumer key, secret and refresh token, with
-  `save_token_data_to_env_file=False`. yfpy obtains and renews the access token itself.
+**No yfpy.** Our own small client using `requests` (see `decisions.md`, 2026-10-12).
+
+- **Token:** POST `https://api.login.yahoo.com/oauth2/get_token` with HTTP Basic auth
+  (consumer key and secret) and the form fields `grant_type=refresh_token`,
+  `refresh_token=…` and `redirect_uri=oob`. The access token is kept in memory and renewed
+  when it is missing or within 60 s of `expires_in`. If Yahoo returns a new refresh token, it
+  is used from then on (in memory only). Token refresh is protected by a lock.
+- **Requests:** GET `https://fantasysports.yahooapis.com/fantasy/v2/{path}?format=json` with
+  `Authorization: Bearer …` and a 10 s timeout. One retry on timeout, connection error or 5xx.
+  A 401 renews the token and retries once. Status 999 (Yahoo rate limit) is not retried. Any
+  other failure, including a failed token refresh or a response that isn't JSON, raises
+  `YahooUnavailable`. Nothing ever prompts for input or writes to disk.
 - League key: `nba.l.{YAHOO_LEAGUE_ID}`.
-- Every Yahoo request has a 10 s timeout and one retry on timeout, connection error or 5xx.
-- Thread-safe in-memory cache keyed by request URL. Each entry stores the parsed JSON and its
+- Thread-safe in-memory cache keyed by request path. Each entry stores the parsed JSON and its
   `fetched_at` time (UTC).
 
 | Data | Server TTL |
@@ -150,7 +166,7 @@ Categories are defined once, in display order:
 | Game-week calendar (start/end date of every week) | Never expires |
 
 - **When a week becomes final.** Week end dates come from Yahoo's game-week calendar
-  (`/game/nba/game_weeks`; yfpy exposes this as `get_game_weeks_by_game_id`). A week is final
+  (`game/nba/game_weeks`). A week is final
   when the fetch happens on a date (America/Los_Angeles) more than 3 days after the week's end
   date. Example: a week ending Sunday the 9th is final from Thursday the 13th at 00:00 PT.
   The 3-day wait allows for Yahoo's stat corrections.
@@ -302,7 +318,9 @@ must pass first.
   reordered keys; a malformed response raises `YahooFormatError`.
 - **`test_rankings.py`:** ties share a rank, TO ranks lower-is-better, null values rank worst,
   plus avg/place/sort-order checks and detail strings.
-- **`test_yahoo_client.py`** (with a fake transport): TTL expiry, final entries never expiring or being evicted, current/settling/final
+- **`test_yahoo_http.py`** (with a fake session): token refresh and renewal, 401 → renew and
+  retry, one retry on timeout or 5xx, no retry on 999, failed refresh → `YahooUnavailable`.
+- **`test_cache.py` / `test_yahoo_client.py`** (with a fake transport): TTL expiry, final entries never expiring or being evicted, current/settling/final
   classification around the 3-day boundary (including the Pacific-time date edge), a week
   fetched while current or settling not becoming final, no week final when the calendar fails,
   refresh ignored for final entries,
@@ -315,16 +333,15 @@ must pass first.
 
 ## 10. Risks to verify early
 
-1. **yfpy renewing from a refresh token alone.** The first implementation task proves that
-   `YahooFantasySportsQuery` renews the access token from consumer key, secret and refresh
-   token with no interactive prompt and no file writes. If it can't, the client performs the
-   OAuth refresh itself (a single POST to Yahoo's token endpoint) and passes the result to
-   yfpy.
-2. **Request timeouts in yfpy.** If `get_response` doesn't accept a timeout, the client calls
-   the OAuth session that yfpy has already authenticated directly, with `timeout=10`.
+1. ~~yfpy renewing from a refresh token alone~~ and 2. ~~request timeouts in yfpy~~:
+   **resolved 2026-10-12.** yfpy 17.0.0 / yahoo-oauth 2.1.1 fall back to an interactive
+   `input()` prompt when no access token is supplied, have no request timeout, use up their
+   retries permanently per instance, and call `sys.exit(1)` on config errors. We replaced
+   yfpy with our own client (5.2). The first backend task that talks to Yahoo verifies the
+   refresh-token flow against the live API.
 3. **Game-week calendar shape.** Confirm that `game_weeks` returns a start and end date for
    each week of this league's season (and capture it as a fixture). If the league's weeks
    differ from the game's calendar, use the league scoreboard's `week_start`/`week_end`
    instead.
-4. **Fixture privacy.** Fixtures contain real team names. Check whether the GitHub repo is
-   public before committing them. If it is, replace the names with placeholders.
+4. ~~Fixture privacy~~: **resolved 2026-10-12.** The GitHub repo is private, so fixtures
+   can keep real team names. Revisit this if the repo is ever made public.

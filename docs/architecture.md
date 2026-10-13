@@ -20,7 +20,11 @@ Browser ──► Cloud Run (gunicorn, 1 worker x 8 threads, scales to zero)
 | Module | Responsibility | Depends on |
 |---|---|---|
 | `config.py` | Reads and validates env vars; defines the nine ranked categories | - |
-| `yahoo_client.py` | yfpy auth, fetch with timeout and retry, TTL cache, stale-on-error, refresh throttle | config, yfpy |
+| `errors.py` | `YahooUnavailable`, `YahooFormatError` | - |
+| `yahoo_http.py` | OAuth token refresh, GET with timeout, retry and 401 handling | requests |
+| `cache.py` | TTL / final cache, stale-on-error, refresh throttle | - |
+| `yahoo_client.py` | League, season, week and calendar fetches; current/settling/final rules | yahoo_http, cache, parsing |
+| `logging_setup.py` | JSON log lines for Cloud Logging | - |
 | `parsing.py` | Yahoo `teams/stats` JSON → `TeamStats` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, place) | config |
 | `api.py` | Flask routes, JSON errors, cache headers, serves the frontend | all of the above |
@@ -55,4 +59,5 @@ the cache at most once every 30 s per entry.
 ## Yahoo authentication
 
 The consumer key, consumer secret and refresh token come from Secret Manager as env vars.
-yfpy renews the access token in memory. Nothing is written to disk.
+`yahoo_http.py` exchanges the refresh token for an access token in memory and renews it
+before it expires (tokens last 1 h). It never prompts for input and never writes to disk.
