@@ -96,7 +96,10 @@ def week_rankings(week: str):
         raise NotFound()
     teams, result, state = _client().week_stats(number, info.current_week, refresh=_refresh())
     body = _rankings_body("week", number, teams, result, league_result)
-    return _respond(body, _STATE_HEADERS[state], result, league_result)
+    # Long CDN caching only for data that was itself fetched as final (spec §5.2): an entry
+    # fetched while settling may still be served after the week turns final.
+    kind = _STATE_HEADERS[state] if state != "final" or result.final else "settling"
+    return _respond(body, kind, result, league_result)
 
 
 @api.get("/", defaults={"path": ""})

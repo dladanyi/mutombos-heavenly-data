@@ -175,3 +175,17 @@ def test_token_endpoint_timeout_raises_unavailable():
     session = FakeSession(posts=[requests.Timeout("slow")])
     with pytest.raises(YahooUnavailable):
         make(session).get_json("a")
+
+
+def test_failed_token_refresh_not_retried_for_30s():
+    clock = Clock()
+    session = FakeSession(posts=[FakeResponse(400, {"error": "invalid_grant"}), token()],
+                          gets=[FakeResponse(200, {"ok": 1})])
+    http = make(session, clock)
+    for _ in range(3):
+        with pytest.raises(YahooUnavailable):
+            http.get_json("a")
+    assert len(session.post_calls) == 1
+    clock.now += 31
+    assert http.get_json("a") == {"ok": 1}
+    assert len(session.post_calls) == 2

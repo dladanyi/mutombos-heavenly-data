@@ -2,6 +2,14 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-13: Final review fixes
+
+- **CDN "final" headers only for data that was fetched as final.** A settling-week entry
+  served after the week turns final gets settling headers, so a pre-correction snapshot can't
+  be cached at the edge for a year.
+- **30 s failure cooldown** per cache key and for token refresh. During a Yahoo outage or rate
+  limit, requests get stale data or a fast 503 instead of each waiting up to ~30 s on Yahoo.
+
 ## 2026-10-12: Yahoo API access program; synthetic fixtures meanwhile
 
 - **Root cause of the production outage:** Yahoo restricted the Fantasy Sports API to apps

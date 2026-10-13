@@ -58,7 +58,9 @@ Yahoo's game-week calendar), which leaves time for Yahoo's stat corrections. Fin
 decided when the data is fetched, so a mid-week or pre-correction snapshot is never frozen.
 Stale responses (served from memory when Yahoo fails) and `?refresh=1` responses are never
 cached by the CDN or the browser. A manual refresh skips the in-memory cache at most once
-every 30 s per entry.
+every 30 s per entry. After a Yahoo failure, that entry isn't retried for 30 s (stale data or a
+fast 503 instead), and a failed token refresh isn't retried for 30 s either, so an outage or
+rate limit doesn't turn into one slow Yahoo call per visitor.
 
 ## Yahoo authentication
 

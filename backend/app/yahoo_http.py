@@ -17,6 +17,8 @@ API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2/"
 # Renew the access token this many seconds before Yahoo says it expires.
 _EXPIRY_MARGIN = 60
 _RATE_LIMITED = 999
+# After a failed token refresh, fail fast for this long instead of re-posting on every request.
+_RENEW_COOLDOWN = 30.0
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +36,7 @@ class YahooHttp:
         self._lock = threading.Lock()
         self._access_token: str | None = None
         self._expires_at = 0.0
+        self._renew_failed_until = 0.0
 
     def get_json(self, path: str) -> dict:
         url = API_BASE + path
@@ -70,7 +73,13 @@ class YahooHttp:
     def _token(self, force: bool) -> str:
         with self._lock:
             if force or self._access_token is None or self._clock() >= self._expires_at - _EXPIRY_MARGIN:
-                self._renew()
+                if self._clock() < self._renew_failed_until:
+                    raise YahooUnavailable("Yahoo token refresh failed recently; retrying after cooldown")
+                try:
+                    self._renew()
+                except YahooUnavailable:
+                    self._renew_failed_until = self._clock() + _RENEW_COOLDOWN
+                    raise
             return self._access_token
 
     def _renew(self) -> None:

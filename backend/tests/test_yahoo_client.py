@@ -91,11 +91,13 @@ def test_pacific_today_uses_la_date():
 
 
 def test_calendar_failure_means_not_final(setup):
-    client, http, _, today = setup
+    client, http, clock, today = setup
     today.value = date(2027, 1, 1)
     http.failing.add("game/nba/game_weeks")
     assert client.week_state(3, current_week=7) == "settling"
     http.failing.clear()
+    assert client.week_state(3, current_week=7) == "settling"  # 30 s failure cooldown, no retry yet
+    clock.now += 31
     assert client.week_state(3, current_week=7) == "final"
     assert http.calls["game/nba/game_weeks"] == 2
 

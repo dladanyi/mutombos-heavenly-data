@@ -114,6 +114,7 @@ def test_week_cache_headers_by_state(http, client):
     client.state = "settling"
     assert headers(http.get("/api/rankings/week/6")) == ("public, max-age=300", "max-age=3600")
     client.state = "final"
+    client.stats_result = result(final=True)
     assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=86400", "max-age=31536000")
 
 
@@ -194,3 +195,12 @@ def test_fetched_at_iso_utc(http):
     fetched_at = http.get("/api/rankings/season").get_json()["fetched_at"]
     assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", fetched_at)
     assert fetched_at == "2026-10-03T04:00:00Z"
+
+
+def test_final_state_with_non_final_entry_gets_settling_headers(http, client):
+    # Fetched while settling (1 h entry), served after the week turned final: must not be CDN-cached for a year.
+    client.state = "final"
+    client.stats_result = result(final=False)
+    assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=300", "max-age=3600")
+    client.stats_result = result(final=True)
+    assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=86400", "max-age=31536000")

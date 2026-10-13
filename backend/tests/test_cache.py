@@ -199,3 +199,30 @@ def test_different_keys_fetch_independently(cache):
     cache.get_or_fetch("a", fa, ttl=300)
     cache.get_or_fetch("b", fb, ttl=300)
     assert (fa.calls, fb.calls) == (1, 1)
+
+
+def test_failure_cooldown_serves_stale_without_calling_yahoo(cache, clock):
+    fetch = Fetch()
+    cache.get_or_fetch("k", fetch, ttl=300)
+    clock.now += 301
+    fetch.error = YahooUnavailable("down")
+    assert cache.get_or_fetch("k", fetch, ttl=300).stale is True
+    clock.now += 10
+    assert cache.get_or_fetch("k", fetch, ttl=300).stale is True
+    assert cache.get_or_fetch("k", fetch, ttl=300, refresh=True).stale is True
+    assert fetch.calls == 2
+    clock.now += 31
+    fetch.error = None
+    assert cache.get_or_fetch("k", fetch, ttl=300).data == "v1#3"
+
+
+def test_failure_cooldown_without_entry_raises_without_calling_yahoo(cache, clock):
+    fetch = Fetch()
+    fetch.error = YahooUnavailable("down")
+    for _ in range(3):
+        with pytest.raises(YahooUnavailable):
+            cache.get_or_fetch("k", fetch, ttl=300)
+    assert fetch.calls == 1
+    clock.now += 31
+    fetch.error = None
+    assert cache.get_or_fetch("k", fetch, ttl=300).data == "v1#2"
