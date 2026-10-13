@@ -145,12 +145,21 @@ Categories are defined once, in display order:
 | Data | Server TTL |
 |---|---|
 | League metadata, season stats, current-week stats | 5 min |
-| Any week before the current week | 6 h |
+| **Final** week: fetched after the week ended (week < current week at fetch time) | Never expires |
 
+- **Final data never changes.** A week's entry is marked final only if the week had already
+  ended *when it was fetched*. An entry fetched while the week was still current stays on the
+  5 min TTL. After the week rolls over, the next fetch replaces it with a final entry. This
+  prevents a mid-week snapshot being frozen forever.
+- Final entries are never evicted. That's about 25 per season, a few KB each. Only in-memory,
+  so they last until the instance shuts down, after which they are refetched once.
 - **Stale on error:** if a fetch fails and an expired entry exists, it is returned with
-  `stale=True`. Entries are kept until evicted (LRU cap of 64 entries).
-- **Refresh:** `refresh=True` bypasses the TTL, but only if the entry is more than 30 s old.
-  Otherwise the cached entry is returned with `refresh_throttled=True`.
+  `stale=True`. Non-final entries are kept until evicted (LRU cap of 64 entries).
+- **Refresh:** for a final entry, `refresh=True` is ignored and Yahoo is not called. For other
+  entries, it bypasses the TTL, but only if the entry is more than 30 s old. Otherwise the
+  cached entry is returned with `refresh_throttled=True`.
+- Past seasons are out of scope here. When they are added, the same rule applies: a finished
+  season is final.
 - If a fetch fails and nothing is cached, it raises `YahooUnavailable`.
 
 ### 5.3 Parsing (`parsing.py`)
@@ -180,8 +189,12 @@ like `YahooUnavailable`.
 |---|---|---|
 | `GET /api/league` | name, current_week, start_week, end_week, categories | `max-age=60` |
 | `GET /api/rankings/season` | season-to-date rankings | `max-age=60` |
-| `GET /api/rankings/week/<n>` or `/current` | one week's rankings | `max-age=60` for the current week, `max-age=3600` for earlier weeks |
+| `GET /api/rankings/week/<n>` or `/current` | one week's rankings | `max-age=60` for the current week, `max-age=86400` for final weeks |
 | `GET /healthz` | `ok` (no Yahoo call) | `no-store` |
+
+Final weeks use a 1-day browser cache instead of "forever" (`immutable`). The server cache is
+what saves Yahoo calls. A browser that cached JSON forever would keep an old response shape
+after a future deploy changes the API, and the frontend could break for that user.
 
 `?refresh=1` on any `/api` endpoint passes `refresh=True` to the client and sends
 `Cache-Control: no-store`. A week outside `start_week..current_week` returns 404 JSON.
@@ -281,7 +294,8 @@ must pass first.
   reordered keys; a malformed response raises `YahooFormatError`.
 - **`test_rankings.py`:** ties share a rank, TO ranks lower-is-better, null values rank worst,
   plus avg/place/sort-order checks and detail strings.
-- **`test_yahoo_client.py`** (with a fake transport): TTL expiry, the 5 min / 6 h split,
+- **`test_yahoo_client.py`** (with a fake transport): TTL expiry, final entries never expiring or being evicted, a week fetched while current
+  not becoming final, refresh ignored for final entries,
   stale on error, `YahooUnavailable` when nothing is cached, the 30 s refresh throttle, and
   one retry.
 - **`test_api.py`** (with a fake client): response shapes, 503 JSON, 404 for an out-of-range

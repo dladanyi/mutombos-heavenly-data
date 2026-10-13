@@ -41,7 +41,10 @@ zero. That is intentional: it keeps the app free and refills on the next request
 | Data | Server TTL | Browser max-age |
 |---|---|---|
 | League, season, current week | 5 min | 60 s |
-| Earlier weeks | 6 h | 1 h |
+| Final weeks (fetched after the week ended) | Never expires | 1 day |
+
+Finished weeks never change, so they are cached for the life of the instance. A week is only
+marked final if it had already ended when fetched, so a mid-week snapshot is never frozen.
 
 If Yahoo fails, the API returns the last cached data marked `stale`. A manual refresh skips
 the cache at most once every 30 s per entry.

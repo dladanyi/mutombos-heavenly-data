@@ -12,7 +12,7 @@ All endpoints return JSON. Adding `?refresh=1` to any `/api` endpoint skips the 
 | `GET /api/league` | League metadata | `max-age=60` |
 | `GET /api/rankings/season` | Season-to-date rankings | `max-age=60` |
 | `GET /api/rankings/week/current` | Current week rankings | `max-age=60` |
-| `GET /api/rankings/week/<n>` | Rankings for week `n` | `max-age=60` for the current week, else `max-age=3600` |
+| `GET /api/rankings/week/<n>` | Rankings for week `n` | `max-age=60` for the current week, else `max-age=86400` |
 | `GET /healthz` | Returns `ok`; never calls Yahoo | `no-store` |
 
 ## `GET /api/league`

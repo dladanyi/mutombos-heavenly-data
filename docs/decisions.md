@@ -11,6 +11,10 @@ Newest first. Each entry: what we decided, and why.
   request-based billing, no paid add-ons (no Redis or database).
 - **In-memory cache per instance.** Free and simple. Losing it on scale-to-zero is
   acceptable.
+- **Finished weeks (and, later, finished seasons) are cached on the server indefinitely.**
+  They never change, so there's no reason to refetch them. A week only counts as final if it
+  had ended when fetched. Browsers cache them for 1 day rather than forever, so a future API
+  change can't leave old JSON stuck in someone's browser.
 - **Drop pandas.** About 150 MB of image size and slower cold starts for about 30 lines of
   ranking logic.
 - **Keep yfpy** for Yahoo OAuth. Replace it only if it can't renew from a refresh token
