@@ -90,12 +90,12 @@ def week_rankings(week: str):
     info, league_result = _client().league()
     if week == "current":
         number = info.current_week
-    elif week.isdigit() and info.start_week <= int(week) <= info.current_week:
+    elif week.isdecimal() and info.start_week <= int(week) <= info.current_week:
         number = int(week)
     else:
         raise NotFound()
     teams, result, state = _client().week_stats(number, info.current_week, refresh=_refresh())
-    body = _rankings_body("week", number, teams, result, league_result)
+    body = {**_rankings_body("week", number, teams, result, league_result), "state": state}
     # Long CDN caching only for data that was itself fetched as final (spec §5.2): an entry
     # fetched while settling may still be served after the week turns final.
     kind = _STATE_HEADERS[state] if state != "final" or result.final else "settling"

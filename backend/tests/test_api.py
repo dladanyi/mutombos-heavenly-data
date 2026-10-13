@@ -141,7 +141,7 @@ def test_refresh_throttled_flag(http, client):
     assert http.get("/api/rankings/season?refresh=1").get_json()["refresh_throttled"] is True
 
 
-@pytest.mark.parametrize("week", ["8", "0", "abc", "-1", "7.5"])
+@pytest.mark.parametrize("week", ["8", "0", "abc", "-1", "7.5", "%C2%B2"])
 def test_out_of_range_week_404(http, week):
     response = http.get(f"/api/rankings/week/{week}")
     assert response.status_code == 404
@@ -204,3 +204,9 @@ def test_final_state_with_non_final_entry_gets_settling_headers(http, client):
     assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=300", "max-age=3600")
     client.stats_result = result(final=True)
     assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=86400", "max-age=31536000")
+
+
+@pytest.mark.parametrize("state", ["current", "settling", "final"])
+def test_week_body_reports_state(http, client, state):
+    client.state = state
+    assert http.get("/api/rankings/week/6").get_json()["state"] == state

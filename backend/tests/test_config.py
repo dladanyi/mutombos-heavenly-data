@@ -13,12 +13,12 @@ REQUIRED = {
 
 def test_load_settings_reads_required_vars():
     s = load_settings(REQUIRED)
-    assert (s.consumer_key, s.consumer_secret, s.refresh_token, s.league_id, s.port) == (
-        "k", "s", "r", "123", 8080)
+    assert (s.consumer_key, s.consumer_secret, s.refresh_token, s.league_id) == ("k", "s", "r", "123")
 
 
-def test_port_from_env():
-    assert load_settings({**REQUIRED, "PORT": "9000"}).port == 9000
+def test_port_is_ignored():
+    s = load_settings({**REQUIRED, "PORT": "not-a-number"})
+    assert not hasattr(s, "port")
 
 
 @pytest.mark.parametrize("missing", list(REQUIRED))

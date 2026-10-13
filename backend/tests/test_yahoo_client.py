@@ -74,6 +74,24 @@ def test_week_state_current(setup):
     assert client.week_state(8, current_week=7) == "current"
 
 
+def test_current_week_past_its_end_follows_calendar(setup):
+    """After the season, Yahoo leaves current_week on the last week; it must still go final."""
+    client, _, _, today = setup
+    today.value = WEEK3_END
+    assert client.week_state(3, current_week=3) == "current"
+    today.value = WEEK3_END.replace(day=10)
+    assert client.week_state(3, current_week=3) == "settling"
+    today.value = WEEK3_END.replace(day=13)
+    assert client.week_state(3, current_week=3) == "final"
+
+
+def test_current_week_calendar_failure_stays_current(setup):
+    client, http, _, today = setup
+    today.value = date(2027, 1, 1)
+    http.failing.add("game/nba/game_weeks")
+    assert client.week_state(3, current_week=3) == "current"
+
+
 def test_week_state_boundary(setup):
     client, _, _, today = setup
     today.value = WEEK3_END.replace(day=12)

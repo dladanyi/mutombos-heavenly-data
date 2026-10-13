@@ -63,15 +63,18 @@ class YahooHttp:
 
             log.warning("Yahoo request failed", extra={"path": path, "status": status, "attempt": attempt})
             if attempt == 1 and status == 401:
-                self._token(force=True)
+                self._token(force=True, rejected=token)
                 continue
             if attempt == 1 and status >= 500 and status != _RATE_LIMITED:
                 continue
             raise YahooUnavailable(f"Yahoo returned HTTP {status} for {path}")
         raise AssertionError("unreachable")
 
-    def _token(self, force: bool) -> str:
+    def _token(self, force: bool, rejected: str | None = None) -> str:
+        """Return a valid access token. A forced renew is skipped if another request already
+        replaced the `rejected` token, so concurrent 401s renew it only once."""
         with self._lock:
+            force = force and (rejected is None or rejected == self._access_token)
             if force or self._access_token is None or self._clock() >= self._expires_at - _EXPIRY_MARGIN:
                 if self._clock() < self._renew_failed_until:
                     raise YahooUnavailable("Yahoo token refresh failed recently; retrying after cooldown")
@@ -98,10 +101,14 @@ class YahooHttp:
         try:
             body = response.json()
             access_token = body["access_token"]
-        except (ValueError, KeyError) as exc:
+            expires_in = float(body.get("expires_in", 3600))
+            new_refresh_token = body.get("refresh_token")
+            if not isinstance(access_token, str) or not access_token:
+                raise ValueError("access_token missing")
+        except (ValueError, KeyError, TypeError, AttributeError) as exc:
             raise YahooUnavailable("Yahoo token refresh returned an unexpected body") from exc
 
         self._access_token = access_token
-        self._expires_at = self._clock() + float(body.get("expires_in", 3600))
-        if body.get("refresh_token"):
-            self._refresh_token = body["refresh_token"]
+        self._expires_at = self._clock() + expires_in
+        if new_refresh_token:
+            self._refresh_token = new_refresh_token

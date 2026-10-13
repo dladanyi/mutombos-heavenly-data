@@ -104,4 +104,9 @@ def test_season_fixture_end_to_end():
     assert all(list(r["stats"]) == [c.key for c in CATEGORIES] for r in rows)
     assert rows[0]["place"] == 1
     assert [r["avg_rank"] for r in rows] == sorted(r["avg_rank"] for r in rows)
-    assert set(rows[0]) == {"name", "avg_rank", "place", "stats"}
+    assert set(rows[0]) == {"team_key", "name", "avg_rank", "place", "stats"}
+
+
+def test_rows_carry_team_key():
+    rows = build_rankings([team("a"), team("b")], [PTS])
+    assert {r["name"]: r["team_key"] for r in rows} == {"a": "k.a", "b": "k.b"}

@@ -30,6 +30,8 @@ class FakeSession:
         item = queue.pop(0)
         if isinstance(item, Exception):
             raise item
+        if callable(item):
+            return item()
         return item
 
     def post(self, url, **kwargs):
@@ -189,3 +191,37 @@ def test_failed_token_refresh_not_retried_for_30s():
     clock.now += 31
     assert http.get_json("a") == {"ok": 1}
     assert len(session.post_calls) == 2
+
+
+def test_401_after_another_request_renewed_reuses_new_token():
+    """Concurrent 401s for the same rejected token renew it once, not once per request."""
+    session = FakeSession(posts=[token("t1"), token("t2")])
+    http = make(session)
+
+    def first_response():
+        # While this request is in flight, another request gets a 401 and renews the token.
+        session.gets[:0] = [FakeResponse(401, {}), FakeResponse(200, {"other": 1})]
+        assert http.get_json("other") == {"other": 1}
+        return FakeResponse(401, {})
+
+    session.gets = [first_response, FakeResponse(200, {"ok": 1})]
+    assert http.get_json("league/nba.l.1") == {"ok": 1}
+    assert len(session.post_calls) == 2
+    assert session.get_calls[-1][1]["headers"]["Authorization"] == "Bearer t2"
+
+
+@pytest.mark.parametrize("body", [
+    {"access_token": "t1", "expires_in": None},
+    {"access_token": "t1", "expires_in": "soon"},
+    ["not", "a", "dict"],
+    {"access_token": None},
+])
+def test_malformed_token_body_is_unavailable_and_cools_down(body):
+    session = FakeSession(posts=[FakeResponse(200, body)])
+    http = make(session)
+    with pytest.raises(YahooUnavailable, match="unexpected body"):
+        http.get_json("league/nba.l.1")
+    with pytest.raises(YahooUnavailable, match="cooldown"):
+        http.get_json("league/nba.l.1")
+    assert len(session.post_calls) == 1
+    assert session.get_calls == []

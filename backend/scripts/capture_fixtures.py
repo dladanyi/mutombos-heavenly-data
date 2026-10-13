@@ -14,6 +14,17 @@ from app.config import load_settings  # noqa: E402
 from app.yahoo_http import YahooHttp  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+# The repo is public: drop each team's managers block (nickname, GUID, possibly an email).
+PRIVATE_KEYS = {"managers"}
+
+
+def strip_private(value):
+    """Return `value` with every PRIVATE_KEYS entry removed, at any depth."""
+    if isinstance(value, dict):
+        return {k: strip_private(v) for k, v in value.items() if k not in PRIVATE_KEYS}
+    if isinstance(value, list):
+        return [strip_private(v) for v in value]
+    return value
 
 
 def main() -> None:
@@ -36,7 +47,7 @@ def main() -> None:
     FIXTURES.mkdir(parents=True, exist_ok=True)
     for name, body in responses.items():
         path = FIXTURES / name
-        path.write_text(json.dumps(body, indent=2, ensure_ascii=False) + "\n")
+        path.write_text(json.dumps(strip_private(body), indent=2, ensure_ascii=False) + "\n")
         print(f"{name}: {path.stat().st_size} bytes")
     print(f"week_stats.json is week {week} (current week {current_week})")
 

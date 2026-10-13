@@ -19,7 +19,7 @@ def to_number(raw: str | None) -> Number | None:
 
 
 def build_rankings(teams: list[TeamStats], categories: Sequence[Category] = CATEGORIES) -> list[dict]:
-    rows = [{"name": t.name, "stats": {}} for t in teams]
+    rows = [{"team_key": t.team_key, "name": t.name, "stats": {}} for t in teams]
     for category in categories:
         values = [to_number(t.values.get(category.stat_id)) for t in teams]
         for row, team, value, rank in zip(rows, teams, values, _ranks(values, category.higher_is_better)):
@@ -34,8 +34,8 @@ def build_rankings(teams: list[TeamStats], categories: Sequence[Category] = CATE
     rows.sort(key=lambda r: (r["avg_rank"], r["name"]))
     for row in rows:
         row["place"] = 1 + sum(other["avg_rank"] < row["avg_rank"] for other in rows)
-    return [{"name": r["name"], "avg_rank": r["avg_rank"], "place": r["place"], "stats": r["stats"]}
-            for r in rows]
+    return [{"team_key": r["team_key"], "name": r["name"], "avg_rank": r["avg_rank"],
+             "place": r["place"], "stats": r["stats"]} for r in rows]
 
 
 def _ranks(values: list[Number | None], higher_is_better: bool) -> list[int]:

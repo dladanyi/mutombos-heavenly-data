@@ -12,7 +12,7 @@ Once Yahoo approves access:
 
 ```sh
 set -a; source .env; set +a
-.venv/bin/python backend/scripts/capture_fixtures.py   # overwrites the four JSON files
+.venv/bin/python backend/scripts/capture_fixtures.py   # overwrites the four JSON files, minus managers
 cd backend && ../.venv/bin/pytest
 ```
 

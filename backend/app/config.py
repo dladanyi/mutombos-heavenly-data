@@ -36,7 +36,6 @@ class Settings:
     consumer_secret: str
     refresh_token: str
     league_id: str
-    port: int
 
 
 _REQUIRED = ("YAHOO_CONSUMER_KEY", "YAHOO_CONSUMER_SECRET", "YAHOO_REFRESH_TOKEN", "YAHOO_LEAGUE_ID")
@@ -51,5 +50,4 @@ def load_settings(env: Mapping[str, str] = os.environ) -> Settings:
         consumer_secret=env["YAHOO_CONSUMER_SECRET"],
         refresh_token=env["YAHOO_REFRESH_TOKEN"],
         league_id=env["YAHOO_LEAGUE_ID"],
-        port=int(env.get("PORT") or 8080),
     )
