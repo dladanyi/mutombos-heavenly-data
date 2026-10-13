@@ -5,14 +5,13 @@
 
 ## Overview
 
-One repo, one container, one Cloud Run service. Flask serves the JSON API and the built React
-app from the same origin.
+One repo, one Vercel project, one URL. Vercel's CDN serves the React app as static files, and
+the Flask app runs as a single Python function for `/api/*` and `/healthz`.
 
 ```
-Browser ──► Cloud Run (gunicorn, 1 worker x 8 threads, scales to zero)
-              ├─ /api/*      Flask JSON API ──► yahoo_client (in-memory TTL cache) ──► Yahoo Fantasy API
-              ├─ /healthz    liveness check, no Yahoo call
-              └─ /*          React app (frontend/dist)
+Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
+                        └─ /api/*, /healthz ──► CDN cache
+                                                  └─ miss ──► Flask function ──► in-memory cache ──► Yahoo Fantasy API
 ```
 
 ## Backend (`backend/app/`)
@@ -24,10 +23,10 @@ Browser ──► Cloud Run (gunicorn, 1 worker x 8 threads, scales to zero)
 | `yahoo_http.py` | OAuth token refresh, GET with timeout, retry and 401 handling | requests |
 | `cache.py` | TTL / final cache, stale-on-error, refresh throttle | - |
 | `yahoo_client.py` | League, season, week and calendar fetches; current/settling/final rules | yahoo_http, cache, parsing |
-| `logging_setup.py` | JSON log lines for Cloud Logging | - |
-| `parsing.py` | Yahoo `teams/stats` JSON → `TeamStats` | config |
+| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, place) | config |
-| `api.py` | Flask routes, JSON errors, cache headers, serves the frontend | all of the above |
+| `api.py` | Flask routes, JSON errors, cache headers, local static serving | all of the above |
+| `logging_setup.py` | JSON log lines (Vercel runtime logs) | - |
 
 `parsing` and `rankings` are pure functions, tested against saved Yahoo responses.
 
@@ -39,25 +38,28 @@ Medal colors come from the API's `rank` and `place` fields.
 
 ## Caching
 
-The cache is in memory, one per Cloud Run instance, and is lost when the service scales to
-zero. That is intentional: it keeps the app free and refills on the next request.
+Two layers:
 
-| Data | Server TTL | Browser max-age |
-|---|---|---|
-| League, season, current week | 5 min | 60 s |
-| Settling weeks (ended less than 3 days ago) | 1 h | 5 min |
-| Final weeks (ended 3+ days before fetch) | Never expires | 1 day |
+- **Vercel CDN:** regional and shared by every visitor. It survives function cold starts and
+  is scoped to the deployment.
+- **In-memory cache in the function:** per instance. Fluid Compute reuses warm instances, so
+  it catches repeat misses. It is also what serves the last good data when Yahoo fails.
+
+| Data | In-memory TTL | CDN | Browser |
+|---|---|---|---|
+| League, season, current week | 5 min | 60 s | 60 s |
+| Settling week (ended less than 3 days ago) | 1 h | 1 h | 5 min |
+| Final week (ended 3+ days before fetch) | forever | 1 year | 1 day |
 
 A week becomes final once it is more than 3 days past its end date (Pacific time, using
 Yahoo's game-week calendar), which leaves time for Yahoo's stat corrections. Finality is
 decided when the data is fetched, so a mid-week or pre-correction snapshot is never frozen.
-Final weeks are cached for the life of the instance.
-
-If Yahoo fails, the API returns the last cached data marked `stale`. A manual refresh skips
-the cache at most once every 30 s per entry.
+Stale responses (served from memory when Yahoo fails) and `?refresh=1` responses are never
+cached by the CDN or the browser. A manual refresh skips the in-memory cache at most once
+every 30 s per entry.
 
 ## Yahoo authentication
 
-The consumer key, consumer secret and refresh token come from Secret Manager as env vars.
+The consumer key, consumer secret and refresh token come from Vercel environment variables.
 `yahoo_http.py` exchanges the refresh token for an access token in memory and renews it
 before it expires (tokens last 1 h). It never prompts for input and never writes to disk.

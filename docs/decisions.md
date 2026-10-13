@@ -2,13 +2,34 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-12: Move hosting from Cloud Run to Vercel
+
+- **Deploy on Vercel (Hobby) with the GitHub repo connected,** instead of Cloud Run + Cloud
+  Build + Secret Manager. Pushes to `main` deploy to production, and other branches get
+  preview URLs.
+  - **Simpler and guaranteed $0.** No Docker, Artifact Registry, IAM or budget alerts. Hobby
+    is capped rather than billed.
+  - **Better caching.** The CDN caches API responses (`Vercel-CDN-Cache-Control`), so finished
+    weeks stay cached across cold starts, unlike Cloud Run's per-instance memory.
+  - **Preview URLs** for reviewing changes before they go live.
+  - **Trade-offs:** less in-memory state survives between requests (shorter-lived
+    instances), so the stale-on-error fallback is a little weaker. The Hobby plan is for
+    non-commercial use only.
+- **Secrets live in Vercel project env vars** (marked Sensitive), not GitHub. GitHub Actions
+  runs CI only and needs no secrets, because tests use saved fixtures.
+- **Drop gunicorn and Docker.** Vercel runs Flask as a WSGI function; locally we use
+  `flask run`.
+- Context: production on Cloud Run was returning 503 at the time, because Yahoo rejects the
+  current app credentials with 403. That's unrelated to hosting and has to be fixed either
+  way.
+
 ## 2026-10-12: Sub-project 1 design
 
 - **Split into backend (Flask JSON API) and frontend (React + Vite + TypeScript), in one
-  repo and one Cloud Run service.** Keeps the data logic and the UI clearly apart, suits the
+  repo and one deployment.** (Cloud Run at first; now one Vercel project.) Keeps the data logic and the UI clearly apart, suits the
   planned interactive features, and avoids running two services and setting up CORS.
-- **Target $0/month.** Scale to zero (`min-instances=0`), `max-instances=2` as a cost cap,
-  request-based billing, no paid add-ons (no Redis or database).
+- **Target $0/month.** No paid add-ons (no Redis or database). (Originally Cloud Run
+  scale-to-zero; superseded by the move to Vercel Hobby above.)
 - **In-memory cache per instance.** Free and simple. Losing it on scale-to-zero is
   acceptable.
 - **Finished weeks (and, later, finished seasons) are cached on the server indefinitely.**
@@ -24,12 +45,12 @@ Newest first. Each entry: what we decided, and why.
   no request timeout, use up retries permanently per instance, call `sys.exit(1)` on config
   errors, and renewed the token on every page load in the old app. Our client uses
   `requests`, renews in memory, and has timeouts and retries. This removes 6 dependencies.
-- **Yahoo secrets in Secret Manager, never written to disk.** The Cloud Run filesystem is
-  ephemeral, and writing to `.env` was fragile.
-- **Keep the existing Cloud Run GitHub link for deploys; GitHub Actions only runs CI.** No
-  deploy credentials in GitHub, and nothing new to set up.
+- **Yahoo secrets in the hosting platform's env store, never written to disk.** Writing to
+  `.env` at runtime was fragile on an ephemeral filesystem. (Secret Manager at first; now
+  Vercel env vars.)
+- ~~Keep the existing Cloud Run GitHub link for deploys~~ (superseded by the move to Vercel
+  above). GitHub Actions only runs CI.
 - **Missing stat values rank worst.** Previously a missing TO became 0 and ranked best.
-- **No IaC (Terraform) for now.** One service plus three secrets; documented `gcloud`
-  commands are enough.
+- **No IaC (Terraform) for now.** One project plus four env vars; the docs are enough.
 - **Work split into three sub-projects:** stability + split, then week picker + trends, then
   matchups.

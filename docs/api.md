@@ -2,18 +2,29 @@
 
 > **Status:** target design from sub-project 1. Not yet implemented.
 
-All endpoints return JSON. Adding `?refresh=1` to any `/api` endpoint skips the server cache
-(at most once every 30 s per resource) and responds with `Cache-Control: no-store`.
+All endpoints return JSON.
 
 ## Endpoints
 
-| Method + path | Description | `Cache-Control` |
+| Method + path | Description |
+|---|---|
+| `GET /api/league` | League metadata |
+| `GET /api/rankings/season` | Season-to-date rankings |
+| `GET /api/rankings/week/current` | Current week rankings |
+| `GET /api/rankings/week/<n>` | Rankings for week `n` |
+| `GET /healthz` | Returns `ok`; never calls Yahoo |
+
+## Caching headers
+
+| Data | `Cache-Control` | `Vercel-CDN-Cache-Control` |
 |---|---|---|
-| `GET /api/league` | League metadata | `max-age=60` |
-| `GET /api/rankings/season` | Season-to-date rankings | `max-age=60` |
-| `GET /api/rankings/week/current` | Current week rankings | `max-age=60` |
-| `GET /api/rankings/week/<n>` | Rankings for week `n` | `max-age=60` current, `max-age=300` ended < 3 days ago, `max-age=86400` final |
-| `GET /healthz` | Returns `ok`; never calls Yahoo | `no-store` |
+| League, season, current week | `public, max-age=60` | `max-age=60` |
+| Week that ended less than 3 days ago | `public, max-age=300` | `max-age=3600` |
+| Final week (ended 3+ days ago) | `public, max-age=86400` | `max-age=31536000` |
+| `?refresh=1`, `/healthz`, errors, stale responses | `no-store` | `no-store` |
+
+Adding `?refresh=1` to any `/api` endpoint skips the server cache (at most once every 30 s per
+resource).
 
 ## `GET /api/league`
 

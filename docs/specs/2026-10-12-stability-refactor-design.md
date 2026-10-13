@@ -24,8 +24,7 @@ This is the first of three sub-projects:
 - A Yahoo failure never produces a raw 500 page. Users see cached data marked stale, or a
   friendly error with a retry button.
 - Backend and frontend tests run in GitHub Actions on every push and PR.
-- Runs within Google Cloud free tiers: $0/month at league-scale traffic.
-- The final container image is under 300 MB.
+- Runs on the Vercel Hobby plan: $0/month (Hobby has hard usage caps and never bills).
 - `docs/` describes the system as built.
 
 ### Out of scope
@@ -40,32 +39,36 @@ leagues.
 | Crash when `last_week == 0`: `last_week_table_html` is never assigned | `app.py` index route | Frontend hides the last-week section when `current_week == 1` |
 | 3-4 live Yahoo calls per page load, no cache | `app.py` | TTL cache in `yahoo_client` |
 | No error handling | everywhere | Stale-on-error cache, JSON 503, UI error state |
-| Token config mismatch (`YAHOO_ACCESS_TOKEN_JSON` vs separate vars) and token writes to `.env` on an ephemeral filesystem | `YahooFantasySportsQuery(...)` | Token data built in memory from env/Secret Manager; never written to disk |
+| Token config mismatch (`YAHOO_ACCESS_TOKEN_JSON` vs separate vars) and token writes to `.env` on an ephemeral filesystem | `YahooFantasySportsQuery(...)` | Token data built in memory from Vercel env vars; never written to disk |
 | Positional parsing (`t[0][2]['name']`) | `generate_rankings` | Key-based parsing in `parsing.py` |
 | ~80 lines of JS re-read generated HTML to color cells | `table_view_fancy.html` | Colors come from API `rank` fields |
-| `COPY . .` without `.dockerignore` can copy a local `.env` into the image | `Dockerfile` | Add `.dockerignore` |
-| `docker-compose.yml` mounts to `/code`, app lives in `/app` | `docker-compose.yml` | Fix the mount |
+| `COPY . .` can copy a local `.env` into the image | `Dockerfile` | Docker removed (Vercel builds from Git; `.env` is git-ignored) |
 | pandas + numpy (~150 MB) for ~30 lines of ranking | `requirements.txt` | Plain Python |
 | Dead code: `table_view.html`, `cut_port_re`, duplicate `datetime` import, `pytz` | various | Removed |
 
 ## 3. Constraints
 
-- **Hosting:** Google Cloud Run, deployed by the existing Cloud Run GitHub link (Cloud Build
-  trigger on push to `main`). The `Dockerfile` stays at the repo root.
-- **Cost:** ideally $0/month. Scale to zero, no always-on instances, no paid add-ons.
+- **Hosting:** Vercel (Hobby plan), with the GitHub repo connected. A push to `main` deploys to
+  production, and every other branch or PR gets a preview deployment. Decided 2026-10-12;
+  replaces the earlier Cloud Run design (see `decisions.md`).
+- **Cost:** $0/month. Hobby is free with hard caps; no paid add-ons.
 - **Filesystem:** ephemeral. Nothing is persisted to disk at runtime.
 
 ## 4. Architecture
 
-One repo, one container, one Cloud Run service, one URL. Flask serves both the JSON API and
-the built React app (same origin, no CORS).
+One repo, one Vercel project, one URL. Vercel's CDN serves the built React app as static
+files, and the Flask app runs as a single Python function (Fluid Compute) for `/api/*` and
+`/healthz`. Same origin, so no CORS.
 
 ```
-Browser ──► Cloud Run (gunicorn, 1 worker x 8 threads)
-              ├─ /api/*      Flask JSON API ──► yahoo_client (TTL cache) ──► Yahoo Fantasy API
-              ├─ /healthz    "ok"
-              └─ /*          frontend/dist (React app)
+Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static, cached at the edge)
+                        └─ /api/*, /healthz ──► CDN cache (per Vercel-CDN-Cache-Control)
+                                                  └─ miss ──► Flask function ──► in-memory cache ──► Yahoo
 ```
+
+Two cache layers protect Yahoo: the **CDN cache** (regional, shared by all visitors, survives
+function cold starts) and the function's **in-memory cache** (per instance; still useful because
+Fluid Compute reuses warm instances, and it is what serves stale data when Yahoo fails).
 
 ### Repository layout
 
@@ -87,7 +90,7 @@ backend/
   scripts/
     get_refresh_token.py   one-time Yahoo login, prints a refresh token
     capture_fixtures.py
-  requirements.txt     flask, gunicorn, requests
+  requirements.txt     flask, requests
   requirements-dev.txt pytest
 frontend/
   public/              halo_ball.png (favicon), header-left.jpg and header-right.jpg
@@ -103,11 +106,12 @@ frontend/
     App.tsx, main.tsx
   package.json, vite.config.ts, tsconfig.json
 .github/workflows/ci.yml
-Dockerfile, .dockerignore, docker-compose.yml
+vercel.json            build command, output dir, Python function, rewrites
 docs/
 ```
 
-Removed: `app.py`, `templates/`, `static/`, root `requirements.txt`, `sample_data_table.txt`,
+Removed: `app.py`, `templates/`, `static/`, `Dockerfile`, `docker-compose.yml`,
+`sample_data_table.txt`,
 `51lCd0RlVSL._AC_.jpg` (not referenced by the app; the header images are inline in the
 template and get extracted to `frontend/public/`).
 
@@ -115,16 +119,17 @@ template and get extracted to `frontend/public/`).
 
 ### 5.1 Configuration (`config.py`)
 
-| Variable | Source on Cloud Run | Required |
+| Variable | Source on Vercel | Required |
 |---|---|---|
-| `YAHOO_CONSUMER_KEY` | Secret Manager | yes |
-| `YAHOO_CONSUMER_SECRET` | Secret Manager | yes |
-| `YAHOO_REFRESH_TOKEN` | Secret Manager | yes |
-| `YAHOO_LEAGUE_ID` | plain env var | yes |
-| `PORT` | set by Cloud Run | default `8080` |
+| `YAHOO_CONSUMER_KEY` | Project env var, marked Sensitive | yes |
+| `YAHOO_CONSUMER_SECRET` | Project env var, marked Sensitive | yes |
+| `YAHOO_REFRESH_TOKEN` | Project env var, marked Sensitive | yes |
+| `YAHOO_LEAGUE_ID` | Project env var | yes |
+| `PORT` | local development only | default `8080` |
 
-A missing required variable makes startup fail with a clear log line. On Cloud Run, the new
-revision then fails to start and traffic stays on the previous revision.
+Env vars are set for both Production and Preview. A missing required variable fails the
+function at startup with a clear log line. The `/api` routes then return 500 and the static
+page shows its error card. Check the preview deployment before merging to `main`.
 
 Categories are defined once, in display order:
 
@@ -209,19 +214,29 @@ like `YahooUnavailable`.
 
 ### 5.5 API (`api.py`)
 
-| Endpoint | Returns | Browser `Cache-Control` |
+| Endpoint | Returns |
+|---|---|
+| `GET /api/league` | name, current_week, start_week, end_week, categories |
+| `GET /api/rankings/season` | season-to-date rankings |
+| `GET /api/rankings/week/<n>` or `/current` | one week's rankings |
+| `GET /healthz` | `ok` (no Yahoo call) |
+
+Each response sets a browser TTL (`Cache-Control`) and a CDN TTL (`Vercel-CDN-Cache-Control`):
+
+| Data | `Cache-Control` (browser) | `Vercel-CDN-Cache-Control` (CDN) |
 |---|---|---|
-| `GET /api/league` | name, current_week, start_week, end_week, categories | `max-age=60` |
-| `GET /api/rankings/season` | season-to-date rankings | `max-age=60` |
-| `GET /api/rankings/week/<n>` or `/current` | one week's rankings | `max-age=60` for the current week, `max-age=300` for settling weeks, `max-age=86400` for final weeks |
-| `GET /healthz` | `ok` (no Yahoo call) | `no-store` |
+| League, season, current week | `public, max-age=60` | `max-age=60` |
+| Settling week | `public, max-age=300` | `max-age=3600` |
+| Final week | `public, max-age=86400` | `max-age=31536000` |
+| `?refresh=1`, `/healthz`, errors (4xx/5xx), stale responses | `no-store` | `no-store` |
 
-Final weeks use a 1-day browser cache instead of "forever" (`immutable`). The server cache is
-what saves Yahoo calls. A browser that cached JSON forever would keep an old response shape
-after a future deploy changes the API, and the frontend could break for that user.
-
-`?refresh=1` on any `/api` endpoint passes `refresh=True` to the client and sends
-`Cache-Control: no-store`. A week outside `start_week..current_week` returns 404 JSON.
+- Final weeks get a 1-day browser cache instead of "forever". A browser that cached JSON
+  forever could keep an old response shape after a deploy changes the API. The CDN cache
+  doesn't have this problem because it is scoped to each deployment.
+- Stale responses (Yahoo down) are never cached by the CDN, so normal data comes back as
+  soon as Yahoo recovers.
+- `?refresh=1` passes `refresh=True` to the client. It's a separate CDN cache key and is sent
+  with `no-store`, so it always reaches the function. A week outside `start_week..current_week` returns 404 JSON.
 
 Rankings response:
 
@@ -258,7 +273,9 @@ Errors are always JSON: `{"error": "yahoo_unavailable", "message": "..."}` with 
 or `{"error": "not_found"}` with 404. Unhandled exceptions are logged with a stack trace and
 return a 500 JSON body, never an HTML page.
 
-Any other path serves `frontend/dist/index.html` or the matching static file.
+Vercel serves the static frontend. A rewrite sends unknown non-API paths to `index.html`.
+For local development, Flask also serves `frontend/dist` (the matching file, otherwise
+`index.html`), so `npm run build` plus Flask works without Vercel.
 
 ### 5.6 Logging
 
@@ -282,33 +299,40 @@ cache hit/miss/stale), so Cloud Logging can parse them.
   hint and the mobile/portrait media queries, ported to `styles.css`.
 - **Development:** `npm run dev` proxies `/api` to Flask on `localhost:8080`.
 
-## 7. Deployment
+## 7. Deployment (Vercel)
 
-- **Dockerfile** (repo root, multi-stage): stage 1 is `node:22-slim` and builds
-  `frontend/dist`. Stage 2 is `python:3.12-slim` with the backend and the built frontend. The
-  command is `gunicorn --workers 1 --threads 8 --bind :$PORT --chdir backend "app:create_app()"`.
-- **`.dockerignore`:** `.env`, `.venv`, `node_modules`, `.git`, `.idea`, `docs`.
-- **`docker-compose.yml`:** builds the same image and uses `.env` for local runs.
-- **Cloud Run service settings:** `min-instances=0`, `max-instances=2`, 512 MiB of memory,
-  1 vCPU, request-based billing, concurrency 80. Three secrets mounted as env vars from
-  Secret Manager, plus `YAHOO_LEAGUE_ID`. Concurrency (80) is deliberately higher than
-  gunicorn's thread count (8). Most requests are fast cache hits, so it's better for extra
-  requests to wait briefly in gunicorn's queue than for Cloud Run to start a second instance
-  with an empty cache.
-- **Artifact Registry:** cleanup policy that keeps the 3 most recent images.
-- **Billing:** a $1 budget alert as a guardrail.
-- **Build/deploy:** unchanged. The Cloud Run GitHub link runs Cloud Build on push to `main`.
-  Before the first deploy, check (read-only) that the trigger's build settings still point at
-  the root `Dockerfile`.
-- **Cutover:** move the secrets into Secret Manager and update the service settings, then
-  merge to `main`. Check `/healthz` and `/api/league` on the new revision. To roll back,
-  `gcloud run services update-traffic <service> --to-revisions <previous>=100`.
+- **Project:** one Vercel project linked to the GitHub repo. Production branch: `main`. Every
+  other branch and PR gets a preview URL.
+- **`vercel.json`:**
+  - build command `cd frontend && npm ci && npm run build`, output directory `frontend/dist`
+  - the Flask app as a Python 3.12 function (Fluid Compute), with `backend/requirements.txt`
+    as its dependencies and `backend/tests/**` excluded from the bundle
+  - rewrites: `/api/(.*)` and `/healthz` → the Flask function; everything else falls back to
+    `/index.html`
+
+  The exact wiring (a Vercel "Services" config, or a thin `api/index.py` entry that imports
+  `create_app()`) is settled by the deployment task with `vercel build` and a preview
+  deployment (§10.5).
+- **Env vars:** set in Project → Settings → Environment Variables for Production and Preview.
+  The three Yahoo secrets are marked Sensitive.
+- **Cost:** Hobby plan. Usage is capped and never billed. If a cap is ever hit, functions
+  pause until the next cycle rather than charging.
+- **Local development:** Flask on `:8080` (`flask --app app:create_app run --port 8080` in
+  `backend/`) plus `npm run dev` with the Vite proxy. `vercel dev` is optional.
+- **Cutover:**
+  1. Create the project, add the env vars, and check the preview deployment of the
+     `stability-refactor` branch.
+  2. Merge to `main`, which deploys to production.
+  3. Disconnect the Cloud Run GitHub trigger and delete the Cloud Run service. This needs the
+     user's approval at that time.
+- **Rollback:** promote the previous production deployment (`vercel rollback`, or "Promote" in
+  the dashboard).
 
 ## 8. CI (`.github/workflows/ci.yml`)
 
-On every push and PR: `pytest` for the backend; `tsc --noEmit` and `vitest run` for the
-frontend; then `docker build`. We recommend turning on branch protection on `main` so that CI
-must pass first.
+On every push and PR: `pytest` for the backend; `tsc --noEmit`, `vitest run` and `vite build`
+for the frontend. Vercel's own build check runs on each preview deployment. We recommend
+turning on branch protection on `main` so that CI must pass first.
 
 ## 9. Testing
 
@@ -345,3 +369,7 @@ must pass first.
    instead.
 4. ~~Fixture privacy~~: **resolved 2026-10-12.** The GitHub repo is private, so fixtures
    can keep real team names. Revisit this if the repo is ever made public.
+5. **Vercel Python wiring.** Confirm with `vercel build` (and a preview deployment) how the
+   Flask app at `backend/app` becomes the function: the Services config or an `api/index.py`
+   shim. Also confirm the `/api/*` rewrites, that `Vercel-CDN-Cache-Control` is honoured, and
+   that responses carry `x-vercel-cache` `HIT` on repeat requests.

@@ -1,66 +1,88 @@
 # Deployment
 
-> **Status:** target setup from sub-project 1. Today the original app is deployed through the
-> same Cloud Run GitHub link.
+> **Status:** target setup from sub-project 1 (Vercel). Production still runs the original app
+> on Google Cloud Run (`mutombos-heavenly-data`, `us-west1`) until the cutover described below.
 
 ## How it deploys
 
-A push to `main` triggers the Cloud Run GitHub link, which runs Cloud Build on the root
-`Dockerfile` and deploys a new revision. GitHub Actions only runs CI (tests and a Docker
-build). It does not deploy.
+The GitHub repo is connected to a Vercel project.
 
-## Goal: $0/month
+- A push to `main` deploys to **production**.
+- Every other branch and every PR gets a **preview deployment** with its own URL.
+- GitHub Actions only runs CI (tests and builds). It does not deploy.
 
-Free-tier allowances as understood on 2026-10-12. Check against current Google Cloud pricing
-pages.
+Vercel builds the frontend (`cd frontend && npm ci && npm run build` → `frontend/dist`) and
+packages the Flask app as a Python function. The routing is in `vercel.json`:
+`/api/*` and `/healthz` go to Flask, and everything else is the static React app.
 
-| Service | Free allowance (approx.) | How we stay inside it |
+## Cost: $0/month
+
+The project is on the **Hobby** plan, which is free and for personal, non-commercial use.
+Hobby usage is capped rather than billed: if a limit were ever reached, functions pause until
+the next cycle, and nothing is charged. Caching keeps usage tiny:
+
+- The CDN caches API responses (`Vercel-CDN-Cache-Control`). Finished weeks are cached for a
+  year, so most requests never reach the function.
+- The function's in-memory cache absorbs the rest.
+
+## Environment variables
+
+Set in Vercel → Project → Settings → Environment Variables, for **Production and Preview**:
+
+| Name | Sensitive | Notes |
 |---|---|---|
-| Cloud Run | ~2M requests, 180k vCPU-s, 360k GiB-s per month (request-based billing) | `min-instances=0`, `max-instances=2`, caching |
-| Artifact Registry | 0.5 GB storage | Small image (<300 MB), cleanup policy keeps 3 images |
-| Secret Manager | 6 active secret versions, 10k access ops/month | 3 secrets, read only at instance start |
-| Cloud Build | Free build-minute allowance | A few minutes per push to `main` |
+| `YAHOO_CONSUMER_KEY` | yes | From the Yahoo developer app |
+| `YAHOO_CONSUMER_SECRET` | yes | From the Yahoo developer app |
+| `YAHOO_REFRESH_TOKEN` | yes | See below |
+| `YAHOO_LEAGUE_ID` | no | `46425` for the 2026-27 season |
 
-Guardrails:
+Changing an env var only takes effect on the next deployment (redeploy from the dashboard).
 
-- Never set `min-instances` above 0, and never enable "CPU always allocated".
-- Keep a $1 billing budget alert on the project.
+## Yahoo app and refresh token
 
-## Cloud Run service settings
+The Yahoo developer app (https://developer.yahoo.com/apps/) must have the **Fantasy Sports
+→ Read** API permission. Without it, every data request returns HTTP 403, "This application is
+not authorized to perform this action", even though token refresh still succeeds.
 
-| Setting | Value |
-|---|---|
-| Min / max instances | 0 / 2 |
-| Memory / CPU | 512 MiB / 1 |
-| Billing | Request-based |
-| Concurrency | 80 |
-| Env vars | `YAHOO_LEAGUE_ID` |
-| Secrets as env vars | `YAHOO_CONSUMER_KEY`, `YAHOO_CONSUMER_SECRET`, `YAHOO_REFRESH_TOKEN` |
-
-The service account running the service needs `roles/secretmanager.secretAccessor` on those
-three secrets.
-
-## Getting a Yahoo refresh token
-
-Needed once, and again if Yahoo revokes the token. The exact local steps will be documented
-here after the risk check in the spec (section 10.1).
-
-## Local run
+To get a refresh token (once, and again if Yahoo revokes it), run this in your own terminal:
 
 ```sh
-docker compose up --build      # same image as production, reads .env
+set -a; source .env; set +a
+.venv/bin/python backend/scripts/get_refresh_token.py
+```
+
+It prints a Yahoo sign-in URL, asks for the code Yahoo shows, and prints only the refresh
+token. Put it in `.env` and in the Vercel env var `YAHOO_REFRESH_TOKEN`, then redeploy.
+
+## Local development
+
+```sh
+# backend (terminal 1)
+set -a; source .env; set +a
+cd backend && ../.venv/bin/flask --app app:create_app run --port 8080
+
+# frontend (terminal 2), proxies /api to :8080
+cd frontend && npm run dev
 ```
 
 ## Smoke test after deploy
 
 ```sh
-curl -fsS https://<service-url>/healthz
-curl -fsS https://<service-url>/api/league
+curl -fsS https://<deployment-url>/healthz
+curl -fsS https://<deployment-url>/api/league
+curl -sSI https://<deployment-url>/api/rankings/season | grep -i x-vercel-cache   # HIT on repeat
 ```
 
 ## Rollback
 
-```sh
-gcloud run revisions list --service <service> --region <region>
-gcloud run services update-traffic <service> --region <region> --to-revisions <previous-revision>=100
-```
+Promote the previous production deployment: `vercel rollback`, or Dashboard → Deployments →
+⋯ → Promote.
+
+## Cutover from Cloud Run (one time)
+
+1. Create the Vercel project from the GitHub repo and add the env vars above.
+2. Check the preview deployment of the `stability-refactor` branch.
+3. Merge to `main`, which deploys to Vercel production.
+4. With the user's approval: disconnect the Cloud Run GitHub trigger (Cloud Build trigger
+   `aa70e010-…`, global) and delete the Cloud Run service `mutombos-heavenly-data`
+   (`us-west1`), so pushes stop deploying to GCP.

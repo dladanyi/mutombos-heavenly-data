@@ -3,33 +3,34 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the single-file Flask app with a tested Flask JSON API and a React frontend
-in one container that runs on Cloud Run for $0/month and looks the same as today's dashboard.
+deployed on Vercel (Hobby, $0/month) that looks the same as today's dashboard.
 
 **Architecture:** `backend/app/` holds small single-purpose modules: config, our own Yahoo
 HTTP client, a cache with current/settling/final rules, parsing, rankings, and Flask routes.
-`frontend/` is a Vite + React + TypeScript app built into `frontend/dist`, which Flask
-serves. A multi-stage root `Dockerfile` builds both. The existing Cloud Run GitHub link
-deploys it.
+`frontend/` is a Vite + React + TypeScript app built into `frontend/dist`. Vercel serves
+the static frontend from its CDN and runs Flask as one Python function for `/api/*` and
+`/healthz`, deploying from GitHub. (Hosting moved from Cloud Run to Vercel on 2026-10-12;
+see `docs/decisions.md`.)
 
-**Tech Stack:** Python 3.12, Flask, gunicorn, requests, pytest; Node 22, React, Vite,
-TypeScript, Vitest, Testing Library; Docker; GitHub Actions.
+**Tech Stack:** Python 3.12, Flask, requests, pytest; Node 22, React, Vite, TypeScript,
+Vitest, Testing Library; Vercel; GitHub Actions.
 
 **Spec:** `docs/specs/2026-10-12-stability-refactor-design.md`. Read it before starting any
 task; section numbers below (§) refer to it.
 
 ## Global Constraints
 
-- Work on branch `stability-refactor`. Never push to `main` (a push to `main` deploys to production).
-- Backend runtime dependencies are exactly `flask`, `gunicorn` and `requests`. No yfpy, pandas, pytz or jmespath.
-- Python 3.12 in Docker and CI. Code must also run on the local `.venv` (Python 3.13).
+- Work on branch `stability-refactor`. Never push to `main` (a push to `main` deploys to production: Cloud Run today, Vercel after cutover).
+- Backend runtime dependencies are exactly `flask` and `requests` (Task 1 added `gunicorn`; Task 10 removes it). No yfpy, pandas, pytz or jmespath.
+- Python 3.12 on Vercel and in CI. Code must also run on the local `.venv` (Python 3.13).
 - Never write tokens or secrets to disk or logs. Never print a token value; scripts print only what the user needs to copy.
 - Nothing may call `input()` or block waiting for a person at runtime.
 - Yahoo requests use a 10 s timeout.
 - Cache timings: current/league/season 300 s; settling week 3600 s; final week and game-week calendar never expire; refresh throttle 30 s; non-final LRU cap 64.
 - A week is final when `today_pacific > week_end + 3 days` at fetch time. Pacific means `America/Los_Angeles` via `zoneinfo`.
-- Browser `Cache-Control`: `max-age=60` (league, season, current week), `max-age=300` (settling), `max-age=86400` (final), `no-store` (`?refresh=1`, `/healthz`).
+- Headers (`Cache-Control` / `Vercel-CDN-Cache-Control`): league, season, current week `public, max-age=60` / `max-age=60`; settling `public, max-age=300` / `max-age=3600`; final `public, max-age=86400` / `max-age=31536000`; `?refresh=1`, `/healthz`, errors and stale responses `no-store` / `no-store`.
 - Categories in display order: PTS(12), REB(15), AST(16), ST(17), BLK(18), 3PTM(10), FG%(5, detail 9004003 "FGM/FGA"), FT%(8, detail 9007006 "FTM/FTA"), TO(19, lower is better).
-- Final image < 300 MB. Cloud Run: min 0, max 2 instances.
+- Hosting: Vercel Hobby, Python 3.12 function, env vars `YAHOO_CONSUMER_KEY`, `YAHOO_CONSUMER_SECRET`, `YAHOO_REFRESH_TOKEN` (Sensitive) and `YAHOO_LEAGUE_ID` (now `46425`).
 - Docs: every task that changes architecture, API or deployment updates the matching file in `docs/` in the same commit (see `docs/README.md`).
 - Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
@@ -64,11 +65,11 @@ task; section numbers below (§) refer to it.
 | `frontend/src/hooks/useApi.ts` | Data-loading hook |
 | `frontend/src/components/*.tsx` | `Header`, `RankingsSection`, `RankingsTable`, `RankCell` |
 | `frontend/src/App.tsx`, `main.tsx`, `styles.css` | Page composition and styles |
-| `Dockerfile`, `.dockerignore`, `docker-compose.yml` | Container |
+| `vercel.json` (+ `api/index.py` shim if needed) | Vercel build, function and rewrites |
 | `.github/workflows/ci.yml` | CI |
 
-Removed in Task 11: `app.py`, `templates/`, `static/`, root `requirements.txt`,
-`sample_data_table.txt`, `51lCd0RlVSL._AC_.jpg`.
+Removed in Tasks 10-11: `app.py`, `templates/`, `static/`, root `requirements.txt`,
+`Dockerfile`, `docker-compose.yml`, `sample_data_table.txt`, `51lCd0RlVSL._AC_.jpg`.
 
 ---
 
@@ -365,12 +366,13 @@ Notes:
 - [ ] **Step 1: Write failing tests** using a `FakeClient` with settable return values/exceptions and a `tmp_path` static dir containing `index.html` and `assets/app.js`:
 
 ```python
-def test_healthz():                       # 200, body "ok", Cache-Control no-store, client not called
-def test_league_shape():                  # keys name,current_week,start_week,end_week,categories; max-age=60
-def test_season_rankings_shape():         # scope "season", week None, 9 categories, teams rows; max-age=60
-def test_current_week_resolves_number():  # /week/current → week == league.current_week; max-age=60
-def test_week_cache_headers_by_state():   # state settling → max-age=300; final → max-age=86400
-def test_refresh_passes_flag_and_no_store():  # ?refresh=1 → client.week_stats called with refresh=True; no-store
+def test_healthz():                       # 200, body "ok", both headers no-store, client not called
+def test_league_shape():                  # keys name,current_week,start_week,end_week,categories; "public, max-age=60" / CDN "max-age=60"
+def test_season_rankings_shape():         # scope "season", week None, 9 categories, teams rows; same headers as league
+def test_current_week_resolves_number():  # /week/current → week == league.current_week; max-age=60 / CDN 60
+def test_week_cache_headers_by_state():   # settling → max-age=300 / CDN max-age=3600; final → max-age=86400 / CDN max-age=31536000
+def test_stale_and_errors_not_cached():   # stale response and 503/404/500 → both headers no-store
+def test_refresh_passes_flag_and_no_store():  # ?refresh=1 → client.week_stats called with refresh=True; both no-store
 def test_out_of_range_week_404():         # current_week+1, start_week-1 and "abc" → 404 {"error": "not_found"}
 def test_week_one_has_no_previous():      # current_week=1 → /week/0 is 404; /week/current 200
 def test_yahoo_unavailable_503_json():    # client raises → 503, error == "yahoo_unavailable"
@@ -384,7 +386,7 @@ def test_fetched_at_iso_utc():            # matches r"^\d{4}-\d\d-\d\dT\d\d:\d\d
 - [ ] **Step 2: Run** `../.venv/bin/pytest tests/test_api.py -v`. Expected: FAIL.
 - [ ] **Step 3: Implement `api.py`, `logging_setup.py` and `create_app`.**
 - [ ] **Step 4: Run the full backend suite** with `../.venv/bin/pytest -v`. Expected: all PASS.
-- [ ] **Step 5: Smoke-test against live Yahoo.** Run `set -a; source .env; set +a; cd backend && ../.venv/bin/gunicorn --workers 1 --threads 8 --bind :8080 "app:create_app()"`, then `curl -s localhost:8080/api/rankings/week/current | head -c 400` and `curl -s localhost:8080/api/league`. Expected: real JSON matching §5.5, and JSON log lines on stdout.
+- [ ] **Step 5: Smoke-test against live Yahoo.** Run `set -a; source .env; set +a; cd backend && ../.venv/bin/flask --app app:create_app run --port 8080`, then `curl -s localhost:8080/api/rankings/week/current | head -c 400` and `curl -s localhost:8080/api/league`. Expected: real JSON matching §5.5, and JSON log lines on stdout.
 - [ ] **Step 6: Update `docs/api.md`** if anything differs from the implementation, and remove its "Not yet implemented" banner.
 - [ ] **Step 7: Commit** `feat(backend): add JSON API, logging and app factory`.
 
@@ -479,21 +481,36 @@ it("refresh sends refresh=1")                       // click Refresh → fetch c
 
 ---
 
-### Task 10: Container
+### Task 10: Vercel configuration and preview deployment
+
+Closes spec §10.5. A preview deployment needs a Vercel project linked to the repo. Creating
+the project and adding env vars are account actions: **ask the user before Step 3.**
 
 **Files:**
-- Create: `.dockerignore`
-- Modify: `Dockerfile`, `docker-compose.yml`
+- Create: `vercel.json`, plus `api/index.py` only if Step 2 shows a shim is needed
+- Modify: `backend/requirements.txt` (remove `gunicorn`), `docs/deployment.md`
+- Delete: `Dockerfile`, `docker-compose.yml`
 
-- [ ] **Step 1: Write the `Dockerfile`.**
-  - Stage `web` (`node:22-slim`): `npm ci` and `npm run build` in `frontend/`.
-  - Final stage (`python:3.12-slim`): `PYTHONDONTWRITEBYTECODE=1`, `PYTHONUNBUFFERED=1`; install `backend/requirements.txt` with `--no-cache-dir`; copy `backend/` to `/app/backend` and the build output to `/app/frontend/dist`; run as a non-root user.
-  - `CMD exec gunicorn --workers 1 --threads 8 --bind :${PORT:-8080} --chdir /app/backend "app:create_app()"` (shell form so `$PORT` expands).
-- [ ] **Step 2: Write `.dockerignore`:** `.env`, `.venv`, `**/node_modules`, `frontend/dist`, `.git`, `.idea`, `docs`, `**/__pycache__`, `**/.pytest_cache`, `backend/tests`.
-- [ ] **Step 3: Update `docker-compose.yml`.** Remove the obsolete `version` key, the volume mount and the `command` override; keep `env_file: .env`, `platform: linux/amd64` and port `8080:8080`.
-- [ ] **Step 4: Build and measure** with `docker build -t mhd:test . && docker image ls mhd:test --format '{{.Size}}'`. Expected: build succeeds and size < 300 MB.
-- [ ] **Step 5: Run and smoke-test** with `docker compose up --build -d`, then `curl -fsS localhost:8080/healthz`, `curl -fsS localhost:8080/api/league` and `curl -fsS localhost:8080/ | grep -o "<title>.*</title>"`. Then check that `docker compose exec web ls -a /app` shows no `.env`. Run `docker compose down`. Expected: `ok`, league JSON, the title, and no `.env` in the image.
-- [ ] **Step 6: Commit** `build: multi-stage Dockerfile serving API and frontend`.
+- [ ] **Step 1: Write `vercel.json`:**
+  - `buildCommand`: `cd frontend && npm ci && npm run build`
+  - `outputDirectory`: `frontend/dist`
+  - The Flask app (`backend/app`, `create_app()`) as a Python 3.12 function, with dependencies from `backend/requirements.txt` and `excludeFiles` covering `backend/tests/**` and `backend/scripts/**`
+  - Rewrites: `/api/(.*)` and `/healthz` → the function; `/(.*)` → `/index.html` (static files win first)
+
+  Use the `vercel:vercel-functions` skill's guidance for the Python entrypoint (Services config vs `api/index.py` doing `from app import create_app; app = create_app()` with `backend/` on `sys.path`).
+- [ ] **Step 2: Build locally** with `npx vercel@latest build` (after `npx vercel@latest pull --yes` once the project exists, or with `--yes` on an unlinked repo if supported). Expected: build succeeds; `.vercel/output/functions/` contains one Python function and `.vercel/output/static/index.html` exists. Add `.vercel/` to `.gitignore`.
+- [ ] **Step 3 (user approval): Link the project and set env vars.** With the user, create or link the Vercel project for this repo (Hobby, production branch `main`). Add the 4 env vars for Production and Preview, with the 3 Yahoo values marked Sensitive. The user enters secret values in the dashboard (or pipes them into `vercel env add` without echoing them), never in chat.
+- [ ] **Step 4: Preview deploy and smoke test.** Push `stability-refactor` (**ask the user first**; this branch never deploys to production) or run `npx vercel@latest deploy` (preview). Then check:
+  - `curl -fsS <preview>/healthz` returns `ok`
+  - `curl -fsS <preview>/api/league` returns league JSON
+  - running `curl -sSI <preview>/api/rankings/season` twice shows `x-vercel-cache: HIT` the second time
+  - `curl -sSI <preview>/api/rankings/season?refresh=1` shows `no-store` and is not a `HIT`
+  - `<preview>/some/deep/link` serves the app
+
+  Expected: all of the above. If the preview is protected by Vercel Authentication, use the `vercel:access-protected-vercel-deployment` skill rather than turning protection off.
+- [ ] **Step 5: Remove Docker files and `gunicorn`.** Run the backend suite and `npm run build`. Expected: PASS.
+- [ ] **Step 6: Update `docs/deployment.md`** with the final `vercel.json` wiring, and record the entrypoint choice in `docs/decisions.md`.
+- [ ] **Step 7: Commit** `build: deploy on Vercel (static frontend + Flask function)`.
 
 ---
 
@@ -501,32 +518,27 @@ it("refresh sends refresh=1")                       // click Refresh → fetch c
 
 **Files:**
 - Create: `.github/workflows/ci.yml`
-- Delete: `app.py`, `templates/`, `static/`, `requirements.txt`, `sample_data_table.txt`, `51lCd0RlVSL._AC_.jpg`
+- Delete: `app.py`, `templates/`, `static/`, `requirements.txt`, `sample_data_table.txt`, `51lCd0RlVSL._AC_.jpg`, `.dockerignore` if present
 - Modify: `README.md` (root: one paragraph, plus "see docs/"), `docs/README.md` (status: implemented, pending cutover), `docs/architecture.md` (remove the banner and correct any drift), `docs/deployment.md` (final settings, local dev commands for backend and frontend), `docs/decisions.md` (add any decisions made during implementation)
 
 - [ ] **Step 1: Write `ci.yml`.** Trigger on `push` and `pull_request`. Jobs:
   - `backend`: `actions/setup-python` 3.12, `pip install -r backend/requirements-dev.txt`, `pytest` in `backend/`
-  - `frontend`: `actions/setup-node` 22 with npm cache, `npm ci`, `npm run typecheck`, `npm test` in `frontend/`
-  - `docker`: `docker build .`, needs both other jobs
+  - `frontend`: `actions/setup-node` 22 with npm cache, `npm ci`, `npm run typecheck`, `npm test`, `npm run build` in `frontend/`
 - [ ] **Step 2: Delete the old files.** Confirm nothing references them with `grep -rn "templates\|app\.py\|sample_data" --exclude-dir=docs --exclude-dir=node_modules --exclude-dir=.git .`. Expected: no hits outside `docs/`.
-- [ ] **Step 3: Run everything locally:** `cd backend && ../.venv/bin/pytest`, `cd frontend && npm run typecheck && npm test`, and `docker build .`. Expected: all pass.
+- [ ] **Step 3: Run everything locally:** `cd backend && ../.venv/bin/pytest`, and `cd frontend && npm run typecheck && npm test && npm run build`. Expected: all pass.
 - [ ] **Step 4: Update the docs** as listed above.
 - [ ] **Step 5: Commit** `ci: add GitHub Actions; remove legacy app; update docs`.
-- [ ] **Step 6: Ask the user before pushing the branch.** After approval, run `git push -u origin stability-refactor` and confirm the CI run is green with `gh run list --branch stability-refactor`. Pushing a non-`main` branch does not deploy.
+- [ ] **Step 6: Push and check CI.** Push the branch (already approved in Task 10 if pushed there; otherwise ask first). Confirm CI is green with `gh run list --branch stability-refactor`, and that the Vercel preview for the latest commit passes the Task 10 Step 4 checks. Pushing a non-`main` branch never deploys to production.
 
 ---
 
 ### Task 12: Cutover to production (with the user)
 
-Every step here changes production or GCP state. **Get explicit user approval before each
-command group.** The AWS MCP tools don't apply; use `gcloud`. Read-only checks can be run
-freely.
+Every step here changes production. **Get explicit user approval before each step.**
 
-- [ ] **Step 1: Inspect (read-only).** Run `gcloud run services describe <service> --region <region>` and `gcloud builds triggers list --region <region>` (try `global` if empty). Record the service name, region, current env/secret wiring, scaling settings, the trigger's Dockerfile path/build context, and the current revision name (for rollback).
-- [ ] **Step 2: Secrets (user approval).** Create `YAHOO_CONSUMER_KEY`, `YAHOO_CONSUMER_SECRET` and `YAHOO_REFRESH_TOKEN` in Secret Manager from the user's values, without echoing them into the conversation (`gcloud secrets create NAME --data-file=-` fed from the environment). Grant the service's runtime service account `roles/secretmanager.secretAccessor` on each.
-- [ ] **Step 3: Service settings (user approval).** Run `gcloud run services update <service> --region <region> --min-instances 0 --max-instances 2 --memory 512Mi --cpu 1 --concurrency 80 --cpu-throttling --set-secrets YAHOO_CONSUMER_KEY=YAHOO_CONSUMER_KEY:latest,YAHOO_CONSUMER_SECRET=YAHOO_CONSUMER_SECRET:latest,YAHOO_REFRESH_TOKEN=YAHOO_REFRESH_TOKEN:latest --update-env-vars YAHOO_LEAGUE_ID=<id>`, and remove any old plain-text token env vars. This creates a revision of the *old* code with the new settings. Check that the site still works.
-- [ ] **Step 4: Cost guardrails (user approval).** Add an Artifact Registry cleanup policy that keeps the 3 most recent images in the repo Cloud Build pushes to, and create a $1 billing budget alert.
-- [ ] **Step 4b: Branch protection (user approval, recommended).** Require the CI checks to pass on `main` before merging (`gh api` or the GitHub settings page).
-- [ ] **Step 5: Merge (user approval).** Open a PR from `stability-refactor` and, once CI is green and the user approves, merge it. Watch the Cloud Build run.
-- [ ] **Step 6: Smoke test** the new revision with `curl -fsS https://<url>/healthz` and `/api/league`, and load the page on desktop and phone. If anything fails, roll back with `gcloud run services update-traffic <service> --region <region> --to-revisions <previous>=100`.
-- [ ] **Step 7: Finalize the docs.** Record the actual service name, region and settings in `docs/deployment.md`, and add a cutover entry to `docs/decisions.md`. Commit on a short follow-up branch and open a PR.
+- [ ] **Step 1: Stop Cloud Build deploys (user approval).** Delete the Cloud Build trigger `aa70e010-fd8a-4564-82a1-365f344f37c4` (global) *before* merging, so the merge doesn't start a Cloud Run build of code that no longer has a Dockerfile. The existing Cloud Run service keeps running untouched.
+- [ ] **Step 2: Merge (user approval).** Open a PR from `stability-refactor` (summary plus test results). Once CI is green, the preview has been checked on desktop and phone, and the user approves, merge to `main`. Vercel deploys to production.
+- [ ] **Step 3: Smoke test production.** Run the Task 10 Step 4 checks against the production URL and load the page on desktop and phone. If anything fails, roll back with `vercel rollback` and report.
+- [ ] **Step 3b: Retire Cloud Run (user approval).** Delete the Cloud Run service `mutombos-heavenly-data` (`us-west1`). Ask whether to also delete the unrelated `helloworld` service and the old images in Artifact Registry; don't delete anything that wasn't explicitly approved.
+- [ ] **Step 4: Branch protection (user approval, recommended).** Require the CI checks to pass on `main` before merging.
+- [ ] **Step 5: Finalize the docs.** Record the production URL, the project name and the cutover date in `docs/deployment.md` and `docs/decisions.md`, and remove the "Not yet implemented" banners. Commit on a short follow-up branch and open a PR.

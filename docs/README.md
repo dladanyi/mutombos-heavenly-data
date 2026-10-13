@@ -12,9 +12,9 @@ Fantasy API.
 
 | Doc | What's in it |
 |---|---|
-| [architecture.md](architecture.md) | How the backend, frontend, Yahoo and Cloud Run fit together |
+| [architecture.md](architecture.md) | How the backend, frontend, Yahoo and Vercel fit together |
 | [api.md](api.md) | Backend endpoint reference and response shapes |
-| [deployment.md](deployment.md) | Cloud Run setup, secrets, free-tier limits, cost guardrails, rollback |
+| [deployment.md](deployment.md) | Vercel setup, env vars, Yahoo app and token, local dev, rollback |
 | [decisions.md](decisions.md) | Dated log of key decisions and why we made them |
 | [specs/](specs/) | One design spec per sub-project |
 | [plans/](plans/) | One implementation plan per sub-project |
