@@ -21,7 +21,7 @@ Fantasy API.
 
 ## Roadmap
 
-1. **Stability refactor + split:** [spec](specs/2026-10-12-stability-refactor-design.md)
+1. **Stability refactor + split:** [spec](specs/2026-10-12-stability-refactor-design.md), [plan](plans/2026-10-12-stability-refactor.md)
 2. Pick any week + trends over time
 3. Head-to-head matchups
 
