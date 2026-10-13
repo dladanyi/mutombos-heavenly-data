@@ -11,9 +11,15 @@ The GitHub repo is connected to a Vercel project.
 - Every other branch and every PR gets a **preview deployment** with its own URL.
 - GitHub Actions only runs CI (tests and builds). It does not deploy.
 
-Vercel builds the frontend (`cd frontend && npm ci && npm run build` → `frontend/dist`) and
-packages the Flask app as a Python function. The routing is in `vercel.json`:
-`/api/*` and `/healthz` go to Flask, and everything else is the static React app.
+`vercel.json` defines two **Services** in one project:
+
+- `frontend` (root `frontend/`): Vite, auto-detected, built to static files on the CDN.
+- `backend` (root `backend/`): Flask as a Python function. The entrypoint is `wsgi:app`
+  (`backend/wsgi.py` calls `create_app()`), dependencies come from `backend/requirements.txt`,
+  and the Python version is pinned by `backend/.python-version` (3.12).
+
+Rewrites send `/api/*` and `/healthz` to `backend` and everything else to `frontend`. Flask
+sees the original request path (`/api/league`, etc.).
 
 ## Cost: $0/month
 
@@ -101,7 +107,8 @@ Promote the previous production deployment: `vercel rollback`, or Dashboard → 
 
 ## Cutover from Cloud Run (one time)
 
-1. Create the Vercel project from the GitHub repo and add the env vars above.
+1. Create the Vercel project from the GitHub repo (framework preset: **Services**, detected
+   from `vercel.json`) and add the env vars above.
 2. Check the preview deployment of the `stability-refactor` branch.
 3. Merge to `main`, which deploys to Vercel production.
 4. With the user's approval: disconnect the Cloud Run GitHub trigger (Cloud Build trigger

@@ -29,6 +29,9 @@ Newest first. Each entry: what we decided, and why.
   runs CI only and needs no secrets, because tests use saved fixtures.
 - **Drop gunicorn and Docker.** Vercel runs Flask as a WSGI function; locally we use
   `flask run`.
+- **Wiring: Vercel Services** (`frontend` = Vite, `backend` = Flask via `wsgi:app`), rather
+  than an `api/index.py` shim. It matches the repo layout, needs no `sys.path` tricks, and
+  Flask sees the original paths.
 - Context: production on Cloud Run was returning 503 at the time, because Yahoo rejects the
   current app credentials with 403. That's unrelated to hosting and has to be fixed either
   way.
