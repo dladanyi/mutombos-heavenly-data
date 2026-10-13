@@ -105,6 +105,30 @@ curl -sSI https://<deployment-url>/api/rankings/season | grep -i x-vercel-cache 
 Promote the previous production deployment: `vercel rollback`, or Dashboard → Deployments →
 ⋯ → Promote.
 
+## Current state (2026-10-13)
+
+- **Project:** `mutombos-heavenly-data` in the personal Hobby scope (`ladanyi77-gmailcoms-projects`),
+  created 2026-03-15. This repo is linked to it (`.vercel/`, git-ignored).
+- **Framework preset:** Services. Install, build and output settings are on auto-detect.
+- **Env vars (Production + Preview):** `YAHOO_CONSUMER_KEY`, `YAHOO_CONSUMER_SECRET`,
+  `YAHOO_REFRESH_TOKEN` (sensitive, from the new Yahoo app), and `YAHOO_LEAGUE_ID=46425`. The old
+  `YAHOO_ACCESS_TOKEN`, `YAHOO_GUID`, `YAHOO_TOKEN_TIME` and `YAHOO_TOKEN_TYPE` were removed.
+  The *Development* copies still hold old values and are only used by `vercel dev` / `env pull`.
+- **Deployment Protection:** previews only. The production URL is public.
+- **Git:** linked to `dladanyi/mutombos-heavenly-data`, production branch `main`, but **pushes don't
+  trigger deployments** (none since March). Check that the Vercel GitHub app can access the repo:
+  GitHub → Settings → Applications → Installed GitHub Apps → Vercel → Repository access.
+- **Preview verified:** built locally and deployed with `vercel deploy --prebuilt`.
+  `/healthz` returns 200, the page loads, the API returns a clean 503 (Yahoo 403, see above),
+  unknown `/api` paths return 404 JSON, and the logs are JSON.
+
+To deploy a preview by hand (uploads only the build output, never source or `.env`):
+
+```sh
+npx vercel@latest build && npx vercel@latest deploy --prebuilt
+npx vercel@latest curl https://<preview-url>/healthz   # previews are protected; this authenticates
+```
+
 ## Cutover from Cloud Run (one time)
 
 1. Create the Vercel project from the GitHub repo (framework preset: **Services**, detected
