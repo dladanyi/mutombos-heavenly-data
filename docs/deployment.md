@@ -16,7 +16,7 @@ The GitHub repo is connected to a Vercel project.
 - `frontend` (root `frontend/`): Vite, auto-detected, built to static files on the CDN.
 - `backend` (root `backend/`): Flask as a Python function. The entrypoint is `wsgi:app`
   (`backend/wsgi.py` calls `create_app()`), dependencies come from `backend/requirements.txt`,
-  and the Python version is pinned by `backend/.python-version` (3.12).
+  and the Python version is pinned by `backend/.python-version` (3.13).
 
 Rewrites send `/api/*` and `/healthz` to `backend` and everything else to `frontend`. Flask
 sees the original request path (`/api/league`, etc.).

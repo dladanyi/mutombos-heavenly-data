@@ -2,6 +2,11 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-13: Python 3.13
+
+- **Target Python 3.13** (was 3.12) on Vercel (`backend/.python-version`) and in CI, matching the
+  local development `.venv`. Vercel supports 3.12-3.14.
+
 ## 2026-10-13: Final review fixes
 
 - **CDN "final" headers only for data that was fetched as final.** A settling-week entry
