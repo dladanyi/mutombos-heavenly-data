@@ -1,6 +1,6 @@
 # API reference
 
-> **Status:** target design from sub-project 1. Not yet implemented.
+> **Status:** implemented on branch `stability-refactor` (2026-10-12); not yet deployed.
 
 All endpoints return JSON.
 
