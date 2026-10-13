@@ -40,6 +40,9 @@ export function useApi<T>(load: (refresh: boolean) => Promise<T>, deps: unknown[
   }, [])
 
   useEffect(() => {
+    // Data from the previous deps (e.g. last week's table) must not show under the new title.
+    setData(undefined)
+    setError(undefined)
     void run(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)

@@ -8,6 +8,7 @@ export const categories: Category[] = [
 
 export function team(name: string, place: number, avg = place * 1.0): TeamRow {
   return {
+    team_key: `466.l.1.t.${name}`,
     name,
     avg_rank: avg,
     place,

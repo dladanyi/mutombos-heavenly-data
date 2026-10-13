@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { rankings, team } from '../test/data'
 import RankingsTable from './RankingsTable'
 
@@ -8,6 +8,15 @@ describe('RankingsTable', () => {
     render(<RankingsTable rankings={rankings()} />)
     const headers = screen.getAllByRole('columnheader').map((th) => th.textContent)
     expect(headers).toEqual(['Team', 'Avg Rank', 'PTS', 'PTS Rk', 'FG%', 'FG% Rk', 'FGM/FGA', 'TO', 'TO Rk'])
+  })
+
+  it('renders teams that share a name as separate rows', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const twins = [{ ...team('Same', 1), team_key: 'k.1' }, { ...team('Same', 2), team_key: 'k.2' }]
+    render(<RankingsTable rankings={rankings({ teams: twins })} />)
+    expect(screen.getAllByRole('row').slice(1)).toHaveLength(2)
+    expect(errors.mock.calls.flat().join(' ')).not.toMatch(/same key/)
+    errors.mockRestore()
   })
 
   it('renders one row per team in API order', () => {

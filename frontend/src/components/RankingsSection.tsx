@@ -38,6 +38,11 @@ export default function RankingsSection({ title, badge, state, onRetry, actions,
           ))}
         </div>
       )}
+      {state.data && state.error && (
+        <div className="notice" role="alert">
+          Couldn't update: {state.error.message}
+        </div>
+      )}
       {state.data ? (
         <>
           <div className="scroll-hint">← swipe to see all stats →</div>

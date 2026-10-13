@@ -20,7 +20,7 @@ export default function RankingsTable({ rankings }: { rankings: Rankings }) {
         {teams.map((team) => {
           const color = medal(team.place)
           return (
-            <tr key={team.name}>
+            <tr key={team.team_key}>
               <td>{team.name}</td>
               <td className={color ? `medal-${color}` : ''}>{team.avg_rank.toFixed(2)}</td>
               {categories.map((c) => (

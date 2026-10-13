@@ -88,6 +88,54 @@ describe('App', () => {
     })
   })
 
+  it('says just refreshed when a final week ignores refresh', async () => {
+    const routes = happyRoutes()
+    for (const path of ['/api/rankings/week/current', '/api/rankings/season']) {
+      const body = (routes[path] as Route).body as object
+      routes[path] = [{ body }, { body: { ...body, refresh_throttled: true } }]
+    }
+    routes['/api/rankings/week/6'] = { body: rankings({ week: 6, state: 'final', refresh_throttled: false }) }
+    mockApi(routes)
+    render(<App />)
+    await screen.findByText('Week 6')
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    expect(await screen.findByText('Just refreshed')).toBeInTheDocument()
+  })
+
+  it('shows a notice when a refresh fails but keeps the table', async () => {
+    const routes = happyRoutes()
+    routes['/api/rankings/season'] = [
+      { body: rankings({ scope: 'season', week: null }) },
+      { status: 503, body: { error: 'yahoo_unavailable', message: 'Yahoo Fantasy is unavailable right now.' } },
+    ]
+    mockApi(routes)
+    render(<App />)
+    await screen.findByText('Week 6')
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    expect(await screen.findByText(/Couldn't update: Yahoo Fantasy is unavailable right now\./)).toBeInTheDocument()
+    expect(document.querySelectorAll('table')).toHaveLength(3)
+  })
+
+  it('drops the live badge once the season is over', async () => {
+    const routes = happyRoutes()
+    routes['/api/rankings/week/current'] = { body: rankings({ week: 21, state: 'final' }) }
+    routes['/api/league'] = { body: league({ current_week: 21 }) }
+    routes['/api/rankings/week/20'] = { body: rankings({ week: 20, state: 'final' }) }
+    mockApi(routes)
+    render(<App />)
+    expect(await screen.findByText('Season over')).toBeInTheDocument()
+    expect(screen.queryByText('● Live')).toBeNull()
+  })
+
+  it('keeps the live badge when a mid-season week has ended', async () => {
+    const routes = happyRoutes()
+    routes['/api/rankings/week/current'] = { body: rankings({ state: 'settling' }) }
+    mockApi(routes)
+    render(<App />)
+    await screen.findByText('Week 6')
+    expect(screen.getByText('● Live')).toBeInTheDocument()
+  })
+
   it('says just refreshed when every refresh was throttled', async () => {
     const routes = happyRoutes()
     for (const path of ['/api/rankings/week/current', '/api/rankings/season', '/api/rankings/week/6']) {

@@ -38,7 +38,9 @@ export default function App() {
   }
 
   const loaded = [current.data, season.data, last.data].filter((r): r is Rankings => Boolean(r))
-  const allThrottled = loaded.length > 0 && loaded.every((r) => r.refresh_throttled)
+  // Final data ignores refresh, so only refreshable rankings decide "Just refreshed".
+  const refreshable = loaded.filter((r) => r.state !== 'final')
+  const allThrottled = refreshable.length > 0 && refreshable.every((r) => r.refresh_throttled)
   useEffect(() => {
     if (!awaitingRefresh) return
     setAwaitingRefresh(false)
@@ -53,6 +55,10 @@ export default function App() {
 
   const staleData = loaded.find((r) => r.stale)
   const weekNumber = current.data?.week ?? info?.current_week
+  // Yahoo leaves current_week on the last week after the season; the backend then reports it ended.
+  const seasonOver = Boolean(
+    info && current.data?.state && current.data.state !== 'current' && current.data.week === info.end_week,
+  )
 
   return (
     <div className="wrapper">
@@ -60,7 +66,7 @@ export default function App() {
 
       <RankingsSection
         title={weekNumber ? `Week ${weekNumber}` : 'This Week'}
-        badge={{ text: '● Live', live: true }}
+        badge={seasonOver ? { text: 'Season over' } : { text: '● Live', live: true }}
         state={current}
         onRetry={() => void current.reload()}
         showLegend
