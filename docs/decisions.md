@@ -2,6 +2,22 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-13: PR #1 review fixes
+
+- **The last week of the season goes final by its calendar date.** Yahoo leaves `current_week`
+  on the last week after the season, so `week >= current_week` alone kept it "current"
+  forever. A week Yahoo calls current now follows the calendar once its end date has passed.
+  Without a calendar date it stays current. Week responses report `state`, and the UI shows
+  "Season over" instead of "● Live" when the last week has ended.
+- **Strip `managers` from captured fixtures**, since the repo is public.
+- **Rows carry `team_key`**, and the UI keys rows by it (team names aren't unique).
+- **Token handling:** concurrent 401s renew the token once, and a malformed token response is a
+  503 with the 30 s cooldown instead of a 500.
+- **UI:** a failed Refresh shows "Couldn't update: …" above the table, "Just refreshed" ignores
+  final data, and changing week clears the old table.
+- **Deferred:** start the last-week request without waiting for `/api/league`. The backend
+  fetches the league for `/week/current` anyway, so the gain is one browser round trip.
+
 ## 2026-10-13: Public repo and a ruleset on `main`
 
 - **Protect `main` with a repository ruleset.** Pushing to `main` deploys production, so every

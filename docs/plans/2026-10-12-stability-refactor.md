@@ -540,5 +540,5 @@ Every step here changes production. **Get explicit user approval before each ste
 - [ ] **Step 2: Merge (user approval).** Open a PR from `stability-refactor` (summary plus test results). Once CI is green, the preview has been checked on desktop and phone, and the user approves, merge to `main`. Vercel deploys to production.
 - [ ] **Step 3: Smoke test production.** Run the Task 10 Step 4 checks against the production URL and load the page on desktop and phone. If anything fails, roll back with `vercel rollback` and report.
 - [ ] **Step 3b: Retire Cloud Run (user approval).** Delete the Cloud Run service `mutombos-heavenly-data` (`us-west1`). Ask whether to also delete the unrelated `helloworld` service and the old images in Artifact Registry; don't delete anything that wasn't explicitly approved.
-- [ ] **Step 4: Branch protection (user approval, recommended).** Require the CI checks to pass on `main` before merging.
+- [x] **Step 4: Branch protection (user approval, recommended).** Done 2026-10-13 as the GitHub ruleset "Protect main" (PR + green `backend`/`frontend` checks).
 - [ ] **Step 5: Finalize the docs.** Record the production URL, the project name and the cutover date in `docs/deployment.md` and `docs/decisions.md`, and remove the "Not yet implemented" banners. Commit on a short follow-up branch and open a PR.

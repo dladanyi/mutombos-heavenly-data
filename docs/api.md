@@ -12,7 +12,7 @@ All endpoints return JSON.
 | `GET /api/rankings/season` | Season-to-date rankings |
 | `GET /api/rankings/week/current` | Current week rankings |
 | `GET /api/rankings/week/<n>` | Rankings for week `n` |
-| `GET /healthz` | Returns `ok`; never calls Yahoo |
+| `GET /healthz` | Returns `ok`; never calls Yahoo. If a required env var is missing the function can't start, so this returns Vercel's own 500 |
 
 ## Caching headers
 
@@ -47,11 +47,13 @@ resource).
   "fetched_at": "2026-10-13T05:41:00Z",
   "stale": false,
   "refresh_throttled": false,
+  "state": "current",
   "categories": [
     {"key": "FG%", "higher_is_better": true, "detail_label": "FGM/FGA"}
   ],
   "teams": [
     {
+      "team_key": "466.l.46425.t.1",
       "name": "Team A",
       "avg_rank": 2.89,
       "place": 1,
@@ -65,7 +67,11 @@ resource).
 - `fetched_at` is when the data was fetched from Yahoo (UTC).
 - `stale` is `true` when Yahoo failed and cached data is being returned.
 - `refresh_throttled` is `true` when `?refresh=1` was ignored because the data was refreshed
-  less than 30 s ago.
+  less than 30 s ago. Final data ignores `?refresh=1` and always reports `false`.
+- `state` (week responses only) is `"current"`, `"settling"` (up to 3 days after the week's
+  end date) or `"final"`. After the season, the last week moves to settling and final by its
+  calendar date even though Yahoo still calls it the current week.
+- `team_key` is Yahoo's unique team ID. Use it, not `name`, to identify a team.
 - Categories, in order: PTS, REB, AST, ST, BLK, 3PTM, FG%, FT%, TO. Only TO is lower-is-better.
 - `value` is `null` if Yahoo has no value yet. Such teams get the worst rank in that category.
 - Ranks use the "min" tie method (ties share the best rank). `place` is the team's position by

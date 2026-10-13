@@ -1,7 +1,7 @@
 # Sub-project 1: Stability refactor + backend/frontend split
 
 - **Date:** 2026-10-12
-- **Status:** Approved design, awaiting implementation plan
+- **Status:** Implemented on `stability-refactor` (PR #1). Waiting for Yahoo API access approval and the cutover.
 - **Branch:** `stability-refactor`
 
 ## 1. Goal
@@ -36,7 +36,7 @@ leagues.
 
 | Problem | Where | Fix in this design |
 |---|---|---|
-| Crash when `last_week == 0`: `last_week_table_html` is never assigned | `app.py` index route | Frontend hides the last-week section when `current_week == 1` |
+| Crash when `last_week == 0`: `last_week_table_html` is never assigned | `app.py` index route | Frontend hides the last-week section when `current_week == start_week` |
 | 3-4 live Yahoo calls per page load, no cache | `app.py` | TTL cache in `yahoo_client` |
 | No error handling | everywhere | Stale-on-error cache, JSON 503, UI error state |
 | Token config mismatch (`YAHOO_ACCESS_TOKEN_JSON` vs separate vars) and token writes to `.env` on an ephemeral filesystem | `YahooFantasySportsQuery(...)` | Token data built in memory from Vercel env vars; never written to disk |
@@ -84,7 +84,7 @@ backend/
     parsing.py         Yahoo JSON -> TeamStats / LeagueInfo / GameWeek
     rankings.py        list[TeamStats] -> ranked rows
     api.py             Flask blueprint: /api/*, /healthz, static frontend
-    logging_setup.py   JSON log lines for Cloud Logging
+    logging_setup.py   JSON log lines for Vercel runtime logs
   tests/
     fixtures/          real Yahoo responses, captured once
   scripts/
@@ -125,11 +125,12 @@ template and get extracted to `frontend/public/`).
 | `YAHOO_CONSUMER_SECRET` | Project env var, marked Sensitive | yes |
 | `YAHOO_REFRESH_TOKEN` | Project env var, marked Sensitive | yes |
 | `YAHOO_LEAGUE_ID` | Project env var | yes |
-| `PORT` | local development only | default `8080` |
 
-Env vars are set for both Production and Preview. A missing required variable fails the
-function at startup with a clear log line. The `/api` routes then return 500 and the static
-page shows its error card. Check the preview deployment before merging to `main`.
+Env vars are set for both Production and Preview. A missing required variable raises
+`ConfigError` when `wsgi.py` imports the app, so the whole function fails to start, `/healthz`
+included. Vercel returns its own 500, and the runtime log shows a plain traceback naming the
+missing variables (not a JSON line). The static page still loads and shows its error card.
+Check the preview deployment before merging to `main`.
 
 Categories are defined once, in display order:
 
@@ -280,7 +281,7 @@ For local development, Flask also serves `frontend/dist` (the matching file, oth
 ### 5.6 Logging
 
 JSON lines to stdout (`severity`, `message`, plus context fields such as the URL, duration and
-cache hit/miss/stale), so Cloud Logging can parse them.
+cache hit/miss/stale), so Vercel's runtime logs can be filtered by field.
 
 ## 6. Frontend
 
@@ -289,7 +290,7 @@ cache hit/miss/stale), so Cloud Logging can parse them.
 - **Layout (same as today):** a header with the two side images, the title, and "Last
   updated" (taken from `fetched_at` and shown in `America/Los_Angeles` time by the browser).
   Then the current-week section (title, Refresh button, legend), the full-season section, and
-  the last-week section when `current_week > 1`. Each table has columns for Team, Avg Rank,
+  the last-week section when `current_week > start_week`. Each table has columns for Team, Avg Rank,
   and each category's value and rank. FG% and FT% show the detail beside them. Ranks 1-3 get
   gold, silver and bronze backgrounds, and `place` 1-3 does the same for Avg Rank.
 - **States:** a loading skeleton, an error card with "Try again" (for 503 and network
@@ -304,35 +305,36 @@ cache hit/miss/stale), so Cloud Logging can parse them.
 - **Project:** one Vercel project linked to the GitHub repo. Production branch: `main`. Every
   other branch and PR gets a preview URL.
 - **`vercel.json`:**
-  - build command `cd frontend && npm ci && npm run build`, output directory `frontend/dist`
-  - the Flask app as a Python 3.12 function (Fluid Compute), with `backend/requirements.txt`
-    as its dependencies and `backend/tests/**` excluded from the bundle
-  - rewrites: `/api/(.*)` and `/healthz` → the Flask function; everything else falls back to
-    `/index.html`
+  - two Services: `frontend` (Vite, static output) and `backend` (Flask as a Python 3.13
+    function on Fluid Compute, entrypoint `wsgi:app`, dependencies from
+    `backend/requirements.txt`). `backend/tests/**` is not excluded from the bundle yet; it is
+    small and never imported.
+  - rewrites: `/api/(.*)` and `/healthz` → `backend`; everything else → `frontend`
 
-  The exact wiring (a Vercel "Services" config, or a thin `api/index.py` entry that imports
-  `create_app()`) is settled by the deployment task with `vercel build` and a preview
-  deployment (§10.5).
+  The wiring was settled with `vercel build` and a preview deployment (§10.5); see
+  `docs/deployment.md`.
 - **Env vars:** set in Project → Settings → Environment Variables for Production and Preview.
   The three Yahoo secrets are marked Sensitive.
 - **Cost:** Hobby plan. Usage is capped and never billed. If a cap is ever hit, functions
   pause until the next cycle rather than charging.
 - **Local development:** Flask on `:8080` (`flask --app app:create_app run --port 8080` in
   `backend/`) plus `npm run dev` with the Vite proxy. `vercel dev` is optional.
-- **Cutover:**
+- **Cutover** (each step needs the user's approval at the time):
   1. Create the project, add the env vars, and check the preview deployment of the
-     `stability-refactor` branch.
-  2. Merge to `main`, which deploys to production.
-  3. Disconnect the Cloud Run GitHub trigger and delete the Cloud Run service. This needs the
-     user's approval at that time.
+     `stability-refactor` branch. (Done.)
+  2. Delete the Cloud Build trigger, so the merge doesn't start a Cloud Build of a tree with no
+     Dockerfile.
+  3. Merge to `main`, which deploys to production.
+  4. Delete the Cloud Run service.
 - **Rollback:** promote the previous production deployment (`vercel rollback`, or "Promote" in
   the dashboard).
 
 ## 8. CI (`.github/workflows/ci.yml`)
 
 On every push and PR: `pytest` for the backend; `tsc --noEmit`, `vitest run` and `vite build`
-for the frontend. Vercel's own build check runs on each preview deployment. We recommend
-turning on branch protection on `main` so that CI must pass first.
+for the frontend. Vercel's own build check runs on each preview deployment. The GitHub
+ruleset "Protect main" requires a PR and green `backend` and `frontend` checks before
+merging to `main` (live since 2026-10-13).
 
 ## 9. Testing
 
@@ -366,9 +368,13 @@ turning on branch protection on `main` so that CI must pass first.
 3. **Game-week calendar shape.** Confirm that `game_weeks` returns a start and end date for
    each week of this league's season (and capture it as a fixture). If the league's weeks
    differ from the game's calendar, use the league scoreboard's `week_start`/`week_end`
-   instead.
-4. ~~Fixture privacy~~: **resolved 2026-10-12.** The GitHub repo is private, so fixtures
-   can keep real team names. Revisit this if the repo is ever made public.
+   instead. **Still open:** the fixtures are synthetic. After Yahoo approval, check that the
+   `game_weeks` dates match this league's week numbering (including around the All-Star
+   break) before trusting finality, since a week marked final too early gets a 1-year CDN
+   cache.
+4. **Fixture privacy: revisited 2026-10-13**, when the repo was made public.
+   `capture_fixtures.py` strips every `managers` block (nickname, GUID, possibly an email)
+   before writing. Team names stay: the production page already shows them publicly.
 5. **Vercel Python wiring.** Confirm with `vercel build` (and a preview deployment) how the
    Flask app at `backend/app` becomes the function: the Services config or an `api/index.py`
    shim. Also confirm the `/api/*` rewrites, that `Vercel-CDN-Cache-Control` is honoured, and

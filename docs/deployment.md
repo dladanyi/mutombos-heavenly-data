@@ -137,10 +137,11 @@ npx vercel@latest curl https://<preview-url>/healthz   # previews are protected;
 
 ## Cutover from Cloud Run (one time)
 
-1. Create the Vercel project from the GitHub repo (framework preset: **Services**, detected
-   from `vercel.json`) and add the env vars above.
-2. Check the preview deployment of the `stability-refactor` branch.
-3. Merge to `main`, which deploys to Vercel production.
-4. With the user's approval: disconnect the Cloud Run GitHub trigger (Cloud Build trigger
-   `aa70e010-…`, global) and delete the Cloud Run service `mutombos-heavenly-data`
-   (`us-west1`), so pushes stop deploying to GCP.
+Each step needs the user's approval at the time.
+
+1. ~~Create the Vercel project and add the env vars; check the `stability-refactor`
+   preview.~~ Done (see "Current state").
+2. **Before merging:** delete the Cloud Build trigger `aa70e010-…` (global). Otherwise the
+   merge starts a Cloud Build of a tree that no longer has a Dockerfile.
+3. Merge PR #1 to `main`, which deploys to Vercel production. Smoke-test it.
+4. Delete the Cloud Run service `mutombos-heavenly-data` (`us-west1`).

@@ -5,10 +5,10 @@ Party fantasy basketball league across nine stat categories, using data from the
 Fantasy API.
 
 > **Status (2026-10-13):** sub-project 1 (stability refactor + backend/frontend split) is
-> implemented on branch `stability-refactor` and tested against synthetic Yahoo data. Two
-> things are pending: Yahoo API access approval (see [deployment.md](deployment.md)) and the
-> Vercel project setup and cutover. Production still runs the old app on Cloud Run, which is
-> down because of the Yahoo access change.
+> implemented on branch `stability-refactor` (PR #1) and tested against synthetic Yahoo data.
+> The Vercel project, env vars and a verified preview are in place. Two things are pending:
+> Yahoo API access approval (see [deployment.md](deployment.md)) and the cutover. Production
+> still runs the old app on Cloud Run, which is down because of the Yahoo access change.
 
 ## Contents
 
