@@ -38,11 +38,32 @@ Set in Vercel → Project → Settings → Environment Variables, for **Producti
 
 Changing an env var only takes effect on the next deployment (redeploy from the dashboard).
 
-## Yahoo app and refresh token
+## Yahoo API access (required)
 
-The Yahoo developer app (https://developer.yahoo.com/apps/) must have the **Fantasy Sports
-→ Read** API permission. Without it, every data request returns HTTP 403, "This application is
-not authorized to perform this action", even though token refresh still succeeds.
+Since about **2026-07-22**, Yahoo only serves Fantasy Sports API data to apps approved through
+its developer access program. Any other app gets HTTP 403 "This application is not authorized
+to perform this action" on **every** endpoint (even `game/nba`), although login and token refresh
+still succeed. This is what took the old Cloud Run site down.
+
+Steps, as reported by other developers (yfpy issue #84), since Yahoo hasn't published an
+official announcement:
+
+1. Apply at https://sports.yahoo.com/developer/access/ and sign the agreement Yahoo sends
+   (DocuSign).
+2. After Yahoo confirms enablement, submit the app's Client ID at
+   https://sports.yahoo.com/developer/application-confirmation/.
+3. If the 403 continues, create a **new** app at https://developer.yahoo.com/apps/create/ (apps
+   created before enablement reportedly can't be fixed), submit its Client ID, and get a new
+   refresh token. Refresh tokens are tied to the app that issued them.
+4. Don't rely on the confirmation email. Test with a real call:
+   `curl -H "Authorization: Bearer <token>" "https://fantasysports.yahooapis.com/fantasy/v2/game/nba?format=json"`
+   must return 200. `backend/scripts/capture_fixtures.py` does the same check.
+
+Reported approval times are 3-8 weeks.
+
+**Status (2026-10-12):** application pending. The app (Client ID in `.env`) returns 403.
+
+## Refresh token
 
 To get a refresh token (once, and again if Yahoo revokes it), run this in your own terminal:
 

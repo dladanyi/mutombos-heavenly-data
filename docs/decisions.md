@@ -2,6 +2,16 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-12: Yahoo API access program; synthetic fixtures meanwhile
+
+- **Root cause of the production outage:** Yahoo restricted the Fantasy Sports API to apps
+  approved through a new access program (enforced from about 2026-07-22). Every endpoint
+  returns 403 for unapproved apps. The user is applying (see `deployment.md`).
+- **Keep building with synthetic fixtures** generated in Yahoo's JSON shape
+  (`backend/tests/fixtures/make_synthetic.py`), instead of pausing for the 3-8 week approval.
+  Once approved, capture real responses, rerun the tests and adjust parsing. Risk: small shape
+  differences, which would be contained to `parsing.py`.
+
 ## 2026-10-12: Move hosting from Cloud Run to Vercel
 
 - **Deploy on Vercel (Hobby) with the GitHub repo connected,** instead of Cloud Run + Cloud
