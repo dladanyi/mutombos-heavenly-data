@@ -37,7 +37,7 @@ def main() -> int:
         print(f"Yahoo rejected the code (HTTP {response.status_code}).", file=sys.stderr)
         return 1
 
-    print("\n3. Store this in Secret Manager (and your local .env) as YAHOO_REFRESH_TOKEN:\n")
+    print("\n3. Store this in your local .env and in Vercel (Settings → Environment Variables, Sensitive) as YAHOO_REFRESH_TOKEN, then redeploy:\n")
     print(response.json()["refresh_token"])
     return 0
 
