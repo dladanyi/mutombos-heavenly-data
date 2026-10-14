@@ -1,0 +1,401 @@
+/* Ported from templates/table_view_fancy.html (pre-refactor dashboard). */
+:root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #232836;
+    --accent: #f97316;
+    --gold: #fbbf24;
+    --silver: #94a3b8;
+    --bronze: #cd7f32;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --gold-bg: rgba(251,191,36,0.22);
+    --silver-bg: rgba(148,163,184,0.18);
+    --bronze-bg: rgba(205,127,50,0.22);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 1.5rem 1.5rem 4rem;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(249,115,22,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 90% 80%, rgba(56,189,248,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Header ── */
+header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+}
+
+h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.6rem, 8vw, 6rem);
+    letter-spacing: 0.04em;
+    line-height: 0.9;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 60%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.2s;
+}
+
+.timestamp {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 1rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards 0.3s;
+}
+
+/* ── Sections ── */
+.section {
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+}
+.section:nth-child(1) { animation-delay: 0.4s; }
+.section:nth-child(2) { animation-delay: 0.5s; }
+.section:nth-child(3) { animation-delay: 0.6s; }
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.4rem, 4vw, 1.8rem);
+    letter-spacing: 0.06em;
+    color: var(--text);
+}
+
+.section-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    background: rgba(249,115,22,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(249,115,22,0.3);
+}
+.section-badge.live { animation: pulse-badge 2s ease infinite; }
+@keyframes pulse-badge {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+.refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    background: rgba(99,179,237,0.12);
+    color: #63b3ed;
+    border: 1px solid rgba(99,179,237,0.3);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.refresh-btn:hover {
+    background: rgba(99,179,237,0.22);
+    border-color: rgba(99,179,237,0.55);
+}
+.refresh-btn:active { opacity: 0.7; }
+.refresh-btn svg {
+    width: 10px;
+    height: 10px;
+    transition: transform 0.4s ease;
+}
+.refresh-btn:active svg { transform: rotate(360deg); }
+
+/* ── Legend ── */
+.legend {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+    align-items: center;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+}
+.legend-swatch {
+    width: 22px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ── Scroll hint (mobile only) ── */
+.scroll-hint {
+    display: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 0.4rem;
+    opacity: 0.65;
+}
+
+/* ── Table wrapper ── */
+.table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: 0 4px 40px rgba(0,0,0,0.4);
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+.table-wrap::-webkit-scrollbar { height: 4px; }
+.table-wrap::-webkit-scrollbar-track { background: var(--surface); }
+.table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.table-wrap::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Tables ── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+/* With index=False there is only ONE thead row — no hiding needed */
+thead tr {
+    background: var(--surface2);
+    border-bottom: 2px solid var(--accent);
+}
+
+th {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.63rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.85rem 1rem;
+    text-align: right;
+    white-space: nowrap;
+    background: var(--surface2);
+}
+
+/* "name" header and team name cells — first column */
+thead th:first-child { text-align: left; color: var(--text); min-width: 180px; }
+
+tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(249,115,22,0.04); }
+
+/* All body cells are <td> with index=False */
+td {
+    padding: 0.78rem 1rem;
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+/* Team name is td[0] with index=False */
+tbody td:first-child {
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.88rem;
+    color: var(--text);
+    min-width: 180px;
+}
+
+/* Avg_Rank is td[1] with index=False */
+tbody td:nth-child(2) {
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* ── Medal classes ── */
+td.medal-gold   { color: var(--gold)   !important; background: var(--gold-bg)   !important; font-weight: 700; }
+td.medal-silver { color: var(--silver) !important; background: var(--silver-bg) !important; font-weight: 600; }
+td.medal-bronze { color: var(--bronze) !important; background: var(--bronze-bg) !important; font-weight: 600; }
+
+td.rank-gold   { color: var(--gold)   !important; font-weight: 600; }
+td.rank-silver { color: var(--silver) !important; font-weight: 500; }
+td.rank-bronze { color: var(--bronze) !important; font-weight: 500; }
+
+
+/* ── Divider ── */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 2.5rem 0;
+}
+
+/* ── Footer ── */
+footer {
+    text-align: center;
+    margin-top: 4rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    opacity: 0.45;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ── Header image layout ── */
+.header-main {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.header-text {
+    flex: 0 0 auto;
+    text-align: center;
+}
+
+.header-img {
+    flex: 0 0 auto;
+    width: 160px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.header-img img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    filter: saturate(1.1) contrast(1.05);
+}
+
+.header-img-left img {
+    border-bottom-right-radius: 0;
+    object-position: center;
+}
+
+.header-img-right img {
+    border-bottom-left-radius: 0;
+    object-position: top center;
+}
+
+@media (max-width: 640px) {
+    .header-img { width: 90px; }
+    .header-img img { height: 130px; }
+    .header-main { gap: 0.75rem; }
+}
+@media (max-width: 768px) and (orientation: portrait) {
+    .header-img { display: none; }
+}
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    body { padding: 1rem 0.5rem 3rem; }
+    .scroll-hint { display: block; }
+    th { font-size: 0.56rem; padding: 0.65rem 0.55rem; }
+    td { font-size: 0.68rem; padding: 0.62rem 0.55rem; }
+
+    tbody td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--surface);
+        box-shadow: 3px 0 10px rgba(0,0,0,0.6);
+        min-width: 120px;
+        font-size: 0.75rem;
+        padding: 0.62rem 0.55rem;
+    }
+    thead th:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 3;
+        box-shadow: 3px 0 10px rgba(0,0,0,0.6);
+        min-width: 120px;
+    }
+}
+
+
+/* ── States added with the React frontend ── */
+.skeleton {
+    height: 12rem;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--surface) 0%, var(--surface2) 50%, var(--surface) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.error-card, .notice {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+}
+.error-card { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.error-card button { flex-shrink: 0; }
+.notice { color: var(--gold); margin-top: 0.75rem; text-align: center; }
+.refresh-btn.spinning svg { animation: spin 0.9s linear infinite; }
+.refresh-btn:disabled { opacity: 0.6; cursor: default; }
+.refresh-note { font-size: 0.7rem; color: var(--muted); }
+@keyframes spin { to { transform: rotate(360deg); } }
