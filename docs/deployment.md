@@ -1,7 +1,7 @@
 # Deployment
 
-> **Status:** target setup from sub-project 1 (Vercel). Production still runs the original app
-> on Google Cloud Run (`mutombos-heavenly-data`, `us-west1`) until the cutover described below.
+> **Status:** production runs on Vercel at https://mutombos-heavenly-data.vercel.app since the
+> cutover on 2026-10-13. The API returns 503 until Yahoo approves API access (below).
 
 ## How it deploys
 
@@ -135,13 +135,15 @@ npx vercel@latest build && npx vercel@latest deploy --prebuilt
 npx vercel@latest curl https://<preview-url>/healthz   # previews are protected; this authenticates
 ```
 
-## Cutover from Cloud Run (one time)
+## Cutover from Cloud Run (done 2026-10-13)
 
-Each step needs the user's approval at the time.
-
-1. ~~Create the Vercel project and add the env vars; check the `stability-refactor`
-   preview.~~ Done (see "Current state").
-2. **Before merging:** delete the Cloud Build trigger `aa70e010-…` (global). Otherwise the
-   merge starts a Cloud Build of a tree that no longer has a Dockerfile.
-3. Merge PR #1 to `main`, which deploys to Vercel production. Smoke-test it.
-4. Delete the Cloud Run service `mutombos-heavenly-data` (`us-west1`).
+1. Created the Vercel project, added the env vars and checked the `stability-refactor`
+   preview.
+2. Merged PR #1 to `main` (`9eaf5b3`). Vercel deployed it to production. No Cloud Build ran.
+3. Smoke-tested production: `/healthz` 200 `ok`, `/` serves the app, the `/api/*` endpoints
+   return a clean 503 JSON (Yahoo access pending) with `no-store`, and unknown `/api` paths
+   return 404 JSON.
+4. Deleted the old GCP resources in project `mutombo-heavenly-block-party`: Cloud Build
+   trigger `aa70e010-…` (global), Cloud Run services `mutombos-heavenly-data` and `helloworld`
+   (`us-west1`), and Artifact Registry repos `cloud-run-source-deploy` and
+   `mutombos-heavenly-data` (`us-west1`). Nothing in this app uses GCP any more.

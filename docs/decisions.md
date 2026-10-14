@@ -2,6 +2,14 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-10-13: Cutover to Vercel
+
+- **Production moved to Vercel** (https://mutombos-heavenly-data.vercel.app) when PR #1 was
+  merged. Cloud Run, its Cloud Build trigger, the `helloworld` sample service and the Artifact
+  Registry images were deleted, so GCP no longer hosts or bills anything for this app.
+- The API returns 503 until Yahoo approves API access. That was already true of the Cloud Run
+  site, so the cutover didn't need to wait for approval.
+
 ## 2026-10-13: PR #1 review fixes
 
 - **The last week of the season goes final by its calendar date.** Yahoo leaves `current_week`
