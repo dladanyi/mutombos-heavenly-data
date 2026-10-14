@@ -536,9 +536,9 @@ the project and adding env vars are account actions: **ask the user before Step 
 
 Every step here changes production. **Get explicit user approval before each step.**
 
-- [ ] **Step 1: Stop Cloud Build deploys (user approval).** Delete the Cloud Build trigger `aa70e010-fd8a-4564-82a1-365f344f37c4` (global) *before* merging, so the merge doesn't start a Cloud Run build of code that no longer has a Dockerfile. The existing Cloud Run service keeps running untouched.
-- [ ] **Step 2: Merge (user approval).** Open a PR from `stability-refactor` (summary plus test results). Once CI is green, the preview has been checked on desktop and phone, and the user approves, merge to `main`. Vercel deploys to production.
-- [ ] **Step 3: Smoke test production.** Run the Task 10 Step 4 checks against the production URL and load the page on desktop and phone. If anything fails, roll back with `vercel rollback` and report.
-- [ ] **Step 3b: Retire Cloud Run (user approval).** Delete the Cloud Run service `mutombos-heavenly-data` (`us-west1`). Ask whether to also delete the unrelated `helloworld` service and the old images in Artifact Registry; don't delete anything that wasn't explicitly approved.
+- [x] **Step 1: Stop Cloud Build deploys (user approval).** Delete the Cloud Build trigger `aa70e010-fd8a-4564-82a1-365f344f37c4` (global) *before* merging, so the merge doesn't start a Cloud Run build of code that no longer has a Dockerfile. The existing Cloud Run service keeps running untouched.
+- [x] **Step 2: Merge (user approval).** Open a PR from `stability-refactor` (summary plus test results). Once CI is green, the preview has been checked on desktop and phone, and the user approves, merge to `main`. Vercel deploys to production.
+- [x] **Step 3: Smoke test production.** Run the Task 10 Step 4 checks against the production URL and load the page on desktop and phone. If anything fails, roll back with `vercel rollback` and report.
+- [x] **Step 3b: Retire Cloud Run (user approval).** Delete the Cloud Run service `mutombos-heavenly-data` (`us-west1`). Ask whether to also delete the unrelated `helloworld` service and the old images in Artifact Registry; don't delete anything that wasn't explicitly approved.
 - [x] **Step 4: Branch protection (user approval, recommended).** Done 2026-10-13 as the GitHub ruleset "Protect main" (PR + green `backend`/`frontend` checks).
-- [ ] **Step 5: Finalize the docs.** Record the production URL, the project name and the cutover date in `docs/deployment.md` and `docs/decisions.md`, and remove the "Not yet implemented" banners. Commit on a short follow-up branch and open a PR.
+- [x] **Step 5: Finalize the docs.** Record the production URL, the project name and the cutover date in `docs/deployment.md` and `docs/decisions.md`, and remove the "Not yet implemented" banners. Commit on a short follow-up branch and open a PR.
