@@ -122,6 +122,11 @@ format. `event` can be `COMMENT`, `REQUEST_CHANGES` or `APPROVE`.
 `/code-review --comment` doesn't go through the wrapper, so it posts as **you**. To post as the
 bot, run the review without `--comment` and have Claude post the result with the wrapper.
 
+The bot **can't resolve review threads**. GitHub rejects `resolveReviewThread` with "Resource
+not accessible by integration", because resolving needs more than the permissions above.
+Resolve threads with your own login (plain `gh`, or the "Resolve conversation" button) rather
+than giving the app Contents write access, which would also let it push to branches.
+
 ## Rotating or revoking
 
 - **Rotate the key:** generate a new private key on the app's General page, replace
