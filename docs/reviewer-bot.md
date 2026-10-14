@@ -70,12 +70,12 @@ it for an installation token (valid for 1 hour), and runs **one** `gh` command w
 Nothing is written to disk, and the token never reaches your shell environment, so `git push`
 and your other `gh` commands still run as you.
 
-Save this as `scripts/gh-as-reviewer` and run `chmod +x` on it:
+Save this as `scripts/gh-as-reviewer.sh` and run `chmod +x` on it:
 
 ```bash
 #!/usr/bin/env bash
 # Run one gh command as the reviewer bot (GitHub App). See docs/reviewer-bot.md.
-# Usage: scripts/gh-as-reviewer api repos/{owner}/{repo}/pulls/1/reviews --input review.json
+# Usage: scripts/gh-as-reviewer.sh api repos/{owner}/{repo}/pulls/1/reviews --input review.json
 set -euo pipefail
 
 CONFIG_DIR="${MHD_REVIEWER_DIR:-$HOME/.config/mhd-reviewer}"
@@ -102,7 +102,7 @@ GH_TOKEN="$token" exec gh "$@"
 Check that it works. Reading the PR should succeed:
 
 ```sh
-scripts/gh-as-reviewer pr view 1 --json title -q .title
+scripts/gh-as-reviewer.sh pr view 1 --json title -q .title
 ```
 
 ## 5. Using it from Claude Code
@@ -112,7 +112,7 @@ post it as the reviewer bot". Claude runs the review, writes the inline comments
 in its scratchpad, and posts them with:
 
 ```sh
-scripts/gh-as-reviewer api repos/{owner}/{repo}/pulls/<n>/reviews --input <review.json>
+scripts/gh-as-reviewer.sh api repos/{owner}/{repo}/pulls/<n>/reviews --input <review.json>
 ```
 
 The JSON follows GitHub's
