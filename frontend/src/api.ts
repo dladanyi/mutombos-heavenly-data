@@ -49,5 +49,5 @@ async function getJson<T>(path: string, opts: Options = {}): Promise<T> {
 
 export const getLeague = (opts?: Options) => getJson<League>('/api/league', opts)
 export const getSeason = (opts?: Options) => getJson<Rankings>('/api/rankings/season', opts)
-export const getWeek = (week: number | 'current', opts?: Options) =>
+export const getWeek = (week: number | 'current' | 'previous', opts?: Options) =>
   getJson<Rankings>(`/api/rankings/week/${week}`, opts)

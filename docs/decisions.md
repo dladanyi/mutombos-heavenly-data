@@ -15,8 +15,14 @@ Newest first. Each entry: what we decided, and why.
   503 with the 30 s cooldown instead of a 500.
 - **UI:** a failed Refresh shows "Couldn't update: …" above the table, "Just refreshed" ignores
   final data, and changing week clears the old table.
-- **Deferred:** start the last-week request without waiting for `/api/league`. The backend
-  fetches the league for `/week/current` anyway, so the gain is one browser round trip.
+- **Week aliases keep 60 s CDN headers.** After the `week_state` change, `/week/current` could
+  get the 1-year final headers once the season ended. That's harmless in the intended case,
+  but if `game_weeks` doesn't match the league (spec risk 3) the live URL would freeze
+  mid-season. Aliases change meaning at every rollover, so they are capped at 60 s. Only
+  numbered weeks get the long cache.
+- **`/week/previous` alias.** The frontend requests last week in parallel with
+  `/api/league` instead of waiting to learn the week number. A 404 (first week) hides the
+  section.
 
 ## 2026-10-13: Public repo and a ruleset on `main`
 

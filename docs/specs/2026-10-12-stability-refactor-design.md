@@ -219,14 +219,14 @@ like `YahooUnavailable`.
 |---|---|
 | `GET /api/league` | name, current_week, start_week, end_week, categories |
 | `GET /api/rankings/season` | season-to-date rankings |
-| `GET /api/rankings/week/<n>` or `/current` | one week's rankings |
+| `GET /api/rankings/week/<n>`, `/current` or `/previous` | one week's rankings (`/previous` is 404 in the first week) |
 | `GET /healthz` | `ok` (no Yahoo call) |
 
 Each response sets a browser TTL (`Cache-Control`) and a CDN TTL (`Vercel-CDN-Cache-Control`):
 
 | Data | `Cache-Control` (browser) | `Vercel-CDN-Cache-Control` (CDN) |
 |---|---|---|
-| League, season, current week | `public, max-age=60` | `max-age=60` |
+| League, season, current week, and the `/current` and `/previous` aliases in any state | `public, max-age=60` | `max-age=60` |
 | Settling week | `public, max-age=300` | `max-age=3600` |
 | Final week | `public, max-age=86400` | `max-age=31536000` |
 | `?refresh=1`, `/healthz`, errors (4xx/5xx), stale responses | `no-store` | `no-store` |
@@ -234,6 +234,10 @@ Each response sets a browser TTL (`Cache-Control`) and a CDN TTL (`Vercel-CDN-Ca
 - Final weeks get a 1-day browser cache instead of "forever". A browser that cached JSON
   forever could keep an old response shape after a deploy changes the API. The CDN cache
   doesn't have this problem because it is scoped to each deployment.
+- The `/current` and `/previous` aliases point to a different week after each rollover, so they
+  always get the 60 s headers, even when the week behind them is final. Only `/week/<n>` URLs
+  get the long CDN cache, and the server-side cache still keeps final weeks forever. This also
+  limits the damage if the calendar is wrong (§10 risk 3).
 - Stale responses (Yahoo down) are never cached by the CDN, so normal data comes back as
   soon as Yahoo recovers.
 - `?refresh=1` passes `refresh=True` to the client. It's a separate CDN cache key and is sent

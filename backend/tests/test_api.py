@@ -206,6 +206,28 @@ def test_final_state_with_non_final_entry_gets_settling_headers(http, client):
     assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=86400", "max-age=31536000")
 
 
+@pytest.mark.parametrize("alias", ["current", "previous"])
+@pytest.mark.parametrize("state", ["settling", "final"])
+def test_week_aliases_never_get_long_cdn_headers(http, client, alias, state):
+    """An alias points at a different week after each rollover, so it keeps the 60 s headers."""
+    client.state = state
+    client.stats_result = result(final=state == "final")
+    assert headers(http.get(f"/api/rankings/week/{alias}")) == SHORT
+
+
+def test_previous_week_resolves_number(http, client):
+    body = http.get("/api/rankings/week/previous").get_json()
+    assert body["week"] == 6
+    assert ("week", 6, 7, False) in client.calls
+
+
+def test_previous_week_404_in_first_week(http, client):
+    client.league_info = LeagueInfo("L", current_week=3, start_week=3, end_week=21)
+    response = http.get("/api/rankings/week/previous")
+    assert response.status_code == 404
+    assert response.get_json() == {"error": "not_found"}
+
+
 @pytest.mark.parametrize("state", ["current", "settling", "final"])
 def test_week_body_reports_state(http, client, state):
     client.state = state

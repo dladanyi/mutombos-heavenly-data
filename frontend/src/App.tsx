@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getLeague, getSeason, getWeek, type Rankings } from './api'
+import { ApiError, getLeague, getSeason, getWeek } from './api'
 import Header from './components/Header'
 import RankingsSection from './components/RankingsSection'
 import { useApi } from './hooks/useApi'
@@ -20,12 +20,15 @@ export default function App() {
   const current = useApi((refresh) => getWeek('current', { refresh }), [])
   const season = useApi((refresh) => getSeason({ refresh }), [])
 
+  // The backend resolves "previous" itself, so this doesn't wait for /api/league.
+  const last = useApi((refresh) => getWeek('previous', { refresh }), [])
+
   const info = league.data
-  const lastWeek = info && info.current_week > info.start_week ? info.current_week - 1 : undefined
-  const last = useApi<Rankings | null>(
-    (refresh) => (lastWeek === undefined ? Promise.resolve(null) : getWeek(lastWeek, { refresh })),
-    [lastWeek],
-  )
+  // 404 means there is no previous week yet (the league's first week).
+  const noLastWeek =
+    (info !== undefined && info.current_week <= info.start_week) ||
+    (last.error instanceof ApiError && last.error.status === 404)
+  const lastWeek = last.data?.week ?? (info ? info.current_week - 1 : undefined)
 
   const [awaitingRefresh, setAwaitingRefresh] = useState(false)
   const [justRefreshed, setJustRefreshed] = useState(false)
@@ -37,7 +40,7 @@ export default function App() {
     setAwaitingRefresh(true)
   }
 
-  const loaded = [current.data, season.data, last.data].filter((r): r is Rankings => Boolean(r))
+  const loaded = [current.data, season.data, noLastWeek ? undefined : last.data].filter((r) => r !== undefined)
   // Final data ignores refresh, so only refreshable rankings decide "Just refreshed".
   const refreshable = loaded.filter((r) => r.state !== 'final')
   const allThrottled = refreshable.length > 0 && refreshable.every((r) => r.refresh_throttled)
@@ -95,11 +98,11 @@ export default function App() {
         onRetry={() => void season.reload()}
       />
 
-      {lastWeek !== undefined && (
+      {!noLastWeek && (
         <>
           <div className="divider" />
           <RankingsSection
-            title={`Week ${lastWeek}`}
+            title={lastWeek !== undefined ? `Week ${lastWeek}` : 'Last Week'}
             badge={{ text: 'Last week' }}
             state={last}
             onRetry={() => void last.reload()}

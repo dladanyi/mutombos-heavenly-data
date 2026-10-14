@@ -26,7 +26,7 @@ function happyRoutes(): Routes {
     '/api/league': { body: league() },
     '/api/rankings/week/current': { body: rankings() },
     '/api/rankings/season': { body: rankings({ scope: 'season', week: null }) },
-    '/api/rankings/week/6': { body: rankings({ week: 6 }) },
+    '/api/rankings/week/previous': { body: rankings({ week: 6 }) },
   }
 }
 
@@ -42,6 +42,24 @@ describe('App', () => {
     expect(screen.getByText(/Last updated:/)).toHaveTextContent('Nov 20, 2026')
   })
 
+  it('requests last week without waiting for the league', () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    expect(calls).toEqual(expect.arrayContaining(['/api/league', '/api/rankings/week/previous']))
+  })
+
+  it('hides last week when the API has no previous week', async () => {
+    const routes = happyRoutes()
+    routes['/api/league'] = { body: league({ current_week: 1 }) }
+    routes['/api/rankings/week/current'] = { body: rankings({ week: 1 }) }
+    routes['/api/rankings/week/previous'] = { status: 404, body: { error: 'not_found' } }
+    mockApi(routes)
+    render(<App />)
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByText('Last week')).toBeNull()
+  })
+
   it('hides last week in week 1', async () => {
     const routes = happyRoutes()
     routes['/api/league'] = { body: league({ current_week: 1 }) }
@@ -51,6 +69,7 @@ describe('App', () => {
     expect(await screen.findByText('Week 1')).toBeInTheDocument()
     await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
     expect(screen.queryByText('Week 0')).toBeNull()
+    expect(screen.queryByText('Last week')).toBeNull()
     expect(calls.some((c) => c.includes('/week/0'))).toBe(false)
   })
 
@@ -84,7 +103,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(calls).toContain('/api/rankings/week/current?refresh=1')
       expect(calls).toContain('/api/rankings/season?refresh=1')
-      expect(calls).toContain('/api/rankings/week/6?refresh=1')
+      expect(calls).toContain('/api/rankings/week/previous?refresh=1')
     })
   })
 
@@ -94,7 +113,7 @@ describe('App', () => {
       const body = (routes[path] as Route).body as object
       routes[path] = [{ body }, { body: { ...body, refresh_throttled: true } }]
     }
-    routes['/api/rankings/week/6'] = { body: rankings({ week: 6, state: 'final', refresh_throttled: false }) }
+    routes['/api/rankings/week/previous'] = { body: rankings({ week: 6, state: 'final', refresh_throttled: false }) }
     mockApi(routes)
     render(<App />)
     await screen.findByText('Week 6')
@@ -120,7 +139,7 @@ describe('App', () => {
     const routes = happyRoutes()
     routes['/api/rankings/week/current'] = { body: rankings({ week: 21, state: 'final' }) }
     routes['/api/league'] = { body: league({ current_week: 21 }) }
-    routes['/api/rankings/week/20'] = { body: rankings({ week: 20, state: 'final' }) }
+    routes['/api/rankings/week/previous'] = { body: rankings({ week: 20, state: 'final' }) }
     mockApi(routes)
     render(<App />)
     expect(await screen.findByText('Season over')).toBeInTheDocument()
@@ -138,7 +157,7 @@ describe('App', () => {
 
   it('says just refreshed when every refresh was throttled', async () => {
     const routes = happyRoutes()
-    for (const path of ['/api/rankings/week/current', '/api/rankings/season', '/api/rankings/week/6']) {
+    for (const path of ['/api/rankings/week/current', '/api/rankings/season', '/api/rankings/week/previous']) {
       const body = (routes[path] as Route).body as object
       routes[path] = [{ body }, { body: { ...body, refresh_throttled: true } }]
     }

@@ -11,6 +11,7 @@ All endpoints return JSON.
 | `GET /api/league` | League metadata |
 | `GET /api/rankings/season` | Season-to-date rankings |
 | `GET /api/rankings/week/current` | Current week rankings |
+| `GET /api/rankings/week/previous` | Last week's rankings; 404 in the league's first week |
 | `GET /api/rankings/week/<n>` | Rankings for week `n` |
 | `GET /healthz` | Returns `ok`; never calls Yahoo. If a required env var is missing the function can't start, so this returns Vercel's own 500 |
 
@@ -18,9 +19,9 @@ All endpoints return JSON.
 
 | Data | `Cache-Control` | `Vercel-CDN-Cache-Control` |
 |---|---|---|
-| League, season, current week | `public, max-age=60` | `max-age=60` |
+| League, season, current week, and `/week/current` and `/week/previous` in any state | `public, max-age=60` | `max-age=60` |
 | Week that ended less than 3 days ago | `public, max-age=300` | `max-age=3600` |
-| Final week (ended 3+ days ago) | `public, max-age=86400` | `max-age=31536000` |
+| Final week (ended 3+ days ago), by number only | `public, max-age=86400` | `max-age=31536000` |
 | `?refresh=1`, `/healthz`, errors, stale responses | `no-store` | `no-store` |
 
 Adding `?refresh=1` to any `/api` endpoint skips the server cache (at most once every 30 s per

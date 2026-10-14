@@ -16,6 +16,13 @@ describe('api', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/rankings/week/7?refresh=1')
   })
 
+  it("getWeek('previous')", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({}), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await getWeek('previous')
+    expect(fetchMock).toHaveBeenCalledWith('/api/rankings/week/previous')
+  })
+
   it("getWeek('current')", async () => {
     const fetchMock = mockFetch(200, { scope: 'week' })
     await getWeek('current')

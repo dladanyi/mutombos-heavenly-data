@@ -22,6 +22,7 @@ _HEADERS = {
     "none": ("no-store", "no-store"),
 }
 _STATE_HEADERS = {"current": "short", "settling": "settling", "final": "final"}
+_ALIASES = ("current", "previous")
 
 
 def _client():
@@ -90,6 +91,8 @@ def week_rankings(week: str):
     info, league_result = _client().league()
     if week == "current":
         number = info.current_week
+    elif week == "previous" and info.current_week > info.start_week:
+        number = info.current_week - 1
     elif week.isdecimal() and info.start_week <= int(week) <= info.current_week:
         number = int(week)
     else:
@@ -99,6 +102,10 @@ def week_rankings(week: str):
     # Long CDN caching only for data that was itself fetched as final (spec §5.2): an entry
     # fetched while settling may still be served after the week turns final.
     kind = _STATE_HEADERS[state] if state != "final" or result.final else "settling"
+    # An alias names a different week after each rollover, so the CDN may only keep it briefly.
+    # (The server-side cache still holds a final week forever.)
+    if week in _ALIASES:
+        kind = "short"
     return _respond(body, kind, result, league_result)
 
 
