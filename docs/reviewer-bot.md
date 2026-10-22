@@ -1,9 +1,10 @@
 # Reviewer bot (GitHub App)
 
-> **Status (2026-10-13):** proposed, not set up yet.
+> **Status (2026-10-13):** live. The app is `mutombot[bot]`, and `scripts/gh-as-reviewer.sh` is on
+> `main` (PR #2).
 
 Code reviews from Claude Code are posted under a separate GitHub identity, a GitHub App that
-shows up as `<app-name>[bot]`. Your own login (`dladanyi`) stays in place for pushes, PRs and
+shows up as `mutombot[bot]`. Your own login (`dladanyi`) stays in place for pushes, PRs and
 merges.
 
 Why an app rather than your own account:
