@@ -71,7 +71,9 @@ official announcement:
 
 Reported approval times are 3-8 weeks.
 
-**Status (2026-10-12):** application pending. The app (Client ID in `.env`) returns 403.
+**Status (2026-10-21):** the original app still returned 403, so per step 3 a new app was created
+and its Client ID submitted; waiting on Yahoo. Its credentials work (token refresh returns 200),
+but Fantasy API calls still return 403. The Client ID is in `.env`.
 
 ## Refresh token
 
@@ -83,7 +85,14 @@ set -a; source .env; set +a
 ```
 
 It prints a Yahoo sign-in URL, asks for the code Yahoo shows, and prints only the refresh
-token. Put it in `.env` and in the Vercel env var `YAHOO_REFRESH_TOKEN`, then redeploy.
+token.
+
+`YAHOO_REDIRECT_URI` in `.env` must match the redirect URI registered on the Yahoo app exactly
+(we use `https://localhost:8080`). Without the `https://` scheme, Yahoo's approval page hangs.
+After approving, the browser goes to `https://localhost:8080/?code=...`, which won't load: copy
+only the `code` value from the address bar and paste it straight away, since codes expire within
+minutes and work once. If the exchange fails, the script prints Yahoo's error (e.g.
+`invalid_grant`, `invalid_client`). Put it in `.env` and in the Vercel env var `YAHOO_REFRESH_TOKEN`, then redeploy.
 
 ## Local development
 

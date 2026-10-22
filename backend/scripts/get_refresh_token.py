@@ -34,7 +34,8 @@ def main() -> int:
         TOKEN_URL, auth=(key, secret), timeout=10,
         data={"grant_type": "authorization_code", "code": code, "redirect_uri": redirect_uri})
     if response.status_code != 200:
-        print(f"Yahoo rejected the code (HTTP {response.status_code}).", file=sys.stderr)
+        # Yahoo's error body names the cause (e.g. invalid_grant, invalid_client) and holds no secrets.
+        print(f"Yahoo rejected the code (HTTP {response.status_code}): {response.text}", file=sys.stderr)
         return 1
 
     print("\n3. Store this in your local .env and in Vercel (Settings → Environment Variables, Sensitive) as YAHOO_REFRESH_TOKEN, then redeploy:\n")
