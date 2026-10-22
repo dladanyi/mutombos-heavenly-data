@@ -19,8 +19,29 @@ _EXPIRY_MARGIN = 60
 _RATE_LIMITED = 999
 # After a failed token refresh, fail fast for this long instead of re-posting on every request.
 _RENEW_COOLDOWN = 30.0
+# Longest Yahoo error message kept in a log line.
+_MAX_ERROR_CHARS = 300
 
 log = logging.getLogger(__name__)
+
+
+def _yahoo_error(response) -> str:
+    """Yahoo's own explanation of a failed request, for logs. The API returns
+    {"error": {"description": ...}}; the token endpoint {"error": ..., "error_description": ...}."""
+    try:
+        body = response.json()
+    except ValueError:
+        body = None
+    message = None
+    if isinstance(body, dict):
+        error = body.get("error")
+        if isinstance(error, dict):
+            message = error.get("description")
+        elif isinstance(error, str):
+            message = f"{error}: {body['error_description']}" if body.get("error_description") else error
+    if not isinstance(message, str):
+        message = response.text or ""
+    return message.strip()[:_MAX_ERROR_CHARS]
 
 
 class YahooHttp:
@@ -61,7 +82,8 @@ class YahooHttp:
                 except ValueError as exc:
                     raise YahooUnavailable(f"Yahoo returned non-JSON for {path}") from exc
 
-            log.warning("Yahoo request failed", extra={"path": path, "status": status, "attempt": attempt})
+            log.warning("Yahoo request failed", extra={"path": path, "status": status, "attempt": attempt,
+                                                       "yahoo_error": _yahoo_error(response)})
             if attempt == 1 and status == 401:
                 self._token(force=True, rejected=token)
                 continue
@@ -96,7 +118,8 @@ class YahooHttp:
             raise YahooUnavailable(f"Yahoo token refresh failed: {type(exc).__name__}") from exc
 
         if response.status_code != 200:
-            log.error("Yahoo token refresh rejected", extra={"status": response.status_code})
+            log.error("Yahoo token refresh rejected", extra={"status": response.status_code,
+                                                             "yahoo_error": _yahoo_error(response)})
             raise YahooUnavailable(f"Yahoo token refresh returned HTTP {response.status_code}")
         try:
             body = response.json()

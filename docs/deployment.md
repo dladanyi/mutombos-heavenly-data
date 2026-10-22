@@ -68,6 +68,9 @@ official announcement:
 4. Don't rely on the confirmation email. Test with a real call:
    `curl -H "Authorization: Bearer <token>" "https://fantasysports.yahooapis.com/fantasy/v2/game/nba?format=json"`
    must return 200. `backend/scripts/capture_fixtures.py` does the same check.
+   In production, the Vercel runtime logs show it too: failed Yahoo calls log a
+   `Yahoo request failed` (or `Yahoo token refresh rejected`) line whose `yahoo_error` field
+   holds Yahoo's own message, e.g. "This application is not authorized to perform this action."
 
 Reported approval times are 3-8 weeks.
 

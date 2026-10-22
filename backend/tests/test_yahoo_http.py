@@ -225,3 +225,31 @@ def test_malformed_token_body_is_unavailable_and_cools_down(body):
         http.get_json("league/nba.l.1")
     assert len(session.post_calls) == 1
     assert session.get_calls == []
+
+
+def test_failed_request_logs_yahoo_error_description(caplog):
+    denied = {"error": {"lang": "en-us", "description": "This application is not authorized to perform this action."}}
+    session = FakeSession(posts=[token()], gets=[FakeResponse(403, denied)])
+    with pytest.raises(YahooUnavailable):
+        make(session).get_json("league/nba.l.1")
+    record, = [r for r in caplog.records if r.getMessage() == "Yahoo request failed"]
+    assert record.status == 403
+    assert record.yahoo_error == "This application is not authorized to perform this action."
+
+
+def test_failed_request_logs_truncated_text_when_not_json(caplog):
+    session = FakeSession(posts=[token()], gets=[FakeResponse(404, text="<error>" + "x" * 500)])
+    with pytest.raises(YahooUnavailable):
+        make(session).get_json("league/nba.l.1")
+    record, = [r for r in caplog.records if r.getMessage() == "Yahoo request failed"]
+    assert record.yahoo_error.startswith("<error>")
+    assert len(record.yahoo_error) == 300
+
+
+def test_token_refresh_rejection_logs_yahoo_error(caplog):
+    rejected = {"error": "invalid_grant", "error_description": "Invalid refresh token"}
+    session = FakeSession(posts=[FakeResponse(400, rejected)])
+    with pytest.raises(YahooUnavailable):
+        make(session).get_json("league/nba.l.1")
+    record, = [r for r in caplog.records if r.getMessage() == "Yahoo token refresh rejected"]
+    assert record.yahoo_error == "invalid_grant: Invalid refresh token"
