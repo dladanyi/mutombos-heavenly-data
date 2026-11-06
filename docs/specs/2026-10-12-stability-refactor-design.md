@@ -372,13 +372,16 @@ merging to `main` (live since 2026-10-13).
 3. **Game-week calendar shape.** Confirm that `game_weeks` returns a start and end date for
    each week of this league's season (and capture it as a fixture). If the league's weeks
    differ from the game's calendar, use the league scoreboard's `week_start`/`week_end`
-   instead. **Still open:** the fixtures are synthetic. After Yahoo approval, check that the
+   instead. **Still open** (the fixtures are real since 2026-11-05): check that the
    `game_weeks` dates match this league's week numbering (including around the All-Star
    break) before trusting finality, since a week marked final too early gets a 1-year CDN
    cache.
-4. **Fixture privacy: revisited 2026-10-13**, when the repo was made public.
-   `capture_fixtures.py` strips every `managers` block (nickname, GUID, possibly an email)
-   before writing. Team names stay: the production page already shows them publicly.
+4. **Fixture privacy: revisited 2026-10-13**, when the repo was made public, and again on
+   2026-11-05 with the first real capture. `capture_fixtures.py` now filters league and team
+   metadata through allowlists, so managers (nickname, GUID, possibly an email), the
+   ownership flag and any new Yahoo field are dropped. It also renames teams to
+   `Team <team_id>`, which is cosmetic: the production page already shows the real names and
+   stats publicly. See `backend/tests/fixtures/README.md`.
 5. **Vercel Python wiring.** Confirm with `vercel build` (and a preview deployment) how the
    Flask app at `backend/app` becomes the function: the Services config or an `api/index.py`
    shim. Also confirm the `/api/*` rewrites, that `Vercel-CDN-Cache-Control` is honoured, and

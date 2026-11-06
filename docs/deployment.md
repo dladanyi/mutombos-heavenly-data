@@ -1,7 +1,7 @@
 # Deployment
 
 > **Status:** production runs on Vercel at https://mutombos-heavenly-data.vercel.app since the
-> cutover on 2026-10-13. The API returns 503 until Yahoo approves API access (below).
+> cutover on 2026-10-13. Yahoo approved API access by 2026-11-05, and the API serves live data.
 
 ## How it deploys
 
@@ -77,6 +77,9 @@ Reported approval times are 3-8 weeks.
 **Status (2026-10-21):** the original app still returned 403, so per step 3 a new app was created
 and its Client ID submitted; waiting on Yahoo. Its credentials work (token refresh returns 200),
 but Fantasy API calls still return 403. The Client ID is in `.env`.
+
+**Status (2026-11-05):** approved. Fantasy API calls succeed and `/api/league?refresh=1`
+returns 200.
 
 ## Refresh token
 

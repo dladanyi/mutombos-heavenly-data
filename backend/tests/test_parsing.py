@@ -1,6 +1,6 @@
 """Parsing tests against fixtures in Yahoo's JSON shape.
 
-Shapes (see fixtures/README.md; currently synthetic):
+Shapes (see fixtures/README.md; real responses, anonymised):
 - league:      fantasy_content.league[0] = metadata dict (current_week int, start/end_week strings)
 - teams/stats: fantasy_content.league[1].teams = {"0": {"team": [metadata_list, {"team_stats": ...}]}, ..., "count": N}
                metadata_list mixes single-key dicts and empty lists
@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from app.errors import YahooFormatError
-from app.parsing import parse_game_weeks, parse_league, parse_team_stats
+from app.parsing import GameWeek, parse_game_weeks, parse_league, parse_team_stats
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -88,6 +88,10 @@ def test_parse_game_weeks_fixture():
         assert week.week == number
         assert isinstance(week.start, date) and isinstance(week.end, date)
         assert week.start <= week.end
+    # Pinned from the real 2026-27 calendar: finality and CDN caching depend on these dates, and
+    # test_yahoo_client derives its boundaries through this parser. Update after a re-capture.
+    assert weeks[1] == GameWeek(1, date(2026, 10, 20), date(2026, 10, 25))
+    assert weeks[3] == GameWeek(3, date(2026, 11, 2), date(2026, 11, 8))
 
 
 def test_parse_game_weeks_bad_date_raises():

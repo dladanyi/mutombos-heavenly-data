@@ -2,6 +2,33 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-11-05: Real Yahoo fixtures replace the synthetic ones
+
+- **Yahoo approved the new app** (created 2026-10-21): `/api/league?refresh=1` returns live
+  data instead of 503.
+- **The test fixtures are now real responses**, captured by `capture_fixtures.py`, and
+  `make_synthetic.py` is gone. The parsers handled the real shape without changes. The only
+  test updates were for the scenario: 10 teams (not 12), current week 3 (not 7), and the real
+  calendar. Its weeks mostly run Monday to Sunday (the synthetic ones ran Tuesday to Monday),
+  but some are irregular: week 1 is six days (Tuesday 2026-10-20 to Sunday 2026-10-25), and
+  Yahoo's game weeks 7 (2026-11-30..12-13) and 17 (2027-02-15..02-28, the All-Star break) are
+  two weeks long.
+- **The capture script filters responses through allowlists, not a denylist,** because the
+  repo is public. The goal is to keep out data that **isn't already public**: managers
+  (nicknames, GUIDs, possibly emails) and `is_owned_by_current_login` (which team is the repo
+  owner's). The first version of this PR used a denylist, which let the ownership flag
+  through. Team metadata now keeps only `team_key`, `team_id`, the name and the stats. League
+  metadata keeps the fields the parser and tests read, plus the season and dates for context.
+  A field Yahoo adds later is dropped by default. The script raises an error instead of
+  saving anything for shapes it hasn't been written for: a team without a `team_id`, or a
+  league part other than the metadata and `teams` (such as standings or a scoreboard).
+- **Renaming teams to `Team <team_id>` is cosmetic.** Team names and stats are already public
+  on the dashboard (the 2026-10-13 fixture-privacy decision in the sub-project 1 spec), so the
+  rename hides nothing. It just keeps the fixtures neutral.
+- **Yahoo doesn't send the league `is_finished` flag mid-season** (checklist step 4). The
+  allowlist keeps it in case it appears after the season. Until then, the season end comes
+  from calendar dates, as before.
+
 ## 2026-10-13: Cutover to Vercel
 
 - **Production moved to Vercel** (https://mutombos-heavenly-data.vercel.app) when PR #1 was
