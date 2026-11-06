@@ -2,6 +2,22 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-11-06: Keep using Yahoo's game calendar for week finality
+
+- **League 46425's weeks match `game/nba/game_weeks` for 2026-27** (spec risk 3), so
+  finality stays on the game calendar, and there's no switch to the scoreboard's
+  `week_start`/`week_end`. All 19 regular-season weeks match exactly, including the
+  two-week weeks 7 and 17. **Playoff weeks 20-22 are provisional:** they have no matchups
+  until the bracket is set, so only their combined span (2027-03-15..04-04, ending on the
+  league's `end_date`) could be checked, not each week's own dates. Re-run the check after
+  week 19 ends on 2027-03-14.
+- **Why not switch anyway:** the calendar is one cached request for the whole season, whereas
+  scoreboard bounds would need a request per week. The two are equivalent as long as the
+  league follows the game calendar.
+- **Re-check every season** with `backend/scripts/check_league_weeks.py`, and again once
+  the playoff bracket is set. Exit codes: 0 match (it prints PROVISIONAL if any week had no
+  matchups), 1 mismatch, 2 couldn't check. Its comparison logic has unit tests.
+
 ## 2026-11-05: Real Yahoo fixtures replace the synthetic ones
 
 - **Yahoo approved the new app** (created 2026-10-21): `/api/league?refresh=1` returns live

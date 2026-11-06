@@ -119,6 +119,27 @@ curl -fsS https://<deployment-url>/api/league
 curl -sSI https://<deployment-url>/api/rankings/season | grep -i x-vercel-cache   # HIT on repeat
 ```
 
+## Each new season
+
+When the league renews (new `YAHOO_LEAGUE_ID` in `.env` and Vercel, then redeploy):
+
+1. Check that the league's weeks match Yahoo's NBA game calendar. The app decides when a week
+   is final (and gets a 1-year CDN cache) from that calendar:
+
+   ```sh
+   set -a; source .env; set +a
+   .venv/bin/python backend/scripts/check_league_weeks.py
+   ```
+
+   Exit codes: 0 = match, 1 = mismatch, 2 = couldn't check (Yahoo error, bad token; fix that
+   and re-run, don't change finality). Run it once the schedule is out, and **again once the
+   playoff bracket is set**. Until then, playoff weeks show "no matchups yet", only their
+   combined span is checked, and the result says PROVISIONAL. If it reports a mismatch,
+   switch finality to the league scoreboard's `week_start`/`week_end` (spec risk 3).
+   2026-27: re-run after 2027-03-14.
+2. Re-capture the test fixtures once week 3 has finished (`backend/tests/fixtures/README.md`),
+   and update the two calendar dates pinned in `test_parsing.py`.
+
 ## Rollback
 
 Promote the previous production deployment: `vercel rollback`, or Dashboard → Deployments →
