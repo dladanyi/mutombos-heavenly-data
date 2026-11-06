@@ -14,4 +14,4 @@ backend/pyproject.toml
 backend/uv.lock
 
 # capture_fixtures.py temp files
-*.tmp
+backend/tests/fixtures/*.tmp

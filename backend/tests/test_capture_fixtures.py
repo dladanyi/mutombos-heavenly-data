@@ -49,7 +49,7 @@ def test_team_without_team_id_fails_loudly():
         capture_fixtures.anonymise(body)
 
 
-def test_non_league_payload_passes_through_and_input_is_untouched():
+def test_game_calendar_passes_through_and_input_is_untouched():
     game = {"fantasy_content": {"game": [{"game_key": "478"}, {"game_weeks": {"count": 0}}]}}
     assert capture_fixtures.anonymise(game) == game
     body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "Real Name"}])
@@ -87,3 +87,29 @@ def test_name_sharing_a_dict_with_team_key_keeps_both():
     body = stats_body([{"team_key": "k.1", "name": "Real Name"}, {"team_id": "1"}])
     meta = team_of(capture_fixtures.anonymise(body))[0]
     assert meta == [{"team_key": "k.1", "name": "Team 1"}, {"team_id": "1"}]
+
+
+def test_siblings_of_teams_and_team_entries_are_dropped():
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "A"}])
+    teams_part = body["fantasy_content"]["league"][1]
+    teams_part["managers"] = [{"email": "e@x"}]
+    teams_part["teams"]["0"]["team_owner"] = {"guid": "G"}
+    clean = capture_fixtures.anonymise(body)
+    assert clean["fantasy_content"]["league"][1].keys() == {"teams"}
+    assert clean["fantasy_content"]["league"][1]["teams"]["0"].keys() == {"team"}
+    assert "e@x" not in repr(clean) and "G" not in repr(clean)
+
+
+def test_unknown_top_level_key_is_dropped():
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "A"}])
+    body["fantasy_content"]["users"] = {"0": {"user": [{"guid": "G"}]}}
+    clean = capture_fixtures.anonymise(body)
+    assert set(clean["fantasy_content"]) == {"xml:lang", "league"}
+
+
+@pytest.mark.parametrize("teams", [[], {"0": {"not_team": []}, "count": 1}, {"0": {"team": {}}, "count": 1}])
+def test_malformed_teams_fail_with_value_error(teams):
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "A"}])
+    body["fantasy_content"]["league"][1]["teams"] = teams
+    with pytest.raises(ValueError):
+        capture_fixtures.anonymise(body)

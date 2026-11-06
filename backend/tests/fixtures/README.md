@@ -13,8 +13,8 @@ Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 202
 **The repo is public**, so the script anonymises the responses before saving them, using
 **allowlists** (`TEAM_META_KEEP`, `TEAM_PARTS_KEEP`, `LEAGUE_META_KEEP` in the script):
 
-- Each team keeps only `team_key`, `team_id` and its `team_stats`, and is renamed to
-  `Team <team_id>`. Everything else is dropped: managers, logos, URLs,
+- Each team keeps only `team_key`, `team_id`, `name` (renamed to `Team <team_id>`; the
+  parser requires it) and its `team_stats`. Everything else is dropped: managers, logos, URLs,
   `is_owned_by_current_login`, draft position, waiver priority, and any field Yahoo adds later.
   The rename is cosmetic, because the dashboard shows real team names and the same stats. What
   matters is keeping out managers and ownership, which aren't public.
@@ -22,6 +22,8 @@ Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 202
   handle them.
 - League metadata keeps its name, key, season, team count, week range and dates.
 - `game_weeks.json` is saved as returned. It's Yahoo's public NBA calendar.
+- The wrappers around these are rebuilt with only their known keys too: the `teams` part,
+  each team entry, and the top-level `fantasy_content` envelope.
 
 The script raises an error and writes nothing if a response has a shape the allowlists don't
 cover: a team without a `team_id`, a league part other than the metadata and `teams` (for

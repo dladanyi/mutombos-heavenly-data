@@ -10,8 +10,9 @@ Newest first. Each entry: what we decided, and why.
   `make_synthetic.py` is gone. The parsers handled the real shape without changes. The only
   test updates were for the scenario: 10 teams (not 12), current week 3 (not 7), and the real
   calendar. Its weeks mostly run Monday to Sunday (the synthetic ones ran Tuesday to Monday),
-  but some are irregular: week 1 is six days (Tuesday 2026-10-20 to Sunday 2026-10-25) and
-  Yahoo's game week 7 is two weeks long.
+  but some are irregular: week 1 is six days (Tuesday 2026-10-20 to Sunday 2026-10-25), and
+  Yahoo's game weeks 7 (2026-11-30..12-13) and 17 (2027-02-15..02-28, the All-Star break) are
+  two weeks long.
 - **The capture script filters responses through allowlists, not a denylist,** because the
   repo is public. The goal is to keep out data that **isn't already public**: managers
   (nicknames, GUIDs, possibly emails) and `is_owned_by_current_login` (which team is the repo

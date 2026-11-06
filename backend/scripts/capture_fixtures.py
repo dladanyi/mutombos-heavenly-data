@@ -23,6 +23,8 @@ FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 # Yahoo sends it. game_weeks (Yahoo's public NBA calendar) is saved as returned.
 TEAM_META_KEEP = {"team_key", "team_id", "name"}
 TEAM_PARTS_KEEP = {"team_stats"}
+# Top-level fantasy_content keys besides `league` / `game` (Yahoo's response envelope).
+ENVELOPE_KEEP = {"xml:lang", "yahoo:uri", "time", "copyright", "refresh_rate"}
 LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "current_week",
                     "start_week", "end_week", "start_date", "end_date", "is_finished"}
 
@@ -38,9 +40,10 @@ def anonymise(body: dict) -> dict:
     if not isinstance(content, dict):
         raise ValueError("response has no fantasy_content")
     if "league" not in content:
-        if _is_game_calendar(content):
-            return body
-        raise ValueError(f"unknown response shape {sorted(content)}; add an allowlist for it before capturing")
+        if not _is_game_calendar(content):
+            raise ValueError(f"unknown response shape {sorted(content)}; add an allowlist for it before capturing")
+        body["fantasy_content"] = {k: v for k, v in content.items() if k in ENVELOPE_KEEP | {"game"}}
+        return body
     league = content["league"]
     if not isinstance(league, list):
         raise ValueError(f"unexpected league of type {type(league).__name__}")
@@ -50,12 +53,28 @@ def anonymise(body: dict) -> dict:
         if "league_key" in part:
             league[i] = {k: v for k, v in part.items() if k in LEAGUE_META_KEEP}
         elif "teams" in part:
-            for key, entry in part["teams"].items():
-                if key != "count":
-                    entry["team"] = _anonymise_team(entry["team"])
+            league[i] = {"teams": _anonymise_teams(part["teams"])}
         else:
             raise ValueError(f"unknown league part {sorted(part)}; add an allowlist for it before capturing")
+    body["fantasy_content"] = {k: v for k, v in content.items() if k in ENVELOPE_KEEP | {"league"}}
     return body
+
+
+def _anonymise_teams(teams) -> dict:
+    """`teams` is {"0": {"team": [...]}, ..., "count": N}. Rebuild it with only those keys."""
+    if not isinstance(teams, dict):
+        raise ValueError(f"unexpected teams of type {type(teams).__name__}")
+    rebuilt = {}
+    for key, entry in teams.items():
+        if key == "count":
+            rebuilt[key] = entry
+        elif not key.isdigit():
+            raise ValueError(f"unknown teams key {key!r}; add an allowlist for it before capturing")
+        elif not isinstance(entry, dict) or not isinstance(entry.get("team"), list):
+            raise ValueError(f"teams.{key} has no team list; Yahoo's shape changed")
+        else:
+            rebuilt[key] = {"team": _anonymise_team(entry["team"])}
+    return rebuilt
 
 
 def _is_game_calendar(content: dict) -> bool:
@@ -70,6 +89,8 @@ def _is_game_calendar(content: dict) -> bool:
 def _anonymise_team(team: list) -> list:
     """`team` is [metadata_list, {"team_stats": ...}, ...]. The metadata list mixes single-key
     dicts with empty-list placeholders; keep the placeholders so the parser still sees them."""
+    if not team or not isinstance(team[0], list):
+        raise ValueError("team has no metadata list; Yahoo's shape changed")
     meta_list, *parts = team
     team_id = next((d["team_id"] for d in meta_list if isinstance(d, dict) and "team_id" in d), None)
     if team_id is None:
