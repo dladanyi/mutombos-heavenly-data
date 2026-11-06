@@ -1,38 +1,57 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "capture_fixtures.py"
 spec = importlib.util.spec_from_file_location("capture_fixtures", SCRIPT)
 capture_fixtures = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(capture_fixtures)
 
 
-def test_strip_private_removes_managers_at_any_depth():
-    body = {"fantasy_content": {"league": [
-        {"name": "L"},
-        {"teams": {"0": {"team": [[
-            {"team_key": "k.1"}, {"name": "Alpha"},
-            {"managers": [{"manager": {"nickname": "n", "guid": "G", "email": "e@x"}}]},
-        ]]}, "count": 1}},
+def stats_body(team_meta, league_meta=None):
+    return {"fantasy_content": {"xml:lang": "en-US", "league": [
+        league_meta or {"league_key": "nba.l.1", "name": "League"},
+        {"teams": {"0": {"team": [team_meta, {"team_stats": {"stats": []}, "team_points": {"total": "0"}}]},
+                   "count": 1}},
     ]}}
-    clean = capture_fixtures.strip_private(body)
-    assert "managers" not in repr(clean)
-    assert "e@x" not in repr(clean)
-    team = clean["fantasy_content"]["league"][1]["teams"]["0"]["team"][0]
-    assert team == [{"team_key": "k.1"}, {"name": "Alpha"}, {}]
 
 
-def test_strip_private_anonymises_teams_and_drops_links():
-    body = {"fantasy_content": {"league": [
-        {"name": "League", "league_id": "1", "url": "https://l", "logo_url": "https://lg",
-         "iris_group_chat_id": "chat"},
-        {"teams": {"0": {"team": [[
-            {"team_key": "k.7"}, {"team_id": "7"}, {"name": "Real Name"}, {"url": "https://t"},
-            {"team_logos": [{"team_logo": {"size": "large", "url": "https://img"}}]},
-        ]]}, "count": 1}},
-    ]}}
-    clean = capture_fixtures.strip_private(body)
-    meta, team = clean["fantasy_content"]["league"][0], clean["fantasy_content"]["league"][1]["teams"]["0"]["team"][0]
-    assert meta == {"name": "League", "league_id": "1"}
-    assert team == [{"team_key": "k.7"}, {"team_id": "7"}, {"name": "Team 7"}, {}, {}]
-    assert "https://" not in repr(clean) and "Real Name" not in repr(clean)
+def team_of(body):
+    return body["fantasy_content"]["league"][1]["teams"]["0"]["team"]
+
+
+def test_team_metadata_keeps_only_allowlisted_keys_and_placeholders():
+    body = stats_body([
+        {"team_key": "k.7"}, {"team_id": "7"}, {"name": "Real Name"}, [], {"url": "https://t"},
+        {"team_logos": [{"team_logo": {"url": "https://img"}}]}, {"is_owned_by_current_login": 1},
+        {"draft_position": 3}, {"previous_season_team_rank": 9}, {"waiver_priority": 2},
+        {"managers": [{"manager": {"nickname": "n", "guid": "G", "email": "e@x"}}]},
+    ])
+    meta, *rest = team_of(capture_fixtures.anonymise(body))
+    assert meta == [{"team_key": "k.7"}, {"team_id": "7"}, {"name": "Team 7"}, []]
+    assert rest == [{"team_stats": {"stats": []}}]
+
+
+def test_league_metadata_keeps_only_allowlisted_keys():
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "A"}], league_meta={
+        "league_key": "nba.l.1", "league_id": "1", "name": "League", "num_teams": 10,
+        "current_week": 3, "start_week": "1", "end_week": "22", "is_finished": 1,
+        "url": "https://l", "logo_url": "https://lg", "iris_group_chat_id": "chat"})
+    meta = capture_fixtures.anonymise(body)["fantasy_content"]["league"][0]
+    assert meta == {"league_key": "nba.l.1", "league_id": "1", "name": "League", "num_teams": 10,
+                    "current_week": 3, "start_week": "1", "end_week": "22", "is_finished": 1}
+
+
+def test_team_without_team_id_fails_loudly():
+    body = stats_body([{"team_key": "k.1"}, {"name": "Real Name"}])
+    with pytest.raises(ValueError, match="team_id"):
+        capture_fixtures.anonymise(body)
+
+
+def test_non_league_payload_passes_through_and_input_is_untouched():
+    game = {"fantasy_content": {"game": [{"game_key": "478"}, {"game_weeks": {"count": 0}}]}}
+    assert capture_fixtures.anonymise(game) == game
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "Real Name"}])
+    capture_fixtures.anonymise(body)
+    assert team_of(body)[0][2] == {"name": "Real Name"}

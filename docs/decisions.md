@@ -10,10 +10,16 @@ Newest first. Each entry: what we decided, and why.
   `make_synthetic.py` is gone. The parsers handled the real shape without changes. The only
   test updates were for the scenario: 10 teams (not 12), current week 3 (not 7), and
   Monday-to-Sunday weeks (the synthetic weeks ran Tuesday to Monday).
-- **The capture script anonymises responses before saving them,** because the repo is public:
-  each team is renamed to `Team <team_id>`, and logos, page URLs and the league chat id are
-  dropped, as well as `managers`. Anonymising in the script, not by hand, means a re-capture
-  can't leak them.
+- **The capture script anonymises responses with allowlists, not a denylist,** because the
+  repo is public. Team metadata keeps only `team_key`, `team_id` and the stats, and each team
+  is renamed to `Team <team_id>`. League metadata keeps only the fields tests use. A
+  denylist (the first version of this PR) let `is_owned_by_current_login`, draft position and
+  waiver priority through, which tied the anonymised teams back to people. With an allowlist,
+  a field Yahoo adds later is dropped by default, and a team without a `team_id` makes the
+  script fail instead of saving its real name.
+- **Yahoo doesn't send the league `is_finished` flag mid-season** (checklist step 4). The
+  allowlist keeps it in case it appears after the season. Until then, the season end comes
+  from calendar dates, as before.
 
 ## 2026-10-13: Cutover to Vercel
 

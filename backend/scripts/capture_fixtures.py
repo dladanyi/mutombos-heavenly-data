@@ -4,6 +4,7 @@ Run from the repo root:
     set -a; source .env; set +a
     .venv/bin/python backend/scripts/capture_fixtures.py
 """
+import copy
 import json
 import sys
 from pathlib import Path
@@ -14,22 +15,54 @@ from app.config import load_settings  # noqa: E402
 from app.yahoo_http import YahooHttp  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
-# The repo is public: drop each team's managers block (nickname, GUID, possibly an email),
-# uploaded logos, page links and the league chat id. The app reads none of these.
-PRIVATE_KEYS = {"managers", "team_logos", "logo_url", "url", "recordbook_url", "iris_group_chat_id"}
+
+# The repo is public, so league and team metadata are filtered through ALLOWLISTS: a field
+# Yahoo adds later is dropped unless it's listed here. Team metadata carries the personal data
+# (managers, logos, is_owned_by_current_login, draft position, ...); parsing.py reads only
+# team_key and name. The league list adds num_teams/season for tests and is_finished for when
+# Yahoo sends it. game_weeks (Yahoo's public NBA calendar) is saved as returned.
+TEAM_META_KEEP = {"team_key", "team_id", "name"}
+TEAM_PARTS_KEEP = {"team_stats"}
+LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "current_week",
+                    "start_week", "end_week", "start_date", "end_date", "is_finished"}
 
 
-def strip_private(value):
-    """Return `value` with every PRIVATE_KEYS entry removed at any depth, and each team's
-    chosen name replaced by "Team <team_id>"."""
-    if isinstance(value, dict):
-        return {k: strip_private(v) for k, v in value.items() if k not in PRIVATE_KEYS}
-    if isinstance(value, list):
-        # A team's metadata is a list of one-key dicts: [{"team_key"}, {"team_id"}, {"name"}, ...].
-        team_id = next((v["team_id"] for v in value if isinstance(v, dict) and "team_id" in v), None)
-        return [{"name": f"Team {team_id}"} if team_id is not None and isinstance(v, dict)
-                and set(v) == {"name"} else strip_private(v) for v in value]
-    return value
+def anonymise(body: dict) -> dict:
+    """Return a copy of a Yahoo response with league and team metadata reduced to the
+    allowlists and each team renamed to "Team <team_id>". Other payloads pass through."""
+    body = copy.deepcopy(body)
+    league = body.get("fantasy_content", {}).get("league")
+    if not isinstance(league, list):
+        return body
+    for i, part in enumerate(league):
+        if not isinstance(part, dict):
+            continue
+        if "league_key" in part:
+            league[i] = {k: v for k, v in part.items() if k in LEAGUE_META_KEEP}
+        elif "teams" in part:
+            for key, entry in part["teams"].items():
+                if key != "count":
+                    entry["team"] = _anonymise_team(entry["team"])
+    return body
+
+
+def _anonymise_team(team: list) -> list:
+    """`team` is [metadata_list, {"team_stats": ...}, ...]. The metadata list mixes single-key
+    dicts with empty-list placeholders; keep the placeholders so the parser still sees them."""
+    meta_list, *parts = team
+    team_id = next((d["team_id"] for d in meta_list if isinstance(d, dict) and "team_id" in d), None)
+    if team_id is None:
+        raise ValueError("team metadata has no team_id; Yahoo's shape changed, so refusing to save it")
+    kept_meta = []
+    for item in meta_list:
+        if item == []:
+            kept_meta.append(item)
+        elif isinstance(item, dict) and item.keys() & TEAM_META_KEEP:
+            kept = {k: v for k, v in item.items() if k in TEAM_META_KEEP}
+            kept_meta.append({"name": f"Team {team_id}"} if "name" in kept else kept)
+    kept_parts = [{k: v for k, v in p.items() if k in TEAM_PARTS_KEEP}
+                  for p in parts if isinstance(p, dict) and p.keys() & TEAM_PARTS_KEEP]
+    return [kept_meta, *kept_parts]
 
 
 def main() -> None:
@@ -49,10 +82,12 @@ def main() -> None:
         "week_stats.json": http.get_json(f"league/{league_key}/teams/stats;type=week;week={week}"),
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
     }
+    # Anonymise everything before writing anything, so a shape error leaves the old files intact.
+    cleaned = {name: anonymise(body) for name, body in responses.items()}
     FIXTURES.mkdir(parents=True, exist_ok=True)
-    for name, body in responses.items():
+    for name, body in cleaned.items():
         path = FIXTURES / name
-        path.write_text(json.dumps(strip_private(body), indent=2, ensure_ascii=False) + "\n")
+        path.write_text(json.dumps(body, indent=2, ensure_ascii=False) + "\n")
         print(f"{name}: {path.stat().st_size} bytes")
     print(f"week_stats.json is week {week} (current week {current_week})")
 

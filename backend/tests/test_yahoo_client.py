@@ -7,16 +7,21 @@ import pytest
 
 from app.cache import Cache
 from app.errors import YahooUnavailable
+from app.parsing import parse_game_weeks
 from app.yahoo_client import YahooClient, pacific_today
 
 FIXTURES = Path(__file__).parent / "fixtures"
 LEAGUE = "league/nba.l.46425"
-WEEK3_END = date(2026, 11, 8)  # real 2026-27 calendar: week 3 = 2026-11-02..2026-11-08
-NUM_TEAMS = 10  # league 46425
 
 
 def fixture(name):
     return json.loads((FIXTURES / name).read_text())
+
+
+# Read from the fixtures so a re-capture doesn't need hand edits (2026-27: week 3 ends 2026-11-08).
+WEEK3_END = parse_game_weeks(fixture("game_weeks.json"))[3].end
+LEAGUE_META = fixture("league.json")["fantasy_content"]["league"][0]
+NUM_TEAMS = int(LEAGUE_META["num_teams"])
 
 
 class FakeHttp:
@@ -60,7 +65,8 @@ class Today:
 
 @pytest.fixture
 def setup():
-    http, clock, today = FakeHttp(), Clock(), Today(date(2026, 11, 12))
+    # Default: 4 days after week 3 ends, so weeks 1-3 are final.
+    http, clock, today = FakeHttp(), Clock(), Today(WEEK3_END + timedelta(days=4))
     client = YahooClient(http, "46425", Cache(clock=clock), today=today)
     return client, http, clock, today
 
@@ -136,7 +142,7 @@ def test_calendar_fetched_once(setup):
 
 def test_final_week_cached_forever(setup):
     client, http, clock, _ = setup
-    _, first, state = client.week_stats(2, current_week=7)  # week 2 ended 2026-11-01
+    _, first, state = client.week_stats(2, current_week=7)  # week 2 is final by the default date
     clock.now += 365 * 86400
     teams, second, _ = client.week_stats(2, current_week=7, refresh=True)
     assert state == "final"
@@ -191,7 +197,7 @@ def test_league_and_season_ttl_five_minutes(setup):
     client.league()
     client.season_stats()
     assert (http.calls[LEAGUE], http.calls[f"{LEAGUE}/teams/stats"]) == (2, 2)
-    assert league.current_week == 3
+    assert league.current_week == int(LEAGUE_META["current_week"])
 
 
 def test_refresh_passed_through(setup):

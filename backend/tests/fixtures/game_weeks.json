@@ -9,6 +9,7 @@
         "name": "Basketball",
         "code": "nba",
         "type": "full",
+        "url": "https://basketball.fantasysports.yahoo.com/nba",
         "season": "2026",
         "is_registration_over": 0,
         "is_game_over": 0,
@@ -228,7 +229,7 @@
         }
       }
     ],
-    "time": "11.090040206909ms",
+    "time": "10.247945785522ms",
     "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
     "refresh_rate": "30"
   }
