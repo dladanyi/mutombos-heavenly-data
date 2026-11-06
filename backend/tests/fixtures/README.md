@@ -16,13 +16,17 @@ Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 202
 - Each team keeps only `team_key`, `team_id` and its `team_stats`, and is renamed to
   `Team <team_id>`. Everything else is dropped: managers, logos, URLs,
   `is_owned_by_current_login`, draft position, waiver priority, and any field Yahoo adds later.
+  The rename is cosmetic, because the dashboard shows real team names and the same stats. What
+  matters is keeping out managers and ownership, which aren't public.
   Yahoo's empty-list placeholders in the metadata list are kept, because the parser has to
   handle them.
 - League metadata keeps its name, key, season, team count, week range and dates.
 - `game_weeks.json` is saved as returned. It's Yahoo's public NBA calendar.
 
-If a team has no `team_id` (Yahoo changed the shape), the script raises an error and writes
-nothing. If `parsing.py` starts reading a new field, add it to the allowlist and re-capture.
+The script raises an error and writes nothing if a response has a shape the allowlists don't
+cover: a team without a `team_id`, or a league part other than the metadata and `teams` (for
+example standings or a scoreboard). Add an allowlist for that part first. Files are written
+to temp names and renamed only once all four succeed. If `parsing.py` starts reading a new field, add it to the allowlist and re-capture.
 Check the diff for personal data before committing a new capture anyway.
 
 To re-capture (this overwrites all four files):
@@ -33,6 +37,5 @@ set -a; source .env; set +a
 cd backend && ../.venv/bin/pytest
 ```
 
-The calendar tests (`test_yahoo_client.py`) take week 3's end date, the team count and the
-current week from these files, so they follow a re-capture. They do assume week 3 has
-finished and that the league has its 2026-27 shape (`nba.l.46425`).
+The calendar tests (`test_yahoo_client.py`) take the league id, team count, current week and
+week 3's end date from these files, so they follow a re-capture.

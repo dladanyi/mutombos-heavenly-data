@@ -29,20 +29,26 @@ LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "c
 
 def anonymise(body: dict) -> dict:
     """Return a copy of a Yahoo response with league and team metadata reduced to the
-    allowlists and each team renamed to "Team <team_id>". Other payloads pass through."""
+    allowlists and each team renamed to "Team <team_id>". Non-league payloads (game_weeks)
+    pass through. A league part other than the metadata or `teams` (e.g. standings or
+    scoreboard) raises: it may carry team blocks the allowlists haven't been written for."""
     body = copy.deepcopy(body)
     league = body.get("fantasy_content", {}).get("league")
-    if not isinstance(league, list):
+    if league is None:
         return body
+    if not isinstance(league, list):
+        raise ValueError(f"unexpected league of type {type(league).__name__}")
     for i, part in enumerate(league):
         if not isinstance(part, dict):
-            continue
+            raise ValueError(f"unexpected league part of type {type(part).__name__}")
         if "league_key" in part:
             league[i] = {k: v for k, v in part.items() if k in LEAGUE_META_KEEP}
         elif "teams" in part:
             for key, entry in part["teams"].items():
                 if key != "count":
                     entry["team"] = _anonymise_team(entry["team"])
+        else:
+            raise ValueError(f"unknown league part {sorted(part)}; add an allowlist for it before capturing")
     return body
 
 
@@ -82,13 +88,22 @@ def main() -> None:
         "week_stats.json": http.get_json(f"league/{league_key}/teams/stats;type=week;week={week}"),
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
     }
-    # Anonymise everything before writing anything, so a shape error leaves the old files intact.
+    # Anonymise and write every file to a temp name first, then rename them all, so a shape or
+    # write error leaves the old fixture set intact rather than a mix of old and new files.
     cleaned = {name: anonymise(body) for name, body in responses.items()}
     FIXTURES.mkdir(parents=True, exist_ok=True)
-    for name, body in cleaned.items():
-        path = FIXTURES / name
-        path.write_text(json.dumps(body, indent=2, ensure_ascii=False) + "\n")
-        print(f"{name}: {path.stat().st_size} bytes")
+    temps = {}
+    try:
+        for name, body in cleaned.items():
+            temps[name] = FIXTURES / f"{name}.tmp"
+            temps[name].write_text(json.dumps(body, indent=2, ensure_ascii=False) + "\n")
+    except BaseException:
+        for tmp in temps.values():
+            tmp.unlink(missing_ok=True)
+        raise
+    for name, tmp in temps.items():
+        tmp.replace(FIXTURES / name)
+        print(f"{name}: {(FIXTURES / name).stat().st_size} bytes")
     print(f"week_stats.json is week {week} (current week {current_week})")
 
 

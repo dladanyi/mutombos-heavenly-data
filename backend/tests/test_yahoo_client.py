@@ -11,17 +11,19 @@ from app.parsing import parse_game_weeks
 from app.yahoo_client import YahooClient, pacific_today
 
 FIXTURES = Path(__file__).parent / "fixtures"
-LEAGUE = "league/nba.l.46425"
 
 
 def fixture(name):
     return json.loads((FIXTURES / name).read_text())
 
 
-# Read from the fixtures so a re-capture doesn't need hand edits (2026-27: week 3 ends 2026-11-08).
-WEEK3_END = parse_game_weeks(fixture("game_weeks.json"))[3].end
+# Read from the fixtures so a re-capture doesn't need hand edits
+# (2026-27: league 46425, 10 teams, week 3 ends 2026-11-08).
 LEAGUE_META = fixture("league.json")["fantasy_content"]["league"][0]
+LEAGUE_ID = str(LEAGUE_META["league_id"])
+LEAGUE = f"league/nba.l.{LEAGUE_ID}"
 NUM_TEAMS = int(LEAGUE_META["num_teams"])
+WEEK3_END = parse_game_weeks(fixture("game_weeks.json"))[3].end
 
 
 class FakeHttp:
@@ -67,7 +69,7 @@ class Today:
 def setup():
     # Default: 4 days after week 3 ends, so weeks 1-3 are final.
     http, clock, today = FakeHttp(), Clock(), Today(WEEK3_END + timedelta(days=4))
-    client = YahooClient(http, "46425", Cache(clock=clock), today=today)
+    client = YahooClient(http, LEAGUE_ID, Cache(clock=clock), today=today)
     return client, http, clock, today
 
 

@@ -55,3 +55,15 @@ def test_non_league_payload_passes_through_and_input_is_untouched():
     body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "Real Name"}])
     capture_fixtures.anonymise(body)
     assert team_of(body)[0][2] == {"name": "Real Name"}
+
+
+def test_unknown_league_part_fails_loudly():
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "A"}])
+    body["fantasy_content"]["league"].append({"standings": [{"managers": [{"manager": {"email": "e@x"}}]}]})
+    with pytest.raises(ValueError, match="standings"):
+        capture_fixtures.anonymise(body)
+
+
+def test_league_that_is_not_a_list_fails_loudly():
+    with pytest.raises(ValueError, match="league"):
+        capture_fixtures.anonymise({"fantasy_content": {"league": {"league_key": "k", "name": "L"}}})
