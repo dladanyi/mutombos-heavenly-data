@@ -128,12 +128,15 @@ When the league renews (new `YAHOO_LEAGUE_ID` in `.env` and Vercel, then redeplo
 
    ```sh
    set -a; source .env; set +a
-   .venv/bin/python backend/scripts/check_league_weeks.py   # exits 1 on a mismatch
+   .venv/bin/python backend/scripts/check_league_weeks.py
    ```
 
-   Run it once the schedule is out. Playoff weeks show "no matchups yet" until the bracket is
-   set, and are checked against the league's `end_date` instead. If it reports a mismatch,
+   Exit codes: 0 = match, 1 = mismatch, 2 = couldn't check (Yahoo error, bad token; fix that
+   and re-run, don't change finality). Run it once the schedule is out, and **again once the
+   playoff bracket is set**. Until then, playoff weeks show "no matchups yet", only their
+   combined span is checked, and the result says PROVISIONAL. If it reports a mismatch,
    switch finality to the league scoreboard's `week_start`/`week_end` (spec risk 3).
+   2026-27: re-run after 2027-03-14.
 2. Re-capture the test fixtures once week 3 has finished (`backend/tests/fixtures/README.md`),
    and update the two calendar dates pinned in `test_parsing.py`.
 

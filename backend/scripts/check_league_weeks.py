@@ -9,7 +9,9 @@ Run from the repo root:
     set -a; source .env; set +a
     .venv/bin/python backend/scripts/check_league_weeks.py
 
-Exits 1 if it finds a mismatch.
+Exit codes: 0 = weeks match, 1 = mismatch found, 2 = couldn't check (Yahoo error, bad token).
+Weeks with no matchups yet (playoffs before the bracket is set) can only be checked as a span,
+so a 0 is PROVISIONAL for them: re-run once the bracket is set.
 """
 import sys
 from datetime import date, timedelta
@@ -52,7 +54,31 @@ def compare_weeks(league: dict[int, Bounds], calendar: dict[int, GameWeek], star
     return problems
 
 
+def matchup_bounds(scoreboard) -> Bounds:
+    """The (week_start, week_end) pairs of a scoreboard's matchups. A missing or empty
+    `matchups` collection (Yahoo returns [] or leaves it out) means no matchups yet."""
+    holder = scoreboard.get("0") if isinstance(scoreboard, dict) else None
+    matchups = holder.get("matchups") if isinstance(holder, dict) else None
+    if not isinstance(matchups, dict):
+        return set()
+    return {(date.fromisoformat(m["matchup"]["week_start"]), date.fromisoformat(m["matchup"]["week_end"]))
+            for key, m in matchups.items() if key.isdigit()}
+
+
+def unscored_weeks(league: dict[int, Bounds]) -> list[int]:
+    """Weeks with no matchups, whose own bounds the check couldn't compare."""
+    return [week for week, bounds in sorted(league.items()) if not bounds]
+
+
 def main() -> int:
+    try:
+        return _run()
+    except Exception as exc:  # noqa: BLE001 - report any failure as "couldn't check", not a mismatch
+        print(f"COULD NOT CHECK: {type(exc).__name__}: {exc}")
+        return 2
+
+
+def _run() -> int:
     from app.config import load_settings
     from app.parsing import parse_game_weeks
     from app.yahoo_http import YahooHttp
@@ -68,10 +94,8 @@ def main() -> int:
     league: dict[int, Bounds] = {}
     for week in range(start_week, end_week + 1):
         parts = http.get_json(f"{league_path}/scoreboard;week={week}")["fantasy_content"]["league"]
-        scoreboard = next(p["scoreboard"] for p in parts if isinstance(p, dict) and "scoreboard" in p)
-        matchups = scoreboard["0"]["matchups"]
-        league[week] = {(date.fromisoformat(m["matchup"]["week_start"]), date.fromisoformat(m["matchup"]["week_end"]))
-                        for key, m in matchups.items() if key != "count"}
+        scoreboard = next((p["scoreboard"] for p in parts if isinstance(p, dict) and "scoreboard" in p), None)
+        league[week] = matchup_bounds(scoreboard)
 
     print(f"league weeks {start_week}..{end_week}, end_date {end_date}")
     for week in range(start_week, end_week + 1):
@@ -82,9 +106,16 @@ def main() -> int:
     problems = compare_weeks(league, calendar, start_week, end_week, end_date)
     for problem in problems:
         print("MISMATCH:", problem)
-    print("OK: the game calendar matches the league's weeks" if not problems else
-          "Use the league scoreboard's week_start/week_end for finality instead (spec risk 3).")
-    return 1 if problems else 0
+    if problems:
+        print("Use the league scoreboard's week_start/week_end for finality instead (spec risk 3).")
+        return 1
+    pending = unscored_weeks(league)
+    if pending:
+        print(f"PROVISIONAL: weeks {pending[0]}-{pending[-1]} have no matchups yet, so only their "
+              "combined span was checked. Re-run once the bracket is set.")
+    else:
+        print("OK: the game calendar matches the league's weeks")
+    return 0
 
 
 if __name__ == "__main__":

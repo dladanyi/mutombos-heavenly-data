@@ -374,10 +374,11 @@ merging to `main` (live since 2026-10-13).
    differ from the game's calendar, use the league scoreboard's `week_start`/`week_end`
    instead. **Resolved for 2026-27 on 2026-11-06:** `backend/scripts/check_league_weeks.py`
    compared every league week's scoreboard bounds with `game_weeks`. Weeks 1-19 match
-   exactly, including the two-week weeks 7 and 17 (All-Star break). Playoff weeks 20-22 have
-   no matchups yet, but the calendar runs without gaps from week 19 to the league's
-   `end_date` (2027-04-04). Game week 23 is past the league and never requested. Re-check
-   each season (`deployment.md`, "Each new season").
+   exactly, including the two-week weeks 7 and 17 (All-Star break). **Playoff weeks 20-22
+   are provisional:** they have no matchups yet, so only their combined span could be checked
+   (the calendar runs without gaps from week 19 to the league's `end_date`, 2027-04-04).
+   Re-run after week 19 ends (2027-03-14). Game week 23 is past the league and never
+   requested. Re-check each season (`deployment.md`, "Each new season").
 4. **Fixture privacy: revisited 2026-10-13**, when the repo was made public, and again on
    2026-11-05 with the first real capture. `capture_fixtures.py` now filters league and team
    metadata through allowlists, so managers (nickname, GUID, possibly an email), the
