@@ -1,6 +1,6 @@
 import json
 from collections import Counter
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -11,7 +11,8 @@ from app.yahoo_client import YahooClient, pacific_today
 
 FIXTURES = Path(__file__).parent / "fixtures"
 LEAGUE = "league/nba.l.46425"
-WEEK3_END = date(2026, 11, 9)  # synthetic calendar: week 3 = 2026-11-03..2026-11-09
+WEEK3_END = date(2026, 11, 8)  # real 2026-27 calendar: week 3 = 2026-11-02..2026-11-08
+NUM_TEAMS = 10  # league 46425
 
 
 def fixture(name):
@@ -79,9 +80,9 @@ def test_current_week_past_its_end_follows_calendar(setup):
     client, _, _, today = setup
     today.value = WEEK3_END
     assert client.week_state(3, current_week=3) == "current"
-    today.value = WEEK3_END.replace(day=10)
+    today.value = WEEK3_END + timedelta(days=1)
     assert client.week_state(3, current_week=3) == "settling"
-    today.value = WEEK3_END.replace(day=13)
+    today.value = WEEK3_END + timedelta(days=4)
     assert client.week_state(3, current_week=3) == "final"
 
 
@@ -94,9 +95,9 @@ def test_current_week_calendar_failure_stays_current(setup):
 
 def test_week_state_boundary(setup):
     client, _, _, today = setup
-    today.value = WEEK3_END.replace(day=12)
+    today.value = WEEK3_END + timedelta(days=3)
     assert client.week_state(3, current_week=7) == "settling"
-    today.value = WEEK3_END.replace(day=13)
+    today.value = WEEK3_END + timedelta(days=4)
     assert client.week_state(3, current_week=7) == "final"
     today.value = WEEK3_END
     assert client.week_state(3, current_week=7) == "settling"
@@ -135,18 +136,18 @@ def test_calendar_fetched_once(setup):
 
 def test_final_week_cached_forever(setup):
     client, http, clock, _ = setup
-    _, first, state = client.week_stats(2, current_week=7)  # week 2 ended 2026-11-02
+    _, first, state = client.week_stats(2, current_week=7)  # week 2 ended 2026-11-01
     clock.now += 365 * 86400
     teams, second, _ = client.week_stats(2, current_week=7, refresh=True)
     assert state == "final"
     assert http.calls[week_path(2)] == 1
     assert first.final and second.final
-    assert len(teams) == 12
+    assert len(teams) == NUM_TEAMS
 
 
 def test_settling_week_ttl_one_hour(setup):
     client, http, clock, today = setup
-    today.value = date(2026, 11, 10)
+    today.value = WEEK3_END + timedelta(days=1)
     assert client.week_stats(3, current_week=4)[2] == "settling"
     clock.now += 3599
     client.week_stats(3, current_week=4)
@@ -166,10 +167,10 @@ def test_current_week_ttl_five_minutes(setup):
 
 def test_week_fetched_while_settling_becomes_final_later(setup):
     client, http, clock, today = setup
-    today.value = date(2026, 11, 12)
+    today.value = WEEK3_END + timedelta(days=3)
     _, result, state = client.week_stats(3, current_week=4)
     assert (state, result.final) == ("settling", False)
-    today.value = date(2026, 11, 13)
+    today.value = WEEK3_END + timedelta(days=4)
     clock.now += 3601
     _, result, state = client.week_stats(3, current_week=4)
     assert (state, result.final) == ("final", True)
@@ -190,7 +191,7 @@ def test_league_and_season_ttl_five_minutes(setup):
     client.league()
     client.season_stats()
     assert (http.calls[LEAGUE], http.calls[f"{LEAGUE}/teams/stats"]) == (2, 2)
-    assert league.current_week == 7
+    assert league.current_week == 3
 
 
 def test_refresh_passed_through(setup):
@@ -208,7 +209,7 @@ def test_format_error_serves_stale(setup):
     http.overrides[f"{LEAGUE}/teams/stats"] = {}
     teams, result = client.season_stats()
     assert result.stale is True
-    assert len(teams) == 12
+    assert len(teams) == NUM_TEAMS
 
 
 def test_unavailable_without_cache_raises(setup):

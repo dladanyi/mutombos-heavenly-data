@@ -1,20 +1,27 @@
 # Test fixtures
 
-**These files are SYNTHETIC** (generated 2026-10-12 by `make_synthetic.py`).
+Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 2026-11-05 by
+`backend/scripts/capture_fixtures.py`, when the current week was 3. `week_stats.json` is week 2.
 
-Yahoo restricted the Fantasy Sports API to apps approved through its developer access program
-(enforced from about 2026-07-22), and this app's access is pending. Real responses couldn't
-be captured, so these follow Yahoo's JSON shape as used by the original `app.py` and
-documented by yfpy. The scenario is a mid-season league (current week 7; week stats are for
-week 6) with 12 invented team names.
+| File | Yahoo endpoint |
+|---|---|
+| `league.json` | `league/nba.l.46425` |
+| `season_stats.json` | `league/nba.l.46425/teams/stats` |
+| `week_stats.json` | `league/nba.l.46425/teams/stats;type=week;week=2` |
+| `game_weeks.json` | `game/nba/game_weeks` |
 
-Once Yahoo approves access:
+**The repo is public**, so the script anonymises the responses before saving them. It drops
+`managers` (nicknames, GUIDs, emails), team logos, page URLs and the league chat id, and
+renames each team to `Team <team_id>`. The app reads none of the dropped fields. Check the diff
+for personal data before committing a new capture anyway.
+
+To re-capture (this overwrites all four files):
 
 ```sh
 set -a; source .env; set +a
-.venv/bin/python backend/scripts/capture_fixtures.py   # overwrites the four JSON files, minus managers
+.venv/bin/python backend/scripts/capture_fixtures.py
 cd backend && ../.venv/bin/pytest
 ```
 
-Fix any parsing differences the tests reveal, then delete `make_synthetic.py` and update this
-README.
+Tests that depend on the calendar (`test_yahoo_client.py`) are written against these dates
+(week 3 = 2026-11-02..2026-11-08) and the league's 10 teams. Update them after a re-capture.

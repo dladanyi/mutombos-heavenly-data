@@ -2,6 +2,19 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-11-05: Real Yahoo fixtures replace the synthetic ones
+
+- **Yahoo approved the new app** (created 2026-10-21): `/api/league?refresh=1` returns live
+  data instead of 503.
+- **The test fixtures are now real responses**, captured by `capture_fixtures.py`, and
+  `make_synthetic.py` is gone. The parsers handled the real shape without changes. The only
+  test updates were for the scenario: 10 teams (not 12), current week 3 (not 7), and
+  Monday-to-Sunday weeks (the synthetic weeks ran Tuesday to Monday).
+- **The capture script anonymises responses before saving them,** because the repo is public:
+  each team is renamed to `Team <team_id>`, and logos, page URLs and the league chat id are
+  dropped, as well as `managers`. Anonymising in the script, not by hand, means a re-capture
+  can't leak them.
+
 ## 2026-10-13: Cutover to Vercel
 
 - **Production moved to Vercel** (https://mutombos-heavenly-data.vercel.app) when PR #1 was

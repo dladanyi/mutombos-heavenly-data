@@ -100,7 +100,7 @@ def test_no_teams():
 def test_season_fixture_end_to_end():
     payload = json.loads((Path(__file__).parent / "fixtures" / "season_stats.json").read_text())
     rows = build_rankings(parse_team_stats(payload))
-    assert len(rows) == 12
+    assert len(rows) == 10  # league 46425
     assert all(list(r["stats"]) == [c.key for c in CATEGORIES] for r in rows)
     assert rows[0]["place"] == 1
     assert [r["avg_rank"] for r in rows] == sorted(r["avg_rank"] for r in rows)

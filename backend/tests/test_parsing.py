@@ -1,6 +1,6 @@
 """Parsing tests against fixtures in Yahoo's JSON shape.
 
-Shapes (see fixtures/README.md; currently synthetic):
+Shapes (see fixtures/README.md; real responses, anonymised):
 - league:      fantasy_content.league[0] = metadata dict (current_week int, start/end_week strings)
 - teams/stats: fantasy_content.league[1].teams = {"0": {"team": [metadata_list, {"team_stats": ...}]}, ..., "count": N}
                metadata_list mixes single-key dicts and empty lists

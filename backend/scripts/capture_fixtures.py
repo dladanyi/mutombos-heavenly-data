@@ -14,16 +14,21 @@ from app.config import load_settings  # noqa: E402
 from app.yahoo_http import YahooHttp  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
-# The repo is public: drop each team's managers block (nickname, GUID, possibly an email).
-PRIVATE_KEYS = {"managers"}
+# The repo is public: drop each team's managers block (nickname, GUID, possibly an email),
+# uploaded logos, page links and the league chat id. The app reads none of these.
+PRIVATE_KEYS = {"managers", "team_logos", "logo_url", "url", "recordbook_url", "iris_group_chat_id"}
 
 
 def strip_private(value):
-    """Return `value` with every PRIVATE_KEYS entry removed, at any depth."""
+    """Return `value` with every PRIVATE_KEYS entry removed at any depth, and each team's
+    chosen name replaced by "Team <team_id>"."""
     if isinstance(value, dict):
         return {k: strip_private(v) for k, v in value.items() if k not in PRIVATE_KEYS}
     if isinstance(value, list):
-        return [strip_private(v) for v in value]
+        # A team's metadata is a list of one-key dicts: [{"team_key"}, {"team_id"}, {"name"}, ...].
+        team_id = next((v["team_id"] for v in value if isinstance(v, dict) and "team_id" in v), None)
+        return [{"name": f"Team {team_id}"} if team_id is not None and isinstance(v, dict)
+                and set(v) == {"name"} else strip_private(v) for v in value]
     return value
 
 
