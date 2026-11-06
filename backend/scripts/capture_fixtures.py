@@ -29,13 +29,19 @@ LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "c
 
 def anonymise(body: dict) -> dict:
     """Return a copy of a Yahoo response with league and team metadata reduced to the
-    allowlists and each team renamed to "Team <team_id>". Non-league payloads (game_weeks)
-    pass through. A league part other than the metadata or `teams` (e.g. standings or
-    scoreboard) raises: it may carry team blocks the allowlists haven't been written for."""
+    allowlists and each team renamed to "Team <team_id>". The game_weeks calendar (public)
+    passes through unchanged. Any other shape raises, e.g. a league part other than the
+    metadata or `teams` (standings, scoreboard) or a `users` payload: it may carry team or
+    manager blocks the allowlists haven't been written for."""
     body = copy.deepcopy(body)
-    league = body.get("fantasy_content", {}).get("league")
-    if league is None:
-        return body
+    content = body.get("fantasy_content")
+    if not isinstance(content, dict):
+        raise ValueError("response has no fantasy_content")
+    if "league" not in content:
+        if _is_game_calendar(content):
+            return body
+        raise ValueError(f"unknown response shape {sorted(content)}; add an allowlist for it before capturing")
+    league = content["league"]
     if not isinstance(league, list):
         raise ValueError(f"unexpected league of type {type(league).__name__}")
     for i, part in enumerate(league):
@@ -52,6 +58,15 @@ def anonymise(body: dict) -> dict:
     return body
 
 
+def _is_game_calendar(content: dict) -> bool:
+    """True for game/nba/game_weeks: a `game` list of the game's metadata plus `game_weeks`."""
+    game = content.get("game")
+    if "users" in content or not isinstance(game, list):
+        return False
+    parts = [set(p) for p in game if isinstance(p, dict)]
+    return len(parts) == len(game) == 2 and "game_key" in parts[0] and parts[1] == {"game_weeks"}
+
+
 def _anonymise_team(team: list) -> list:
     """`team` is [metadata_list, {"team_stats": ...}, ...]. The metadata list mixes single-key
     dicts with empty-list placeholders; keep the placeholders so the parser still sees them."""
@@ -65,7 +80,9 @@ def _anonymise_team(team: list) -> list:
             kept_meta.append(item)
         elif isinstance(item, dict) and item.keys() & TEAM_META_KEEP:
             kept = {k: v for k, v in item.items() if k in TEAM_META_KEEP}
-            kept_meta.append({"name": f"Team {team_id}"} if "name" in kept else kept)
+            if "name" in kept:
+                kept["name"] = f"Team {team_id}"
+            kept_meta.append(kept)
     kept_parts = [{k: v for k, v in p.items() if k in TEAM_PARTS_KEEP}
                   for p in parts if isinstance(p, dict) and p.keys() & TEAM_PARTS_KEEP]
     return [kept_meta, *kept_parts]
@@ -89,7 +106,8 @@ def main() -> None:
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
     }
     # Anonymise and write every file to a temp name first, then rename them all, so a shape or
-    # write error leaves the old fixture set intact rather than a mix of old and new files.
+    # write error leaves the old fixture set intact. (The renames themselves aren't one atomic
+    # step; an interrupt between them could still mix sets. *.tmp is git-ignored.)
     cleaned = {name: anonymise(body) for name, body in responses.items()}
     FIXTURES.mkdir(parents=True, exist_ok=True)
     temps = {}

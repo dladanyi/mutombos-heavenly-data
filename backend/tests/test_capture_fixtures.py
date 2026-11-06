@@ -67,3 +67,23 @@ def test_unknown_league_part_fails_loudly():
 def test_league_that_is_not_a_list_fails_loudly():
     with pytest.raises(ValueError, match="league"):
         capture_fixtures.anonymise({"fantasy_content": {"league": {"league_key": "k", "name": "L"}}})
+
+
+def test_payload_without_league_or_calendar_fails_loudly():
+    users = {"fantasy_content": {"users": {"0": {"user": [{"guid": "G"}, {"games": {}}]}}}}
+    with pytest.raises(ValueError, match="users"):
+        capture_fixtures.anonymise(users)
+    with pytest.raises(ValueError):
+        capture_fixtures.anonymise({"error": "nope"})
+
+
+def test_game_with_more_than_the_calendar_fails_loudly():
+    game = {"fantasy_content": {"game": [{"game_key": "478"}, {"leagues": {"count": 1}}]}}
+    with pytest.raises(ValueError, match="game"):
+        capture_fixtures.anonymise(game)
+
+
+def test_name_sharing_a_dict_with_team_key_keeps_both():
+    body = stats_body([{"team_key": "k.1", "name": "Real Name"}, {"team_id": "1"}])
+    meta = team_of(capture_fixtures.anonymise(body))[0]
+    assert meta == [{"team_key": "k.1", "name": "Team 1"}, {"team_id": "1"}]

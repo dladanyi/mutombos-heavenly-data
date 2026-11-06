@@ -24,9 +24,13 @@ Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 202
 - `game_weeks.json` is saved as returned. It's Yahoo's public NBA calendar.
 
 The script raises an error and writes nothing if a response has a shape the allowlists don't
-cover: a team without a `team_id`, or a league part other than the metadata and `teams` (for
-example standings or a scoreboard). Add an allowlist for that part first. Files are written
-to temp names and renamed only once all four succeed. If `parsing.py` starts reading a new field, add it to the allowlist and re-capture.
+cover: a team without a `team_id`, a league part other than the metadata and `teams` (for
+example standings or a scoreboard), or any response that is neither a league nor the
+`game_weeks` calendar (for example a `users` payload). Add an allowlist for it first. Files
+are written to temp names and renamed only once all four writes succeed.
+
+`test_parsing.py` pins two real calendar dates (weeks 1 and 3) because the finality tests
+take their boundaries through the parser. Update those after a re-capture for a new season. If `parsing.py` starts reading a new field, add it to the allowlist and re-capture.
 Check the diff for personal data before committing a new capture anyway.
 
 To re-capture (this overwrites all four files):
