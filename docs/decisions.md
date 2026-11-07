@@ -2,6 +2,15 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-11-06: Sub-project 1 complete; start sub-project 2
+
+- **Sub-project 1 is done.** After Yahoo approved API access, the post-approval checklist
+  passed: real fixtures (#7), the league week calendar (#8, playoff weeks provisional), and
+  production checks of the page and CDN caching (`deployment.md`, "Current state").
+- **Next is sub-project 2** (pick any week + trends over time), starting from a design
+  spec. The deferred minors from the sub-project 1 final review stay deferred unless
+  sub-project 2 touches them.
+
 ## 2026-11-06: Keep using Yahoo's game calendar for week finality
 
 - **League 46425's weeks match `game/nba/game_weeks` for 2026-27** (spec risk 3), so

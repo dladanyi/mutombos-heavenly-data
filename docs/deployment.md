@@ -117,6 +117,8 @@ cd frontend && npm run dev
 curl -fsS https://<deployment-url>/healthz
 curl -fsS https://<deployment-url>/api/league
 curl -sSI https://<deployment-url>/api/rankings/season | grep -i x-vercel-cache   # HIT on repeat
+curl -sSI https://<deployment-url>/api/rankings/week/1 | grep -i x-vercel-cache   # HIT on repeat (final week)
+curl -sSI "https://<deployment-url>/api/league?refresh=1" | grep -i cache-control  # no-store
 ```
 
 ## Each new season
@@ -145,7 +147,7 @@ When the league renews (new `YAHOO_LEAGUE_ID` in `.env` and Vercel, then redeplo
 Promote the previous production deployment: `vercel rollback`, or Dashboard → Deployments →
 ⋯ → Promote.
 
-## Current state (2026-10-13)
+## Current state (2026-11-06)
 
 - **Project:** `mutombos-heavenly-data` in the personal Hobby scope (`ladanyi77-gmailcoms-projects`),
   created 2026-03-15. This repo is linked to it (`.vercel/`, git-ignored).
@@ -158,9 +160,17 @@ Promote the previous production deployment: `vercel rollback`, or Dashboard → 
 - **Git:** linked to `dladanyi/mutombos-heavenly-data`, production branch `main`. Pushes trigger
   deployments again (fixed 2026-10-13 by restoring the Vercel GitHub app's access to the repo):
   branches get previews, and `main` deploys to production.
-- **Preview verified** (prebuilt upload and Git-triggered build):
-  `/healthz` returns 200, the page loads, the API returns a clean 503 (Yahoo 403, see above),
+- **Preview verified 2026-10-13** (prebuilt upload and Git-triggered build): `/healthz`
+  returns 200, the page loads, the API returned a clean 503 while Yahoo access was pending,
   unknown `/api` paths return 404 JSON, and the logs are JSON.
+- **Production verified against live Yahoo data 2026-11-06** (post-approval checklist):
+  - The page renders three tables (current week, full season, last week), 10 teams each, at
+    desktop (1440px) and phone (390px) widths. There are no console errors, and the page
+    doesn't scroll sideways. On a phone each table scrolls inside its card with a "swipe"
+    hint. On desktop the last column or two also need a scroll inside the card (cosmetic).
+  - Final past weeks (`/api/rankings/week/1`, `/2`): MISS on the first request, then
+    `x-vercel-cache: HIT`.
+  - `?refresh=1` returns `cache-control: no-store` (week and league).
 - **GitHub repo:** public since 2026-10-13, so it can use rulesets on the free plan. The ruleset
   "Protect main" (id 25037399) is active on the default branch.
 
