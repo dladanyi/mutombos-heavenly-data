@@ -113,11 +113,24 @@ cd frontend && npm run dev
 
 ## Smoke test after deploy
 
+Use GET (`-o /dev/null -D -`), not `curl -I`: HEAD requests don't reliably show CDN hits
+(on 2026-11-07, HEAD to `/api/league` kept returning MISS while GET returned HIT).
+
 ```sh
-curl -fsS https://<deployment-url>/healthz
-curl -fsS https://<deployment-url>/api/league
-curl -sSI https://<deployment-url>/api/rankings/season | grep -i x-vercel-cache   # HIT on repeat
+U=https://<deployment-url>
+h() { curl -sS -o /dev/null -D - "$U$1" | grep -iE '^(cache-control|x-vercel-cache)'; }
+curl -fsS $U/healthz
+curl -fsS $U/api/league
+h /api/rankings/season              # max-age=60; run twice within 60s: MISS, then HIT
+h /api/rankings/week/1              # final week: max-age=86400; MISS, then HIT
+h "/api/rankings/week/current?refresh=1"   # no-store
+h "/api/league?refresh=1"                  # no-store
 ```
+
+`HIT` alone doesn't prove a week is final (a settling week is cached too), so check that
+`cache-control` is `public, max-age=86400`. Week 1 is only final once it ended more than 3 days
+ago (`FINAL_DELAY_DAYS`), so early in a new season expect `max-age=60` (current) or `max-age=300`
+(settling) instead.
 
 ## Each new season
 
@@ -145,7 +158,7 @@ When the league renews (new `YAHOO_LEAGUE_ID` in `.env` and Vercel, then redeplo
 Promote the previous production deployment: `vercel rollback`, or Dashboard → Deployments →
 ⋯ → Promote.
 
-## Current state (2026-10-13)
+## Current state (2026-11-06)
 
 - **Project:** `mutombos-heavenly-data` in the personal Hobby scope (`ladanyi77-gmailcoms-projects`),
   created 2026-03-15. This repo is linked to it (`.vercel/`, git-ignored).
@@ -158,9 +171,20 @@ Promote the previous production deployment: `vercel rollback`, or Dashboard → 
 - **Git:** linked to `dladanyi/mutombos-heavenly-data`, production branch `main`. Pushes trigger
   deployments again (fixed 2026-10-13 by restoring the Vercel GitHub app's access to the repo):
   branches get previews, and `main` deploys to production.
-- **Preview verified** (prebuilt upload and Git-triggered build):
-  `/healthz` returns 200, the page loads, the API returns a clean 503 (Yahoo 403, see above),
+- **Preview verified 2026-10-13** (prebuilt upload and Git-triggered build): `/healthz`
+  returns 200, the page loads, the API returned a clean 503 while Yahoo access was pending,
   unknown `/api` paths return 404 JSON, and the logs are JSON.
+- **Production verified against live Yahoo data 2026-11-06** (post-approval checklist):
+  - The page renders three tables (current week, full season, last week), 10 teams each, at
+    desktop (1440px) and phone (390px) widths. There are no console errors, and the page
+    doesn't scroll sideways. On a phone each table scrolls inside its card with a "swipe"
+    hint. On desktop the last column or two also need a scroll inside the card (cosmetic).
+  - Final past weeks (`/api/rankings/week/1`, `/2`): MISS on the first request, then
+    `x-vercel-cache: HIT`.
+  - Re-checked 2026-11-07 with GET: `/healthz` 200; weeks 1 and 2 send
+    `cache-control: public, max-age=86400` (the final headers), MISS then HIT; season and
+    league send `public, max-age=60`, MISS then HIT; `?refresh=1` on
+    `/api/rankings/week/current` and `/api/league` returns `no-store`.
 - **GitHub repo:** public since 2026-10-13, so it can use rulesets on the free plan. The ruleset
   "Protect main" (id 25037399) is active on the default branch.
 
