@@ -4,10 +4,12 @@ Mutombo's Heavenly Data is a dashboard that ranks the teams in the Mutombo's Hea
 Party fantasy basketball league across nine stat categories, using data from the Yahoo
 Fantasy API.
 
-> **Status (2026-11-05):** sub-project 1 (stability refactor + backend/frontend split) is
-> merged and live on Vercel at https://mutombos-heavenly-data.vercel.app, serving live Yahoo
-> data now that Yahoo has approved API access. Cloud Run is retired. The tests run on real
-> (anonymised) Yahoo responses.
+> **Status (2026-11-06):** sub-project 1 (stability refactor + backend/frontend split) is
+> done. It's live on Vercel at https://mutombos-heavenly-data.vercel.app, serving live Yahoo
+> data, and was verified in production after Yahoo approved API access (see
+> [deployment.md](deployment.md), "Current state"). The tests run on real Yahoo responses.
+> Next: sub-project 2. One open follow-up: re-run `check_league_weeks.py` after 2027-03-14
+> to confirm the playoff weeks ([decisions.md](decisions.md)).
 
 ## Contents
 
@@ -22,7 +24,7 @@ Fantasy API.
 
 ## Roadmap
 
-1. **Stability refactor + split:** [spec](specs/2026-10-12-stability-refactor-design.md), [plan](plans/2026-10-12-stability-refactor.md)
+1. **Stability refactor + split** (done 2026-11-06): [spec](specs/2026-10-12-stability-refactor-design.md), [plan](plans/2026-10-12-stability-refactor.md)
 2. Pick any week + trends over time
 3. Head-to-head matchups
 
