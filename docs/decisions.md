@@ -6,7 +6,8 @@ Newest first. Each entry: what we decided, and why.
 
 - **Sub-project 1 is done.** After Yahoo approved API access, the post-approval checklist
   passed: real fixtures (#7), the league week calendar (#8, playoff weeks provisional), and
-  production checks of the page and CDN caching (`deployment.md`, "Current state").
+  production checks of the page, `/healthz`, the cache headers on every route, CDN hits, and
+  the `?refresh=1` bypass (`deployment.md`, "Current state", lists exactly what was checked).
 - **Next is sub-project 2** (pick any week + trends over time), starting from a design
   spec. The deferred minors from the sub-project 1 final review stay deferred unless
   sub-project 2 touches them.

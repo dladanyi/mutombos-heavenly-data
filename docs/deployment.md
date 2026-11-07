@@ -113,13 +113,24 @@ cd frontend && npm run dev
 
 ## Smoke test after deploy
 
+Use GET (`-o /dev/null -D -`), not `curl -I`: HEAD requests don't reliably show CDN hits
+(on 2026-11-07, HEAD to `/api/league` kept returning MISS while GET returned HIT).
+
 ```sh
-curl -fsS https://<deployment-url>/healthz
-curl -fsS https://<deployment-url>/api/league
-curl -sSI https://<deployment-url>/api/rankings/season | grep -i x-vercel-cache   # HIT on repeat
-curl -sSI https://<deployment-url>/api/rankings/week/1 | grep -i x-vercel-cache   # HIT on repeat (final week)
-curl -sSI "https://<deployment-url>/api/league?refresh=1" | grep -i cache-control  # no-store
+U=https://<deployment-url>
+h() { curl -sS -o /dev/null -D - "$U$1" | grep -iE '^(cache-control|x-vercel-cache)'; }
+curl -fsS $U/healthz
+curl -fsS $U/api/league
+h /api/rankings/season              # max-age=60; run twice within 60s: MISS, then HIT
+h /api/rankings/week/1              # final week: max-age=86400; MISS, then HIT
+h "/api/rankings/week/current?refresh=1"   # no-store
+h "/api/league?refresh=1"                  # no-store
 ```
+
+`HIT` alone doesn't prove a week is final (a settling week is cached too), so check that
+`cache-control` is `public, max-age=86400`. Week 1 is only final once it ended more than 3 days
+ago (`FINAL_DELAY_DAYS`), so early in a new season expect `max-age=60` (current) or `max-age=300`
+(settling) instead.
 
 ## Each new season
 
@@ -170,7 +181,10 @@ Promote the previous production deployment: `vercel rollback`, or Dashboard → 
     hint. On desktop the last column or two also need a scroll inside the card (cosmetic).
   - Final past weeks (`/api/rankings/week/1`, `/2`): MISS on the first request, then
     `x-vercel-cache: HIT`.
-  - `?refresh=1` returns `cache-control: no-store` (week and league).
+  - Re-checked 2026-11-07 with GET: `/healthz` 200; weeks 1 and 2 send
+    `cache-control: public, max-age=86400` (the final headers), MISS then HIT; season and
+    league send `public, max-age=60`, MISS then HIT; `?refresh=1` on
+    `/api/rankings/week/current` and `/api/league` returns `no-store`.
 - **GitHub repo:** public since 2026-10-13, so it can use rulesets on the free plan. The ruleset
   "Protect main" (id 25037399) is active on the default branch.
 

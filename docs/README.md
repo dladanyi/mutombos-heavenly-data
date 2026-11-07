@@ -7,7 +7,8 @@ Fantasy API.
 > **Status (2026-11-06):** sub-project 1 (stability refactor + backend/frontend split) is
 > done. It's live on Vercel at https://mutombos-heavenly-data.vercel.app, serving live Yahoo
 > data, and was verified in production after Yahoo approved API access (see
-> [deployment.md](deployment.md), "Current state"). The tests run on real Yahoo responses.
+> [deployment.md](deployment.md), "Current state"). The tests run on real (anonymised) Yahoo
+> responses.
 > Next: sub-project 2. One open follow-up: re-run `check_league_weeks.py` after 2027-03-14
 > to confirm the playoff weeks ([decisions.md](decisions.md)).
 
