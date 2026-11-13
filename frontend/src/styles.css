@@ -262,25 +262,43 @@ tbody tr:hover { background: rgba(249,115,22,0.04); }
     color: var(--gold);
     margin-bottom: 0.75rem;
 }
-/* The standings card is as wide as its columns. Its first column is the rank, so undo the
-   pinned 180px team-name styling the rankings tables give their first column. */
+/* The standings card is as wide as its columns (it scrolls inside the card when wider). Its
+   first column is the rank, so # and Team are pinned together instead of the 180px team-name
+   column the rankings tables pin. */
 .standings-wrap { margin-bottom: 1.5rem; width: fit-content; max-width: 100%; }
 .standings-wrap table { width: auto; min-width: min(100%, 520px); }
 .standings-wrap th:first-child,
 .standings-wrap tbody td:first-child {
-    position: static;
-    min-width: 0;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    box-sizing: border-box;
     width: 3rem;
+    min-width: 3rem;
+    max-width: 3rem;
     box-shadow: none;
     text-align: right;
     font-family: 'DM Mono', monospace;
     font-size: 0.78rem;
     font-weight: 600;
-    background: transparent;
+    background: var(--surface);
 }
-.standings-wrap th:nth-child(2) { text-align: left; }
+.standings-wrap th:first-child { background: var(--surface2); z-index: 3; }
+/* Medal tints are translucent; layer them over the surface so scrolled cells don't show through. */
+.standings-wrap td.medal-gold:first-child   { background: linear-gradient(var(--gold-bg), var(--gold-bg)), var(--surface) !important; }
+.standings-wrap td.medal-silver:first-child { background: linear-gradient(var(--silver-bg), var(--silver-bg)), var(--surface) !important; }
+.standings-wrap td.medal-bronze:first-child { background: linear-gradient(var(--bronze-bg), var(--bronze-bg)), var(--surface) !important; }
+.standings-wrap th:nth-child(2),
 .standings-wrap td:nth-child(2) {
+    position: sticky;
+    left: 3rem;
+    z-index: 2;
     text-align: left;
+    box-shadow: 3px 0 10px rgba(0,0,0,0.6);
+}
+.standings-wrap th:nth-child(2) { background: var(--surface2); z-index: 3; }
+.standings-wrap td:nth-child(2) {
+    background: var(--surface);
     font-family: 'DM Sans', sans-serif;
     font-weight: 500;
     font-size: 0.88rem;

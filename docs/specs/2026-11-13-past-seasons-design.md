@@ -111,8 +111,11 @@ FULL SEASON   ‹  2025-26  ›                         [ Final ]
   (past, or the current one in the off-season) shows "Final".
 - **Champion line:** the standings entry with rank 1, showing its name, record and win %.
 - **Standings order:** final rank, so the medals go to the actual playoff finishers. Columns
-  are #, Team, Record (W–L–T), Win %, Seed. Ranks 1–3 get the existing gold, silver and bronze
-  colours.
+  are #, Team, Record (W–L–T), Win %, Seed, then (added by the user after the build) Avg Rk,
+  Med Rk and one rank column per category, so finish and stat ranks read on one row. Ranks
+  1–3 in # get the existing gold, silver and bronze colours. Category rank cells get the
+  usual 1st/2nd/3rd-in-stat colours, and Avg/Med Rk stay plain. # and Team are pinned while
+  the table scrolls sideways.
 - **Medals in a past season's stat table:** the standings carry the medals, and Avg Rank
   shows plain numbers (the user's decision). Per-category cells keep their 1st/2nd/3rd-in-stat
   colours, as in every other table, since that's per-stat highlighting rather than a finish

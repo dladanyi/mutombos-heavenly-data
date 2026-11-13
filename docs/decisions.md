@@ -194,3 +194,5 @@ Newest first. Each entry: what we decided, and why.
   playoff weeks included (one cached call), with a caption, because the standings record is
   regular season only. Once the current season is finished, the section opens on its final
   view during the off-season.
+  The standings rows also carry each team's Avg/Med Rk and per-category ranks (user request),
+  so a team's finish and its stat ranks can be compared on one line.

@@ -62,7 +62,7 @@ export default function FullSeasonSection({ current, onRetry }: Props) {
       onRetry={() => void final.reload()}
       actions={arrows}
       medals={false}
-      intro={final.data && <StandingsTable standings={final.data.standings} />}
+      intro={final.data && <StandingsTable standings={final.data.standings} rankings={final.data} />}
       caption="Season totals, including playoffs"
     />
   )

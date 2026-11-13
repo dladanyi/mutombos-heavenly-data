@@ -37,7 +37,8 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirror
 [api.md](api.md). Components: `Header`, `RankingsSection`, `RankingsTable`, `RankCell`,
 `FullSeasonSection` (the ‹ › season arrows; today's view while a season is in progress, the
-final view once finished) and `StandingsTable` (champion line and final standings).
+final view once finished) and `StandingsTable` (champion line and final standings, with each team's Avg/Med Rk and
+per-category ranks next to its finish).
 Medal colors come from the API's `rank` and `place` fields. A finished season's medals are on
 its standings, so its rankings table doesn't colour Avg Rank.
 
