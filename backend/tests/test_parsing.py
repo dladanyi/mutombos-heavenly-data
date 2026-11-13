@@ -16,7 +16,7 @@ import pytest
 
 from app.errors import YahooFormatError
 from app.parsing import (GameWeek, MatchupResult, parse_game_weeks, parse_league, parse_scoreboard,
-                         parse_team_stats)
+                         parse_standings, parse_team_stats)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -195,3 +195,66 @@ def test_scoreboard_matchup_without_stat_winners_counts_zero():
     results = parse_scoreboard(matchup_body(m, matchup(a="k.3", b="k.4", winners=("k.3",), winner="k.3")))
     assert (results["k.1"].wins, results["k.1"].losses, results["k.1"].ties) == (0, 0, 0)
     assert results["k.3"].outcome == "W"
+
+
+
+# league metadata: season (string), renew ("<game_key>_<league_id>" or ""), is_finished (1 when done)
+# standings:  fantasy_content.league[1].standings = [{"teams": {"0": {"team": [metadata_list,
+#             {"team_standings": {rank, playoff_seed, outcome_totals: {wins, losses, ties, percentage}}}]}, ...}}]
+
+def test_parse_league_season_fields():
+    league = parse_league(load("prev_league.json"))
+    assert (league.season, league.league_key, league.is_finished, league.previous_league_key) == (
+        2025, "466.l.11070", True, "454.l.37383")
+
+
+@pytest.mark.parametrize("renew", ["", None])
+def test_parse_league_renew_empty_or_missing(renew):
+    payload = load("prev_league.json")
+    meta = payload["fantasy_content"]["league"][0]
+    meta.pop("is_finished", None)
+    if renew is None:
+        meta.pop("renew", None)
+    else:
+        meta["renew"] = renew
+    league = parse_league(payload)
+    assert league.previous_league_key is None and league.is_finished is False
+
+
+def test_parse_standings_fixture():
+    rows = parse_standings(load("prev_standings.json"))
+    assert [r.rank for r in rows] == list(range(1, 11))
+    assert all(r.wins + r.losses + r.ties == 180 for r in rows)
+    assert (rows[0].playoff_seed, rows[0].percentage) == (1, 0.661)
+    assert all(re.fullmatch(r"Team \d+", r.name) for r in rows)
+
+
+def standings_body(*team_standings):
+    teams = {str(i): {"team": [[{"team_key": f"k.{i}"}, {"team_id": str(i)}, {"name": f"Team {i}"}],
+                               {"team_standings": ts}]} for i, ts in enumerate(team_standings)}
+    return {"fantasy_content": {"league": [{"league_key": "nba.l.1"},
+                                           {"standings": [{"teams": {**teams, "count": len(teams)}}]}]}}
+
+
+def totals(w=1, l=1, t=0, pct=".500"):
+    return {"wins": str(w), "losses": str(l), "ties": str(t), "percentage": pct}
+
+
+def test_parse_standings_blank_seed_and_rank():
+    rows = parse_standings(standings_body(
+        {"rank": "", "playoff_seed": "", "outcome_totals": totals()},
+        {"rank": 1, "playoff_seed": "2", "outcome_totals": totals(2, 0, 0, "1.000")}))
+    assert [(r.team_key, r.rank, r.playoff_seed) for r in rows] == [("k.1", 1, 2), ("k.0", None, None)]
+    assert rows[0].percentage == 1.0
+
+
+@pytest.mark.parametrize("ts", [None, {"rank": 1, "outcome_totals": []}])
+def test_parse_standings_malformed_raises(ts):
+    body = standings_body({"rank": 1, "outcome_totals": totals()})
+    team = body["fantasy_content"]["league"][1]["standings"][0]["teams"]["0"]["team"]
+    if ts is None:
+        team.pop()
+    else:
+        team[1] = {"team_standings": ts}
+    with pytest.raises(YahooFormatError):
+        parse_standings(body)

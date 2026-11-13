@@ -1,0 +1,25 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/league/466.l.11070",
+    "league": [
+      {
+        "league_key": "466.l.11070",
+        "league_id": "11070",
+        "name": "Mutombo's Heavenly Block Party",
+        "num_teams": 10,
+        "renew": "454_37383",
+        "current_week": "23",
+        "start_week": "1",
+        "start_date": "2025-10-21",
+        "end_week": "23",
+        "end_date": "2026-04-05",
+        "is_finished": 1,
+        "season": "2025"
+      }
+    ],
+    "time": "23.183822631836ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}

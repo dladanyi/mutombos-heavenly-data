@@ -22,11 +22,12 @@ FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 # team_key and name. The league list adds num_teams/season for tests and is_finished for when
 # Yahoo sends it. game_weeks (Yahoo's public NBA calendar) is saved as returned.
 TEAM_META_KEEP = {"team_key", "team_id", "name"}
-TEAM_PARTS_KEEP = {"team_stats"}
+TEAM_PARTS_KEEP = {"team_stats", "team_standings"}
+STANDINGS_KEEP = {"rank", "playoff_seed", "outcome_totals"}
 # Top-level fantasy_content keys besides `league` / `game` (Yahoo's response envelope).
 ENVELOPE_KEEP = {"xml:lang", "yahoo:uri", "time", "copyright", "refresh_rate"}
 LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "current_week",
-                    "start_week", "end_week", "start_date", "end_date", "is_finished"}
+                    "start_week", "end_week", "start_date", "end_date", "is_finished", "renew"}
 # Scoreboard: each matchup keeps its result fields; its two teams go through the team allowlists.
 MATCHUP_KEEP = {"week", "week_start", "week_end", "status", "is_playoffs", "is_consolation",
                 "is_tied", "winner_team_key", "stat_winners"}
@@ -61,6 +62,8 @@ def anonymise(body: dict) -> dict:
             league[i] = {"teams": _anonymise_teams(part["teams"])}
         elif "scoreboard" in part:
             league[i] = {"scoreboard": _anonymise_scoreboard(part["scoreboard"])}
+        elif "standings" in part:
+            league[i] = {"standings": _anonymise_standings(part["standings"])}
         else:
             raise ValueError(f"unknown league part {sorted(part)}; add an allowlist for it before capturing")
     body["fantasy_content"] = {k: v for k, v in content.items() if k in ENVELOPE_KEEP | {"league"}}
@@ -82,6 +85,14 @@ def _anonymise_teams(teams) -> dict:
         else:
             rebuilt[key] = {"team": _anonymise_team(entry["team"])}
     return rebuilt
+
+
+def _anonymise_standings(standings) -> list:
+    """`standings` is [{"teams": {...}}]; each team keeps team_standings reduced to STANDINGS_KEEP."""
+    if not isinstance(standings, list) or len(standings) != 1 or not isinstance(standings[0], dict) \
+            or set(standings[0]) != {"teams"}:
+        raise ValueError("unknown standings shape; add an allowlist for it before capturing")
+    return [{"teams": _anonymise_teams(standings[0]["teams"])}]
 
 
 def _anonymise_scoreboard(scoreboard) -> dict:
@@ -154,9 +165,17 @@ def _anonymise_team(team: list) -> list:
             if "name" in kept:
                 kept["name"] = f"Team {team_id}"
             kept_meta.append(kept)
-    kept_parts = [{k: v for k, v in p.items() if k in TEAM_PARTS_KEEP}
+    kept_parts = [{k: _reduce_part(k, v) for k, v in p.items() if k in TEAM_PARTS_KEEP}
                   for p in parts if isinstance(p, dict) and p.keys() & TEAM_PARTS_KEEP]
     return [kept_meta, *kept_parts]
+
+
+def _reduce_part(key: str, value):
+    if key != "team_standings":
+        return value
+    if not isinstance(value, dict):
+        raise ValueError("team_standings is not an object; Yahoo's shape changed")
+    return {k: v for k, v in value.items() if k in STANDINGS_KEEP}
 
 
 def main() -> None:
@@ -177,6 +196,12 @@ def main() -> None:
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
         "scoreboard.json": http.get_json(f"league/{league_key}/scoreboard;week={week}"),
     }
+    renew = str(meta.get("renew") or "")
+    if "_" in renew:  # last season's league, for the past-seasons view
+        prev = renew.replace("_", ".l.", 1)
+        responses["prev_league.json"] = http.get_json(f"league/{prev}")
+        responses["prev_standings.json"] = http.get_json(f"league/{prev}/standings")
+        responses["prev_season_stats.json"] = http.get_json(f"league/{prev}/teams/stats")
     # Anonymise and write every file to a temp name first, then rename them all, so a shape or
     # write error leaves the old fixture set intact. (The renames themselves aren't one atomic
     # step; an interrupt between them could still mix sets. *.tmp is git-ignored.)
