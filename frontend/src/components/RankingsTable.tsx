@@ -1,4 +1,4 @@
-import type { MatchupResult, Rankings } from '../api'
+import type { MatchupResult, RankingsTableData } from '../api'
 import RankCell, { medal } from './RankCell'
 
 // Medians of whole-number ranks are whole or end in .5, so String() is enough ('3', '2.5').
@@ -18,7 +18,14 @@ function ResultCell({ result }: { result?: MatchupResult | null }) {
   )
 }
 
-export default function RankingsTable({ rankings, showResult }: { rankings: Rankings; showResult?: boolean }) {
+type Props = {
+  rankings: RankingsTableData
+  showResult?: boolean
+  /** Colour Avg Rank by place. Off for finished seasons, whose standings carry the medals. */
+  medals?: boolean
+}
+
+export default function RankingsTable({ rankings, showResult, medals = true }: Props) {
   const { categories, teams } = rankings
   return (
     <table>
@@ -37,7 +44,7 @@ export default function RankingsTable({ rankings, showResult }: { rankings: Rank
       </thead>
       <tbody>
         {teams.map((team) => {
-          const color = medal(team.place)
+          const color = medals ? medal(team.place) : undefined
           return (
             <tr key={team.team_key}>
               <td>{team.name}</td>

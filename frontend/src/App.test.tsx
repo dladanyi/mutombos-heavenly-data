@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { league, rankings } from './test/data'
+import { finalSeason, league, rankings, seasonsList } from './test/data'
 
 type Route = { status?: number; body: unknown }
 type Routes = Record<string, Route | Route[]>
@@ -27,6 +27,7 @@ function happyRoutes(): Routes {
     '/api/rankings/week/current': { body: rankings() },
     '/api/rankings/season': { body: rankings({ scope: 'season', week: null }) },
     '/api/rankings/week/previous': { body: rankings({ week: 6 }) },
+    '/api/seasons': { body: seasonsList() },
   }
 }
 
@@ -48,6 +49,17 @@ describe('App', () => {
     await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(3))
     const tables = [...document.querySelectorAll('table')]
     expect(tables.map((t) => [...t.querySelectorAll('th')].some((th) => th.textContent === 'Result'))).toEqual([false, false, true])
+  })
+
+  it('refresh still reloads the current season while it shows its final view', async () => {
+    const routes = happyRoutes()
+    routes['/api/seasons'] = { body: seasonsList({ seasons: [{ season: 2026, league_key: '478.l.1', current: true, finished: true }] }) }
+    routes['/api/seasons/2026'] = { body: finalSeason({ season: 2026 }) }
+    const calls = mockApi(routes)
+    render(<App />)
+    expect(await screen.findByText(/Champion/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    await waitFor(() => expect(calls).toContain('/api/rankings/season?refresh=1'))
   })
 
   it('requests last week without waiting for the league', () => {

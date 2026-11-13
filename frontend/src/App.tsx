@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ApiError, getLeague, getSeason, getWeek } from './api'
 import Header from './components/Header'
+import FullSeasonSection from './components/FullSeasonSection'
 import RankingsSection from './components/RankingsSection'
 import { useApi } from './hooks/useApi'
 
@@ -91,12 +92,7 @@ export default function App() {
 
       <div className="divider" />
 
-      <RankingsSection
-        title="Full Season"
-        badge={{ text: 'Season to date' }}
-        state={season}
-        onRetry={() => void season.reload()}
-      />
+      <FullSeasonSection current={season} onRetry={() => void season.reload()} />
 
       {!noLastWeek && (
         <>

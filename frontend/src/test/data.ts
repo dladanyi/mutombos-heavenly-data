@@ -1,4 +1,4 @@
-import type { Category, League, Rankings, TeamRow } from '../api'
+import type { Category, FinalSeason, League, Rankings, SeasonsList, Standing, TeamRow } from '../api'
 
 export const categories: Category[] = [
   { key: 'PTS', higher_is_better: true },
@@ -36,4 +36,37 @@ export function rankings(overrides: Partial<Rankings> = {}): Rankings {
 
 export function league(overrides: Partial<League> = {}): League {
   return { name: "Mutombo's Heavenly Block Party", current_week: 7, start_week: 1, end_week: 21, categories, ...overrides }
+}
+
+export function standing(rank: number | null, name: string, overrides: Partial<Standing> = {}): Standing {
+  return { rank, team_key: `466.l.1.t.${name}`, name, wins: 100, losses: 78, ties: 2, percentage: 0.561, playoff_seed: rank, ...overrides }
+}
+
+export function seasonsList(overrides: Partial<SeasonsList> = {}): SeasonsList {
+  return {
+    seasons: [
+      { season: 2026, league_key: '478.l.1', current: true, finished: false },
+      { season: 2025, league_key: '466.l.1', current: false, finished: true },
+    ],
+    complete: true,
+    ...overrides,
+  }
+}
+
+export function finalSeason(overrides: Partial<FinalSeason> = {}): FinalSeason {
+  return {
+    season: 2025,
+    league_key: '466.l.1',
+    fetched_at: '2026-04-10T18:30:00Z',
+    stale: false,
+    categories,
+    standings: [
+      standing(1, 'Team 4', { wins: 118, losses: 60, ties: 2, percentage: 0.661, playoff_seed: 1 }),
+      standing(2, 'Team 3', { playoff_seed: 3 }),
+      standing(3, 'Team 9', { playoff_seed: 4 }),
+      standing(4, 'Team 10', { playoff_seed: null }),
+    ],
+    teams: [team('Team 4', 1), team('Team 3', 2), team('Team 9', 3)],
+    ...overrides,
+  }
 }

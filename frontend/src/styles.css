@@ -250,6 +250,50 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(249,115,22,0.04); }
+/* Full Season: season arrows, champion line, standings */
+.season-nav { display: inline-flex; align-items: center; gap: 0.4rem; }
+.season-arrow { font-size: 0.85rem; line-height: 1; padding: 0.15rem 0.5rem; }
+.season-arrow:disabled { opacity: 0.3; cursor: default; }
+.season-label { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text); }
+.champion {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+}
+/* The standings card is as wide as its columns. Its first column is the rank, so undo the
+   pinned 180px team-name styling the rankings tables give their first column. */
+.standings-wrap { margin-bottom: 1.5rem; width: fit-content; max-width: 100%; }
+.standings-wrap table { width: auto; min-width: min(100%, 520px); }
+.standings-wrap th:first-child,
+.standings-wrap tbody td:first-child {
+    position: static;
+    min-width: 0;
+    width: 3rem;
+    box-shadow: none;
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: transparent;
+}
+.standings-wrap th:nth-child(2) { text-align: left; }
+.standings-wrap td:nth-child(2) {
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.88rem;
+    color: var(--text);
+    min-width: 160px;
+}
+.table-caption {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+}
+
 /* Head-to-head result (last week's table) */
 th.result-cell, td.result-cell { text-align: left; }
 .result { font-weight: 600; color: var(--text); }
@@ -394,6 +438,7 @@ footer {
         padding: 0.62rem 0.55rem;
     }
     thead th:first-child { min-width: 120px; }
+    .standings-wrap td:nth-child(2) { min-width: 0; font-size: 0.75rem; }
 }
 
 
