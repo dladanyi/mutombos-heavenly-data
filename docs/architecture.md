@@ -35,7 +35,9 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 ## Frontend (`frontend/src/`)
 
 React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirror
-[api.md](api.md). Components: `Header`, `RankingsSection`, `RankingsTable`, `RankCell`,
+[api.md](api.md). The page has two sections: the week section (opens on the live week; ‹ ›
+step back through finished weeks via `/api/rankings/week/<n>`) and Full Season. Components:
+`Header`, `RankingsSection`, `RankingsTable`, `RankCell`, `ArrowNav` (the shared ‹ › buttons),
 `FullSeasonSection` (the ‹ › season arrows; today's view while a season is in progress, the
 final view once finished) and `StandingsTable` (champion line and final standings, with each team's Avg/Med Rk and
 per-category ranks next to its finish).

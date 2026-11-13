@@ -205,3 +205,8 @@ Newest first. Each entry: what we decided, and why.
   fetched".** The current week table opens with a Matchup column: categories won so far
   ("7–2 vs Team D"), coloured by who's leading, without W/L until it's final. It costs one
   scoreboard call per 5 minutes per instance, the same TTL as the week's stats.
+- **The week section steps through past weeks; the Last Week section is gone (2026-11-13).**
+  The top section opens on the live week (Live badge, Matchup column) and ‹ › step back to
+  any finished week (Final or Settling badge, Result column), fetched by number so final
+  weeks get the long CDN cache. Refresh also refreshes the week being viewed. This is the
+  "pick any week" half of sub-project 2; trends over time remain.

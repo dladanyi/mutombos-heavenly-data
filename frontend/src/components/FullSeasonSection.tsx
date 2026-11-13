@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getFinalSeason, getSeasons, seasonLabel, type Rankings } from '../api'
 import type { ApiState } from '../hooks/useApi'
 import { useApi } from '../hooks/useApi'
+import ArrowNav from './ArrowNav'
 import RankingsSection from './RankingsSection'
 import StandingsTable from './StandingsTable'
 
@@ -25,25 +26,15 @@ export default function FullSeasonSection({ current, onRetry }: Props) {
 
   const arrows =
     seasons.length > 1 && year !== undefined ? (
-      <div className="season-nav">
-        <button
-          className="refresh-btn season-arrow"
-          aria-label="Previous season"
-          disabled={index >= seasons.length - 1}
-          onClick={() => setIndex(index + 1)}
-        >
-          ‹
-        </button>
-        <span className="season-label">{seasonLabel(year)}</span>
-        <button
-          className="refresh-btn season-arrow"
-          aria-label="Next season"
-          disabled={index === 0}
-          onClick={() => setIndex(index - 1)}
-        >
-          ›
-        </button>
-      </div>
+      <ArrowNav
+        label={seasonLabel(year)}
+        backLabel="Previous season"
+        forwardLabel="Next season"
+        canBack={index < seasons.length - 1}
+        canForward={index > 0}
+        onBack={() => setIndex(index + 1)}
+        onForward={() => setIndex(index - 1)}
+      />
     ) : undefined
 
   if (!showFinal) {
