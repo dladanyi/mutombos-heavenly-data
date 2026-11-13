@@ -149,7 +149,10 @@ def final_season(season: str):
     if not re.fullmatch(r"[0-9]{4}", season):  # ASCII only: isdecimal() lets in 5000-digit and non-ASCII digits
         raise NotFound()
     refs, complete, walk_results = _client().seasons(refresh=_refresh())
-    ref = next((s for s in refs if s.season == int(season)), None)
+    index = next((i for i, s in enumerate(refs) if s.season == int(season)), None)
+    ref = refs[index] if index is not None else None
+    # Walk results line up with refs; only the leagues up to the requested one matter here.
+    walk_results = walk_results[:index + 1] if index is not None else walk_results
     if ref is None:
         if not complete:  # an outage cut the walk short, so "not found" isn't known
             raise YahooUnavailable("season list incomplete")

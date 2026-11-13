@@ -94,16 +94,14 @@ class YahooClient:
         """Readable seasons, newest first, by following each league's `renew` link. Returns
         (seasons, complete, results): `complete` is False when an outage cut the walk short."""
         info, current_result = self.league(refresh=refresh)
-        # A 403 only means "this account wasn't in that season" when the current league loaded
-        # fine; a bad credential makes everything 403 and leaves the current league stale.
-        denied_ends_walk = not current_result.stale
-        seasons = [SeasonRef(info.season or 0, info.league_key, True, info.is_finished)]
+        current_key = info.league_key or self._league_path.removeprefix("league/")
+        seasons = [SeasonRef(info.season or 0, current_key, True, info.is_finished)]
         results = [current_result]
         key = info.previous_league_key
         complete = True
         while key and len(seasons) < MAX_SEASONS:
             try:
-                result = self._cache.get_or_fetch(f"league/{key}", self._league_or_denied(key, denied_ends_walk),
+                result = self._cache.get_or_fetch(f"league/{key}", self._league_or_denied(key),
                                                   PREVIOUS_LEAGUE_TTL)
             except YahooUnavailable:
                 complete = False
@@ -124,13 +122,20 @@ class YahooClient:
         stats = self._fetch(f"league/{league_key}/teams/stats", parse_team_stats, ttl, refresh)
         return standings.data, standings, stats.data, stats
 
-    def _league_or_denied(self, key: str, denied_ends_walk: bool) -> Callable[[], LeagueInfo | None]:
+    def _league_or_denied(self, key: str) -> Callable[[], LeagueInfo | None]:
+        """Fetch a previous league; None means this account can't read it (end of history).
+
+        Yahoo also answers 403 for a bad credential, so a 403 only counts as "no access" if the
+        current league loads fine in the same moment (an uncached call; a cached current league
+        proves nothing). Otherwise it's an outage: re-raise, and the cache serves the old entry."""
         def fetch() -> LeagueInfo | None:
             try:
                 return parse_league(self._http.get_json(f"league/{key}"))
-            except YahooAccessDenied:
-                if not denied_ends_walk:
-                    raise  # an outage, not an end of history: the cache serves the old entry stale
+            except YahooAccessDenied as denied:
+                try:
+                    self._http.get_json(self._league_path)
+                except YahooUnavailable:
+                    raise denied from None
                 return None
         return fetch
 

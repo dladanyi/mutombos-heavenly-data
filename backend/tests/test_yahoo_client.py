@@ -355,3 +355,25 @@ def test_bad_credential_does_not_cache_end_of_history(setup):
     http.denied.clear()
     clock.now += 31  # past the failure cooldown
     assert [s.season for s in client.seasons()[0]] == [2026, 2025]
+
+
+def test_cached_current_league_does_not_vouch_for_a_403(setup):
+    """The current league served from its 5-minute cache says nothing about the credential:
+    a 403 on a previous league must be re-checked against Yahoo before ending history."""
+    client, http, clock, _ = setup
+    client.seasons()
+    clock.now += 86350
+    client.league()  # current league refetched: fresh in cache for 300 s
+    clock.now += 51  # previous-league entries have expired, the current one hasn't
+    http.denied |= {LEAGUE, PREV}
+    seasons, _, results = client.seasons()
+    assert [s.season for s in seasons] == [2026, 2025]
+    assert any(r.stale for r in results)
+
+
+def test_current_season_key_falls_back_to_configured_league(setup):
+    client, http, *_ = setup
+    league = fixture("league.json")
+    del league["fantasy_content"]["league"][0]["league_key"]
+    http.overrides[LEAGUE] = league
+    assert client.seasons()[0][0].league_key == f"nba.l.{LEAGUE_ID}"

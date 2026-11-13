@@ -71,7 +71,7 @@ def parse_league(payload: dict) -> LeagueInfo:
             league_key=str(meta.get("league_key", "")),
             season=int(meta["season"]) if meta.get("season") not in (None, "") else None,
             previous_league_key=renew.replace("_", ".l.", 1) if "_" in renew else None,
-            is_finished=str(meta.get("is_finished")) == "1",
+            is_finished=meta.get("is_finished") in (1, "1", True),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise YahooFormatError(f"league metadata is missing or invalid: {exc}") from exc

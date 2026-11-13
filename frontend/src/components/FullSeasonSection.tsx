@@ -14,10 +14,13 @@ export default function FullSeasonSection({ current, onRetry }: Props) {
   const [index, setIndex] = useState(0) // 0 = newest
   const selected = seasons[index]
   const finished = selected?.finished ?? false
+  // Anything but the current season gets its own data, even if Yahoo hasn't flagged it finished;
+  // the current season switches to the final view once it is finished (the off-season).
+  const showFinal = finished || (selected !== undefined && !selected.current)
   const year = selected?.season
   const final = useApi(
-    () => (finished && year !== undefined ? getFinalSeason(year) : Promise.resolve(undefined)),
-    [year, finished],
+    () => (showFinal && year !== undefined ? getFinalSeason(year) : Promise.resolve(undefined)),
+    [year, showFinal],
   )
 
   const arrows =
@@ -43,7 +46,7 @@ export default function FullSeasonSection({ current, onRetry }: Props) {
       </div>
     ) : undefined
 
-  if (!finished) {
+  if (!showFinal) {
     return (
       <RankingsSection
         title="Full Season"
@@ -57,7 +60,7 @@ export default function FullSeasonSection({ current, onRetry }: Props) {
   return (
     <RankingsSection
       title="Full Season"
-      badge={{ text: 'Final' }}
+      badge={{ text: finished ? 'Final' : 'Past season' }}
       state={final}
       onRetry={() => void final.reload()}
       actions={arrows}

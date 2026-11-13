@@ -98,4 +98,19 @@ describe('FullSeasonSection', () => {
     expect(calls).toContain('/api/seasons/2026')
     expect(within(tables()[0]).getAllByRole('columnheader')[0].textContent).toBe('#')
   })
+
+  it('shows a past season\'s own data even if Yahoo has not flagged it finished', async () => {
+    const calls = stubFetch({
+      '/api/seasons': () => json(seasonsList({ seasons: [
+        { season: 2026, league_key: '478.l.1', current: true, finished: false },
+        { season: 2025, league_key: '466.l.1', current: false, finished: false },
+      ] })),
+      '/api/seasons/2025': () => json(finalSeason()),
+    })
+    render(<FullSeasonSection current={current()} onRetry={() => {}} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous season' }))
+    expect(await screen.findByText(/Champion/)).toBeInTheDocument()
+    expect(calls).toContain('/api/seasons/2025')
+    expect(screen.queryByText('Season to date')).toBeNull()
+  })
 })

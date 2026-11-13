@@ -258,3 +258,10 @@ def test_parse_standings_malformed_raises(ts):
         team[1] = {"team_standings": ts}
     with pytest.raises(YahooFormatError):
         parse_standings(body)
+
+
+@pytest.mark.parametrize("raw, expected", [(1, True), ("1", True), (True, True), (0, False), ("0", False), (None, False)])
+def test_parse_league_is_finished_forms(raw, expected):
+    payload = load("prev_league.json")
+    payload["fantasy_content"]["league"][0]["is_finished"] = raw
+    assert parse_league(payload).is_finished is expected

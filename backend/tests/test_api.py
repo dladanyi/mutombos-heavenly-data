@@ -36,6 +36,7 @@ class FakeClient:
         self.season_refs = [SeasonRef(2026, "478.l.1", True, False), SeasonRef(2025, "466.l.1", False, True)]
         self.seasons_complete = True
         self.seasons_result = result()
+        self.walk_results = None  # one CacheResult per season in season_refs, when a test needs them
         self.standings = [Standing(2, "k.2", "Beta", 90, 88, 2, 0.506, 1),
                           Standing(1, "k.1", "Alpha", 100, 78, 2, 0.561, 3)]
         self.standings_result = result(final=True)
@@ -65,7 +66,7 @@ class FakeClient:
     def seasons(self, refresh=False):
         self.calls.append(("seasons", refresh))
         self._maybe_fail()
-        return self.season_refs, self.seasons_complete, [self.seasons_result]
+        return self.season_refs, self.seasons_complete, self.walk_results or [self.seasons_result]
 
     def final_season(self, league_key, finished, refresh=False):
         self.calls.append(("final_season", league_key, finished, refresh))
@@ -383,3 +384,11 @@ def test_stale_season_no_store(http, client):
     response = http.get("/api/seasons/2025")
     assert response.get_json()["stale"] is True
     assert headers(response) == NO_STORE
+
+
+def test_older_seasons_do_not_mark_a_requested_season_stale(http, client):
+    client.season_refs = client.season_refs + [SeasonRef(2019, "390.l.1", False, True)]
+    client.walk_results = [result(), result(), result(stale=True)]
+    response = http.get("/api/seasons/2025")
+    assert response.get_json()["stale"] is False
+    assert headers(response) == FINAL

@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import load_settings  # noqa: E402
+from app.parsing import parse_league  # noqa: E402
 from app.yahoo_http import YahooHttp  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
@@ -196,9 +197,8 @@ def main() -> None:
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
         "scoreboard.json": http.get_json(f"league/{league_key}/scoreboard;week={week}"),
     }
-    renew = str(meta.get("renew") or "")
-    if "_" in renew:  # last season's league, for the past-seasons view
-        prev = renew.replace("_", ".l.", 1)
+    prev = parse_league(league).previous_league_key
+    if prev:  # last season's league, for the past-seasons view
         responses["prev_league.json"] = http.get_json(f"league/{prev}")
         responses["prev_standings.json"] = http.get_json(f"league/{prev}/standings")
         responses["prev_season_stats.json"] = http.get_json(f"league/{prev}/teams/stats")
