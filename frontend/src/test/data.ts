@@ -11,6 +11,7 @@ export function team(name: string, place: number, avg = place * 1.0): TeamRow {
     team_key: `466.l.1.t.${name}`,
     name,
     avg_rank: avg,
+    median_rank: place,
     place,
     stats: {
       PTS: { value: 800 - place * 10, rank: place },

@@ -1,7 +1,15 @@
 // Types mirror docs/api.md.
 export type Category = { key: string; higher_is_better: boolean; detail_label?: string }
 export type StatCell = { value: number | null; rank: number; detail?: string | null }
-export type TeamRow = { team_key: string; name: string; avg_rank: number; place: number; stats: Record<string, StatCell> }
+export type TeamRow = {
+  team_key: string
+  name: string
+  avg_rank: number
+  /** Optional: browsers may still hold final-week JSON cached before this field existed. */
+  median_rank?: number
+  place: number
+  stats: Record<string, StatCell>
+}
 export type Rankings = {
   scope: 'week' | 'season'
   week: number | null

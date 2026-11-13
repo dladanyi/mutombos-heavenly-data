@@ -172,3 +172,6 @@ Newest first. Each entry: what we decided, and why.
 - **No IaC (Terraform) for now.** One project plus four env vars; the docs are enough.
 - **Work split into three sub-projects:** stability + split, then week picker + trends, then
   matchups.
+- **Median rank shown next to average rank, informational only (2026-11-13).** Teams are
+  still ordered, and medals still assigned, by the mean. With 9 categories the median is a
+  whole number, so ordering by it would create many ties between the 10 teams.
