@@ -71,10 +71,10 @@ class YahooClient:
         result = self._fetch(path, parse_team_stats, _WEEK_TTL[state], refresh)
         return result.data, result, state
 
-    def week_results(self, week: int, current_week: int,
+    def week_results(self, week: int, state: WeekState,
                      refresh: bool = False) -> tuple[dict[str, MatchupResult], CacheResult]:
-        """Head-to-head results by team_key, cached by the same week state rules as week_stats."""
-        state = self.week_state(week, current_week)
+        """Head-to-head results by team_key. Pass the state week_stats returned, so the stats and
+        the scoreboard are cached under the same state (and the calendar isn't looked up twice)."""
         path = f"{self._league_path}/scoreboard;week={week}"
         result = self._fetch(path, parse_scoreboard, _WEEK_TTL[state], refresh)
         return result.data, result

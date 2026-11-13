@@ -89,8 +89,15 @@ def _anonymise_scoreboard(scoreboard) -> dict:
     if not isinstance(scoreboard, dict) or set(scoreboard) - {"week", "0"}:
         raise ValueError("unknown scoreboard shape; add an allowlist for it before capturing")
     holder = scoreboard.get("0")
-    if not isinstance(holder, dict) or set(holder) != {"matchups"} or not isinstance(holder["matchups"], dict):
-        raise ValueError("scoreboard has no matchups object; Yahoo's shape changed")
+    if not isinstance(holder, dict) or set(holder) - {"matchups"}:
+        raise ValueError("unknown scoreboard holder; add an allowlist for it before capturing")
+    out: dict = {"week": scoreboard["week"]} if "week" in scoreboard else {}
+    # No matchups yet (Yahoo sends [] or leaves the key out) is valid; parse_scoreboard handles it.
+    if holder.get("matchups", []) == []:
+        out["0"] = dict(holder)
+        return out
+    if not isinstance(holder["matchups"], dict):
+        raise ValueError("scoreboard matchups is not an object; Yahoo's shape changed")
     matchups = {}
     for key, entry in holder["matchups"].items():
         if key == "count":
@@ -99,9 +106,7 @@ def _anonymise_scoreboard(scoreboard) -> dict:
             raise ValueError(f"unknown matchups entry {key!r}; add an allowlist for it before capturing")
         else:
             matchups[key] = {"matchup": _anonymise_matchup(entry["matchup"])}
-    out = {"0": {"matchups": matchups}}
-    if "week" in scoreboard:
-        out["week"] = scoreboard["week"]
+    out["0"] = {"matchups": matchups}
     return out
 
 
@@ -111,10 +116,13 @@ def _anonymise_matchup(matchup: dict) -> dict:
         raise ValueError("matchup has no teams object; Yahoo's shape changed")
     kept = {k: v for k, v in matchup.items() if k in MATCHUP_KEEP}
     if "stat_winners" in kept:
-        if not isinstance(kept["stat_winners"], list):
-            raise ValueError("stat_winners is not a list; Yahoo's shape changed")
+        winners = kept["stat_winners"]
+        if not isinstance(winners, list) or not all(
+                isinstance(w, dict) and set(w) == {"stat_winner"} and isinstance(w["stat_winner"], dict)
+                for w in winners):
+            raise ValueError("unknown stat_winners shape; add an allowlist for it before capturing")
         kept["stat_winners"] = [{"stat_winner": {k: v for k, v in w["stat_winner"].items() if k in STAT_WINNER_KEEP}}
-                                for w in kept["stat_winners"]]
+                                for w in winners]
     kept["0"] = {"teams": _anonymise_teams(teams_holder["teams"])}
     return kept
 

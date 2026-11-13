@@ -42,7 +42,7 @@ export default function RankingsTable({ rankings, showResult }: { rankings: Rank
             <tr key={team.team_key}>
               <td>{team.name}</td>
               {showResult && <ResultCell result={team.result} />}
-              <td className={color ? `medal-${color}` : ''}>{team.avg_rank.toFixed(2)}</td>
+              <td className={color ? `avg-rank medal-${color}` : 'avg-rank'}>{team.avg_rank.toFixed(2)}</td>
               <td>{formatMedian(team.median_rank)}</td>
               {categories.map((c) => (
                 <RankCell

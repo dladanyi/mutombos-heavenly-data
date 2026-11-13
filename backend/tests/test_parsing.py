@@ -164,15 +164,22 @@ def test_scoreboard_without_matchups_is_empty(matchups):
     assert parse_scoreboard(body) == {}
 
 
-@pytest.mark.parametrize("breakage", ["no_teams", "one_team", "bad_stat_winner"])
+@pytest.mark.parametrize("breakage", ["no_teams", "one_team", "bad_stat_winner", "null_stat_winners",
+                                      "stat_winner_list", "stat_winner_string"])
 def test_scoreboard_malformed_raises(breakage):
     m = matchup()
     if breakage == "no_teams":
         del m["0"]
     elif breakage == "one_team":
         del m["0"]["teams"]["1"]
-    else:
+    elif breakage == "bad_stat_winner":
         m["stat_winners"] = [{"oops": 1}]
+    elif breakage == "null_stat_winners":
+        m["stat_winners"] = None
+    elif breakage == "stat_winner_list":
+        m["stat_winners"] = [{"stat_winner": []}]
+    else:
+        m["stat_winners"] = ["x"]
     with pytest.raises(YahooFormatError):
         parse_scoreboard(matchup_body(m))
 
@@ -180,3 +187,11 @@ def test_scoreboard_malformed_raises(breakage):
 def test_scoreboard_finished_without_winner_has_no_outcome():
     results = parse_scoreboard(matchup_body(matchup(winner=None)))
     assert results["k.1"].outcome is None and results["k.2"].outcome is None
+
+
+def test_scoreboard_matchup_without_stat_winners_counts_zero():
+    m = matchup(status="midevent", winner=None)
+    del m["stat_winners"]
+    results = parse_scoreboard(matchup_body(m, matchup(a="k.3", b="k.4", winners=("k.3",), winner="k.3")))
+    assert (results["k.1"].wins, results["k.1"].losses, results["k.1"].ties) == (0, 0, 0)
+    assert results["k.3"].outcome == "W"

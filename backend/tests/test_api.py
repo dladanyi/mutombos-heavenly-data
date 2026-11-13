@@ -54,8 +54,8 @@ class FakeClient:
         self._maybe_fail()
         return TEAMS, self.stats_result, self.state
 
-    def week_results(self, week, current_week, refresh=False):
-        self.calls.append(("results", week, current_week, refresh))
+    def week_results(self, week, state, refresh=False):
+        self.calls.append(("results", week, state, refresh))
         if self.results_error:
             raise self.results_error
         return self.results, self.results_result
@@ -260,7 +260,7 @@ def test_current_week_has_no_results_and_skips_scoreboard(http, client):
 def test_finished_week_rows_carry_results(http, client, state):
     client.state = state
     teams = rows_by_name(http.get("/api/rankings/week/previous?refresh=1"))
-    assert ("results", 6, 7, True) in client.calls
+    assert ("results", 6, state, True) in client.calls
     assert teams["Alpha"]["result"] == {"outcome": "W", "wins": 5, "losses": 3, "ties": 1,
                                         "opponent": {"team_key": "k.2", "name": "Beta"}}
     assert teams["Beta"]["result"]["outcome"] == "L"

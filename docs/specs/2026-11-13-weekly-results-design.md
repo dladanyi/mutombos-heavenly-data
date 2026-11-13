@@ -26,7 +26,8 @@ A matchup Yahoo hasn't marked finished shows the score without W/L/T.
 
 - **Data:** Yahoo's `league/<key>/scoreboard;week=N`. Each matchup has `status` (`postevent`
   when finished), `is_tied`, `winner_team_key`, and `stat_winners` (one per category, a
-  winner or `is_tied`). Category counts come from `stat_winners`, not `team_points`.
+  winner or `is_tied`). Category counts come from `stat_winners`, not `team_points`. A matchup without `stat_winners` counts
+  as 0–0 rather than dropping every team's result.
 - **Backend:** `parsing.parse_scoreboard` → `{team_key: MatchupResult}`;
   `YahooClient.week_results` caches it with the same current/settling/final rules as the
   week's stats. The week route adds `result` to each row only when the week isn't current, so

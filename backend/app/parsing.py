@@ -102,8 +102,13 @@ def _parse_matchup(matchup: dict, where: str) -> dict[str, MatchupResult]:
     (a_key, a_name), (b_key, b_name) = teams
     wins = {a_key: 0, b_key: 0}
     ties = 0
-    for entry in _get(matchup, "stat_winners"):
+    stat_winners = matchup.get("stat_winners", [])  # absent = no categories decided yet
+    if not isinstance(stat_winners, list):
+        raise YahooFormatError(f"{where}.stat_winners is not a list")
+    for entry in stat_winners:
         winner = _get(entry, "stat_winner")
+        if not isinstance(winner, dict):
+            raise YahooFormatError(f"{where} has a malformed stat winner: {winner!r}")
         if str(winner.get("is_tied")) == "1":
             ties += 1
         elif winner.get("winner_team_key") in wins:

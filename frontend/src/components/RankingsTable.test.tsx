@@ -29,9 +29,9 @@ describe('RankingsTable', () => {
     render(<RankingsTable rankings={rankings({ teams: [team('A', 1, 1.5), team('B', 1, 1.5), team('C', 3, 2.25)] })} />)
     const avgCells = screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[1])
     expect(avgCells.map((td) => [td.textContent, td.className])).toEqual([
-      ['1.50', 'medal-gold'],
-      ['1.50', 'medal-gold'],
-      ['2.25', 'medal-bronze'],
+      ['1.50', 'avg-rank medal-gold'],
+      ['1.50', 'avg-rank medal-gold'],
+      ['2.25', 'avg-rank medal-bronze'],
     ])
   })
 
@@ -82,6 +82,8 @@ describe('RankingsTable', () => {
       expect(screen.getAllByRole('columnheader').map((th) => th.textContent).slice(0, 3)).toEqual(['Team', 'Result', 'Avg Rank'])
       expect(resultCells().map((td) => td.textContent)).toEqual(['W 5–3–1 vs Beta', 'L 3–5 vs Alpha'])
       expect(within(resultCells()[0]).getByText('W 5–3–1')).toHaveClass('result-w')
+      // Avg Rank is styled by class, so moving it to column 3 keeps its look.
+      expect(within(screen.getAllByRole('row')[2]).getAllByRole('cell')[2]).toHaveClass('avg-rank')
     })
 
     it('shows the score without an outcome while unfinished, and a dash without a matchup', () => {

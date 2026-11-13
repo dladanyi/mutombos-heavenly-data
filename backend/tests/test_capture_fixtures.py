@@ -146,7 +146,22 @@ def test_scoreboard_keeps_results_and_anonymises_teams():
 @pytest.mark.parametrize("body", [
     scoreboard_body(scoreboard_extra={"standings": []}),
     scoreboard_body(matchup_extra={"0": {"teams": {}, "managers": []}}),
+    scoreboard_body(matchup_extra={"stat_winners": [{"oops": 1}]}),
+    scoreboard_body(matchup_extra={"stat_winners": ["x"]}),
+    scoreboard_body(matchup_extra={"stat_winners": None}),
 ])
 def test_unknown_scoreboard_shapes_fail_loudly(body):
     with pytest.raises(ValueError):
         capture_fixtures.anonymise(body)
+
+
+@pytest.mark.parametrize("matchups", [[], None])
+def test_scoreboard_without_matchups_is_kept(matchups):
+    body = scoreboard_body()
+    holder = body["fantasy_content"]["league"][1]["scoreboard"]["0"]
+    if matchups is None:
+        del holder["matchups"]
+    else:
+        holder["matchups"] = matchups
+    out = capture_fixtures.anonymise(body)["fantasy_content"]["league"][1]["scoreboard"]
+    assert out["0"] == ({} if matchups is None else {"matchups": []})

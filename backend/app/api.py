@@ -8,7 +8,7 @@ from werkzeug.exceptions import HTTPException, NotFound
 
 from app.cache import CacheResult
 from app.config import CATEGORIES
-from app.errors import YahooFormatError, YahooUnavailable
+from app.errors import YahooUnavailable
 from app.parsing import MatchupResult
 from app.rankings import build_rankings
 
@@ -104,9 +104,9 @@ def week_rankings(week: str):
     results: dict[str, MatchupResult] = {}
     if state != "current":  # head-to-head results only exist once the week is over
         try:
-            results, results_result = _client().week_results(number, info.current_week, refresh=_refresh())
+            results, results_result = _client().week_results(number, state, refresh=_refresh())
             others.append(results_result)
-        except (YahooUnavailable, YahooFormatError) as exc:
+        except YahooUnavailable as exc:  # includes YahooFormatError (a subclass)
             # The rankings are still useful without results; just don't let anything cache this.
             log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
             results_ok = False
