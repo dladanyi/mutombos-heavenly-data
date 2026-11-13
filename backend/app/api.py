@@ -9,7 +9,7 @@ from werkzeug.exceptions import HTTPException, NotFound
 from app.cache import CacheResult
 from app.config import CATEGORIES
 from app.errors import YahooUnavailable
-from app.parsing import MatchupResult
+from app.parsing import MatchupResult, Standing
 from app.rankings import build_rankings
 
 log = logging.getLogger(__name__)
@@ -132,6 +132,47 @@ def _result_json(r: MatchupResult | None) -> dict | None:
         return None
     return {"outcome": r.outcome, "wins": r.wins, "losses": r.losses, "ties": r.ties,
             "opponent": {"team_key": r.opponent_key, "name": r.opponent_name}}
+
+
+@api.get("/api/seasons")
+def seasons():
+    refs, complete, results = _client().seasons(refresh=_refresh())
+    body = {"seasons": [{"season": s.season, "league_key": s.league_key, "current": s.current,
+                         "finished": s.finished} for s in refs], "complete": complete}
+    return _respond(body, "short" if complete else "none", *results)
+
+
+@api.get("/api/seasons/<season>")
+def final_season(season: str):
+    """A finished season: any past season, or the current one once Yahoo marks it finished."""
+    if not season.isdecimal():
+        raise NotFound()
+    refs, complete, walk_results = _client().seasons(refresh=_refresh())
+    ref = next((s for s in refs if s.season == int(season)), None)
+    if ref is None:
+        if not complete:  # an outage cut the walk short, so "not found" isn't known
+            raise YahooUnavailable("season list incomplete")
+        raise NotFound()
+    if ref.current and not ref.finished:
+        raise NotFound()  # the in-progress season is served by /api/rankings/season
+    standings, standings_result, teams, stats_result = _client().final_season(
+        ref.league_key, ref.finished, refresh=_refresh())
+    body = {
+        "season": ref.season,
+        "league_key": ref.league_key,
+        "fetched_at": _iso(standings_result.fetched_at),
+        "stale": any(r.stale for r in (standings_result, stats_result, *walk_results)),
+        "categories": _categories(),
+        "standings": [_standing_json(s) for s in sorted(standings, key=lambda s: (s.rank is None, s.rank or 0))],
+        "teams": build_rankings(teams),
+    }
+    kind = "final" if ref.finished and standings_result.final and stats_result.final else "short"
+    return _respond(body, kind, standings_result, stats_result, *walk_results)
+
+
+def _standing_json(s: Standing) -> dict:
+    return {"rank": s.rank, "team_key": s.team_key, "name": s.name, "wins": s.wins, "losses": s.losses,
+            "ties": s.ties, "percentage": s.percentage, "playoff_seed": s.playoff_seed}
 
 
 @api.get("/", defaults={"path": ""})

@@ -6,7 +6,8 @@ from app import create_app
 from app.cache import CacheResult
 from app.errors import YahooUnavailable
 from app.errors import YahooFormatError
-from app.parsing import LeagueInfo, MatchupResult, TeamStats
+from app.parsing import LeagueInfo, MatchupResult, Standing, TeamStats
+from app.yahoo_client import SeasonRef
 
 FETCHED_AT = 1_791_000_000.0  # 2026-10-03T04:00:00Z
 
@@ -32,6 +33,13 @@ class FakeClient:
         # Final by default so the existing final-week header tests only depend on stats_result.
         self.results_result = result(final=True)
         self.results_error = None
+        self.season_refs = [SeasonRef(2026, "478.l.1", True, False), SeasonRef(2025, "466.l.1", False, True)]
+        self.seasons_complete = True
+        self.seasons_result = result()
+        self.standings = [Standing(2, "k.2", "Beta", 90, 88, 2, 0.506, 1),
+                          Standing(1, "k.1", "Alpha", 100, 78, 2, 0.561, 3)]
+        self.standings_result = result(final=True)
+        self.final_stats_result = result(final=True)
         self.error = None
         self.calls = []
 
@@ -53,6 +61,15 @@ class FakeClient:
         self.calls.append(("week", week, current_week, refresh))
         self._maybe_fail()
         return TEAMS, self.stats_result, self.state
+
+    def seasons(self, refresh=False):
+        self.calls.append(("seasons", refresh))
+        self._maybe_fail()
+        return self.season_refs, self.seasons_complete, [self.seasons_result]
+
+    def final_season(self, league_key, finished, refresh=False):
+        self.calls.append(("final_season", league_key, finished, refresh))
+        return self.standings, self.standings_result, TEAMS, self.final_stats_result
 
     def week_results(self, week, state, refresh=False):
         self.calls.append(("results", week, state, refresh))
@@ -294,5 +311,75 @@ def test_stale_results_mark_response_stale(http, client):
     client.state = "settling"
     client.results_result = result(stale=True)
     response = http.get("/api/rankings/week/6")
+    assert response.get_json()["stale"] is True
+    assert headers(response) == NO_STORE
+
+
+FINAL = ("public, max-age=86400", "max-age=31536000")
+
+
+def test_seasons_list_shape_and_short_headers(http):
+    response = http.get("/api/seasons")
+    assert response.get_json() == {"seasons": [
+        {"season": 2026, "league_key": "478.l.1", "current": True, "finished": False},
+        {"season": 2025, "league_key": "466.l.1", "current": False, "finished": True}], "complete": True}
+    assert headers(response) == SHORT
+
+
+def test_seasons_list_incomplete_is_no_store(http, client):
+    client.seasons_complete = False
+    response = http.get("/api/seasons")
+    assert response.get_json()["complete"] is False
+    assert headers(response) == NO_STORE
+
+
+def test_past_season_body(http, client):
+    body = http.get("/api/seasons/2025").get_json()
+    assert (body["season"], body["league_key"], body["stale"]) == (2025, "466.l.1", False)
+    assert body["fetched_at"] == "2026-10-03T04:00:00Z"
+    assert [s["rank"] for s in body["standings"]] == [1, 2]
+    assert body["standings"][0] == {"rank": 1, "team_key": "k.1", "name": "Alpha", "wins": 100, "losses": 78,
+                                    "ties": 2, "percentage": 0.561, "playoff_seed": 3}
+    assert [t["name"] for t in body["teams"]] == ["Alpha", "Beta"]
+    assert [c["key"] for c in body["categories"]][0] == "PTS"
+    assert ("final_season", "466.l.1", True, False) in client.calls
+
+
+def test_past_season_final_headers_only_when_both_final(http, client):
+    assert headers(http.get("/api/seasons/2025")) == FINAL
+    client.final_stats_result = result(final=False)
+    assert headers(http.get("/api/seasons/2025")) == SHORT
+    client.final_stats_result = result(final=True)
+    client.standings_result = result(final=False)
+    assert headers(http.get("/api/seasons/2025")) == SHORT
+
+
+def test_current_in_progress_season_404(http):
+    response = http.get("/api/seasons/2026")
+    assert response.status_code == 404 and response.get_json() == {"error": "not_found"}
+
+
+def test_current_finished_season_served(http, client):
+    client.season_refs = [SeasonRef(2026, "478.l.1", True, True), client.season_refs[1]]
+    response = http.get("/api/seasons/2026")
+    assert response.status_code == 200 and response.get_json()["season"] == 2026
+    assert ("final_season", "478.l.1", True, False) in client.calls
+
+
+@pytest.mark.parametrize("season", ["abc", "2025-26", "1999", "-1"])
+def test_bad_season_404(http, season):
+    response = http.get(f"/api/seasons/{season}")
+    assert response.status_code == 404 and response.get_json() == {"error": "not_found"}
+
+
+def test_unknown_season_while_incomplete_503(http, client):
+    client.seasons_complete = False
+    response = http.get("/api/seasons/2024")
+    assert response.status_code == 503 and response.get_json()["error"] == "yahoo_unavailable"
+
+
+def test_stale_season_no_store(http, client):
+    client.standings_result = result(stale=True, final=True)
+    response = http.get("/api/seasons/2025")
     assert response.get_json()["stale"] is True
     assert headers(response) == NO_STORE
