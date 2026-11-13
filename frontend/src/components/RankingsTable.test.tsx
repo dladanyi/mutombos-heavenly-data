@@ -93,12 +93,23 @@ describe('RankingsTable', () => {
         { ...team('Beta', 2), result: { ...live, wins: 2, losses: 7, opponent: { team_key: 'k.a', name: 'Alpha' } } },
         { ...team('Gamma', 3), result: { ...live, wins: 4, losses: 4, ties: 1 } },
       ]
-      render(<RankingsTable rankings={rankings({ teams })} showResult resultHeader="Matchup" />)
+      render(<RankingsTable rankings={rankings({ teams })} showResult liveResults />)
       expect(screen.getAllByRole('columnheader')[1].textContent).toBe('Matchup')
       expect(resultCells().map((td) => td.textContent)).toEqual(['7–2 vs Beta', '2–7 vs Alpha', '4–4–1 vs Beta'])
       expect(resultCells().map((td) => td.querySelector('.result')!.className)).toEqual([
         'result result-w', 'result result-l', 'result result-t',
       ])
+    })
+
+    it('keeps a finished week without an outcome neutral, and a 0–0 live matchup neutral', () => {
+      const undecided = { outcome: null, wins: 5, losses: 4, ties: 0, opponent: { team_key: 'k.b', name: 'Beta' } }
+      const { unmount } = render(<RankingsTable rankings={rankings({ teams: [{ ...team('Alpha', 1), result: undecided }] })} showResult />)
+      expect(screen.getAllByRole('columnheader')[1].textContent).toBe('Result')
+      expect(resultCells()[0].querySelector('.result')!.className).toBe('result')
+      unmount()
+      const start = { ...undecided, wins: 0, losses: 0 }
+      render(<RankingsTable rankings={rankings({ teams: [{ ...team('Alpha', 1), result: start }] })} showResult liveResults />)
+      expect(resultCells()[0].querySelector('.result')!.className).toBe('result')
     })
 
     it('shows the score without an outcome while unfinished, and a dash without a matchup', () => {

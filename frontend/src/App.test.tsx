@@ -24,7 +24,7 @@ function mockApi(routes: Routes) {
 function happyRoutes(): Routes {
   return {
     '/api/league': { body: league() },
-    '/api/rankings/week/current': { body: rankings() },
+    '/api/rankings/week/current': { body: rankings({ state: 'current' }) },
     '/api/rankings/season': { body: rankings({ scope: 'season', week: null }) },
     '/api/rankings/week/6': { body: rankings({ week: 6, state: 'final' }) },
     '/api/seasons': { body: seasonsList() },
@@ -184,6 +184,8 @@ describe('App', () => {
     render(<App />)
     expect(await screen.findByText('Season over')).toBeInTheDocument()
     expect(screen.queryByText('● Live')).toBeNull()
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
+    expect(document.querySelector('table th:nth-child(2)')!.textContent).toBe('Result')
   })
 
   it('keeps the live badge when a mid-season week has ended', async () => {
@@ -208,5 +210,29 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
     expect(await screen.findByText('Just refreshed')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('Just refreshed')).toBeNull(), { timeout: 4000 })
+  })
+
+  it('keeps showing the chosen week when Yahoo rolls over to a new week', async () => {
+    const routes = happyRoutes()
+    routes['/api/league'] = [{ body: league() }, { body: league({ current_week: 8 }) }]
+    mockApi(routes)
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('Week 6')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.getByText('Week 6')).toBeInTheDocument()
+    expect(screen.queryByText('Week 7')).toBeNull()
+  })
+
+  it('shows no state badge for a past week that has not loaded', async () => {
+    const routes = happyRoutes()
+    routes['/api/rankings/week/6'] = { status: 503, body: { error: 'yahoo_unavailable', message: 'down' } }
+    mockApi(routes)
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('down')).toBeInTheDocument()
+    expect(screen.queryByText('Final')).toBeNull()
+    expect(screen.queryByText('Settling')).toBeNull()
   })
 })

@@ -23,9 +23,11 @@ export default function App() {
   const season = useApi((refresh) => getSeason({ refresh }), [])
 
   const info = league.data
-  // The week section steps back from the current week: 0 = current (live), 1 = last week, ...
-  const [weekOffset, setWeekOffset] = useState(0)
-  const pastWeek = info && weekOffset > 0 ? info.current_week - weekOffset : undefined
+  // The week chosen with the arrows (null = the live week). A week number, not an offset, so the
+  // table doesn't change under the user when Yahoo rolls over to a new week.
+  const [chosenWeek, setChosenWeek] = useState<number | null>(null)
+  const pastWeek =
+    info && chosenWeek !== null && chosenWeek < info.current_week ? Math.max(chosenWeek, info.start_week) : undefined
   const past = useApi(
     (refresh) => (pastWeek !== undefined ? getWeek(pastWeek, { refresh }) : Promise.resolve(undefined)),
     [pastWeek],
@@ -77,7 +79,7 @@ export default function App() {
         title={weekNumber ? `Week ${weekNumber}` : 'This Week'}
         badge={
           pastWeek !== undefined
-            ? { text: past.data?.state === 'settling' ? 'Settling' : 'Final' }
+            ? past.data && { text: past.data.state === 'settling' ? 'Settling' : 'Final' }
             : seasonOver
               ? { text: 'Season over' }
               : { text: '● Live', live: true }
@@ -86,17 +88,17 @@ export default function App() {
         onRetry={() => void shown.reload()}
         showLegend
         showResult
-        resultHeader={pastWeek !== undefined ? 'Result' : 'Matchup'}
+        liveResults={shown.data?.state === 'current'}
         actions={
           <>
             {info && info.current_week > info.start_week && (
               <ArrowNav
                 backLabel="Previous week"
                 forwardLabel="Next week"
-                canBack={info.current_week - weekOffset > info.start_week}
-                canForward={weekOffset > 0}
-                onBack={() => setWeekOffset((o) => o + 1)}
-                onForward={() => setWeekOffset((o) => Math.max(0, o - 1))}
+                canBack={(pastWeek ?? info.current_week) > info.start_week}
+                canForward={pastWeek !== undefined}
+                onBack={() => setChosenWeek((pastWeek ?? info.current_week) - 1)}
+                onForward={() => setChosenWeek(pastWeek !== undefined && pastWeek + 1 < info.current_week ? pastWeek + 1 : null)}
               />
             )}
             {justRefreshed && <span className="refresh-note">Just refreshed</span>}

@@ -10,7 +10,7 @@ type Props = {
   actions?: ReactNode
   showLegend?: boolean
   showResult?: boolean
-  resultHeader?: string
+  liveResults?: boolean
   showRecord?: boolean
   medals?: boolean
   /** Shown above the rankings table once data has loaded (e.g. a finished season's standings). */
@@ -25,7 +25,7 @@ const LEGEND = [
 ] as const
 
 export default function RankingsSection({
-  title, badge, state, onRetry, actions, showLegend, showResult, resultHeader, showRecord, medals, intro, caption,
+  title, badge, state, onRetry, actions, showLegend, showResult, liveResults, showRecord, medals, intro, caption,
 }: Props) {
   return (
     <div className="section">
@@ -61,7 +61,7 @@ export default function RankingsSection({
             <RankingsTable
               rankings={state.data}
               showResult={showResult}
-              resultHeader={resultHeader}
+              liveResults={liveResults}
               showRecord={showRecord}
               medals={medals}
             />

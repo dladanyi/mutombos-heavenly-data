@@ -4,15 +4,17 @@ import RankCell, { medal } from './RankCell'
 // Medians of whole-number ranks are whole or end in .5, so String() is enough ('3', '2.5').
 const formatMedian = (m?: number | null) => (m == null ? '–' : String(m))
 
-function ResultCell({ result }: { result?: MatchupResult | null }) {
+function ResultCell({ result, live }: { result?: MatchupResult | null; live?: boolean }) {
   if (!result) return <td className="result-cell">–</td>
   const score = [result.wins, result.losses, ...(result.ties ? [result.ties] : [])].join('–')
   const outcome = result.outcome ?? ''
-  // Live (no outcome yet): colour by who is leading so far.
-  const tone = outcome || (result.wins > result.losses ? 'W' : result.wins < result.losses ? 'L' : 'T')
+  // A live matchup is coloured by who is leading so far (neutral before any category is decided);
+  // a finished week without an outcome from Yahoo stays neutral rather than looking decided.
+  const decided = result.wins + result.losses + result.ties > 0
+  const tone = outcome || (live && decided ? (result.wins > result.losses ? 'W' : result.wins < result.losses ? 'L' : 'T') : '')
   return (
     <td className="result-cell">
-      <span className={`result result-${tone.toLowerCase()}`}>{outcome ? `${outcome} ${score}` : score}</span>{' '}
+      <span className={tone ? `result result-${tone.toLowerCase()}` : 'result'}>{outcome ? `${outcome} ${score}` : score}</span>{' '}
       <span className="result-opp">vs {result.opponent.name}</span>
     </td>
   )
@@ -21,21 +23,21 @@ function ResultCell({ result }: { result?: MatchupResult | null }) {
 type Props = {
   rankings: RankingsTableData
   showResult?: boolean
-  /** Header for the result column: "Result" for a finished week, "Matchup" for the live one. */
-  resultHeader?: string
+  /** The week is in progress: the column is headed "Matchup" and coloured by who is leading. */
+  liveResults?: boolean
   showRecord?: boolean
   /** Colour Avg Rank by place. Off for finished seasons, whose standings carry the medals. */
   medals?: boolean
 }
 
-export default function RankingsTable({ rankings, showResult, resultHeader = 'Result', showRecord, medals = true }: Props) {
+export default function RankingsTable({ rankings, showResult, liveResults, showRecord, medals = true }: Props) {
   const { categories, teams } = rankings
   return (
     <table>
       <thead>
         <tr>
           <th>Team</th>
-          {showResult && <th className="result-cell">{resultHeader}</th>}
+          {showResult && <th className="result-cell">{liveResults ? 'Matchup' : 'Result'}</th>}
           {showRecord && <th>Record</th>}
           <th>Avg Rank</th>
           <th>Med Rank</th>
@@ -52,7 +54,7 @@ export default function RankingsTable({ rankings, showResult, resultHeader = 'Re
           return (
             <tr key={team.team_key}>
               <td>{team.name}</td>
-              {showResult && <ResultCell result={team.result} />}
+              {showResult && <ResultCell result={team.result} live={liveResults} />}
               {showRecord && (
                 <td>{team.record ? `${team.record.wins}–${team.record.losses}–${team.record.ties}` : '–'}</td>
               )}
