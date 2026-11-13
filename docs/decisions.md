@@ -181,3 +181,16 @@ Newest first. Each entry: what we decided, and why.
   so the current week costs no extra Yahoo call. If the scoreboard fails, the rankings are
   still served (results null, not cached) rather than failing the whole week. This is the
   first piece of sub-project 3 (matchups).
+- **Past seasons via Yahoo's `renew` links (2026-11-13).** Full Season gets ‹ › arrows. The
+  backend follows each league's `renew` link to the previous season's league, so a new season
+  needs no config change. A 403 on a previous league means this account wasn't in it and ends
+  the walk (2024-25 today). It only counts as that when the current league loaded fine, since
+  Yahoo also returns 403 for a bad credential. Rejected: listing past leagues in config (a
+  yearly manual step) and folding past seasons into `/api/rankings/season` (different shape
+  and caching).
+- **A finished season shows a champion line and final standings, with medals on the standings
+  only.** Its stat table keeps the per-category colours but not the Avg Rank medals, so there
+  aren't two sets of medals on one screen. The stat table uses Yahoo's whole-season totals,
+  playoff weeks included (one cached call), with a caption, because the standings record is
+  regular season only. Once the current season is finished, the section opens on its final
+  view during the off-season.

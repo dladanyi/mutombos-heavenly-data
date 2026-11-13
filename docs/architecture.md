@@ -19,11 +19,11 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 | Module | Responsibility | Depends on |
 |---|---|---|
 | `config.py` | Reads and validates env vars; defines the nine ranked categories | - |
-| `errors.py` | `YahooUnavailable`, `YahooFormatError` | - |
+| `errors.py` | `YahooUnavailable`, `YahooFormatError`, `YahooAccessDenied` (HTTP 403) | - |
 | `yahoo_http.py` | OAuth token refresh, GET with timeout, retry and 401 handling | requests |
 | `cache.py` | TTL / final cache, stale-on-error, refresh throttle | - |
-| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules | yahoo_http, cache, parsing |
-| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult` | config |
+| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules; past-season walk (`renew`) and final standings | yahoo_http, cache, parsing |
+| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult`, `Standing` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, median rank, place) | config |
 | `api.py` | Flask routes, JSON errors, cache headers, local static serving | all of the above |
 | `logging_setup.py` | JSON log lines (Vercel runtime logs) | - |
@@ -35,8 +35,11 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 ## Frontend (`frontend/src/`)
 
 React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirror
-[api.md](api.md). Components: `Header`, `RankingsSection`, `RankingsTable`, `RankCell`.
-Medal colors come from the API's `rank` and `place` fields.
+[api.md](api.md). Components: `Header`, `RankingsSection`, `RankingsTable`, `RankCell`,
+`FullSeasonSection` (the ‹ › season arrows; today's view while a season is in progress, the
+final view once finished) and `StandingsTable` (champion line and final standings).
+Medal colors come from the API's `rank` and `place` fields. A finished season's medals are on
+its standings, so its rankings table doesn't colour Avg Rank.
 
 ## Caching
 
@@ -52,6 +55,8 @@ Two layers:
 | League, season, current week | 5 min | 60 s | 60 s |
 | Settling week (ended less than 3 days ago) | 1 h | 1 h | 5 min |
 | Final week (ended 3+ days before fetch) | forever | 1 year | 1 day |
+| Season list (`/api/seasons`) | current league 5 min, previous leagues 1 day | 60 s | 60 s |
+| Finished season's standings and stats | forever | 1 year | 1 day |
 
 A week becomes final once it is more than 3 days past its end date (Pacific time, using
 Yahoo's game-week calendar), which leaves time for Yahoo's stat corrections. Finality is
