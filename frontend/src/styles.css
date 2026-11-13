@@ -202,6 +202,10 @@ h1 {
 .table-wrap::-webkit-scrollbar-track { background: var(--surface); }
 .table-wrap::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 5px; border: 2px solid var(--surface); }
 .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* Firefox only: in Chromium 121+ scrollbar-color would override the rules above (and the 10px height). */
+@supports not selector(::-webkit-scrollbar) {
+    .table-wrap { scrollbar-color: var(--muted) var(--surface); }
+}
 
 /* ── Tables ── */
 table {
@@ -246,6 +250,10 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(249,115,22,0.04); }
+/* The pinned team cell is opaque, so layer the same hover tint over its background. */
+tbody tr:hover td:first-child {
+    background: linear-gradient(rgba(249,115,22,0.04), rgba(249,115,22,0.04)), var(--surface);
+}
 
 /* All body cells are <td> with index=False */
 td {

@@ -81,7 +81,8 @@ resource).
 - `avg_rank` is the mean of the category ranks (2 decimals). `median_rank` is their median.
   With 9 categories that is always a whole number; it's sent as a float. `median_rank` is
   informational only: sorting and `place` still use `avg_rank`. Browsers may hold final-week
-  responses cached before `median_rank` existed for up to a day, so clients treat it as optional.
+  responses cached before `median_rank` existed for up to a day (the CDN cache is per
+  deployment, so it starts empty), so clients treat it as optional.
 
 ## Errors
 

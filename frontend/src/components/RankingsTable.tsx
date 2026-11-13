@@ -1,8 +1,8 @@
 import type { Rankings } from '../api'
 import RankCell, { medal } from './RankCell'
 
-// Medians of whole-number ranks are whole or end in .5.
-const formatMedian = (m?: number) => (m === undefined ? '–' : Number.isInteger(m) ? String(m) : m.toFixed(1))
+// Medians of whole-number ranks are whole or end in .5, so String() is enough ('3', '2.5').
+const formatMedian = (m?: number | null) => (m == null ? '–' : String(m))
 
 export default function RankingsTable({ rankings }: { rankings: Rankings }) {
   const { categories, teams } = rankings

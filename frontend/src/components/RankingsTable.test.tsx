@@ -51,6 +51,12 @@ describe('RankingsTable', () => {
     expect(within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2].textContent).toBe('–')
   })
 
+  it('shows a dash instead of crashing when median rank is null', () => {
+    const teams = [{ ...team('A', 1), median_rank: null as unknown as number }]
+    render(<RankingsTable rankings={rankings({ teams })} />)
+    expect(within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2].textContent).toBe('–')
+  })
+
   it('renders team names as text', () => {
     const name = "<b>Mutombo's & 🏀</b>"
     render(<RankingsTable rankings={rankings({ teams: [team(name, 1)] })} />)
