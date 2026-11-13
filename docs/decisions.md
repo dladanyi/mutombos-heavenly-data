@@ -201,3 +201,7 @@ Newest first. Each entry: what we decided, and why.
   is doing in matchups and how it ranks on stats read side by side. The standings are cached for
   5 minutes like the rest of the live data. If they fail, the rankings are still served
   (records null, not cached).
+- **The current week shows its live matchups (2026-11-13), reversing "the live week isn't
+  fetched".** The current week table opens with a Matchup column: categories won so far
+  ("7–2 vs Team D"), coloured by who's leading, without W/L until it's final. It costs one
+  scoreboard call per 5 minutes per instance, the same TTL as the week's stats.

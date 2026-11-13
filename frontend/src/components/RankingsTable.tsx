@@ -8,11 +8,11 @@ function ResultCell({ result }: { result?: MatchupResult | null }) {
   if (!result) return <td className="result-cell">–</td>
   const score = [result.wins, result.losses, ...(result.ties ? [result.ties] : [])].join('–')
   const outcome = result.outcome ?? ''
+  // Live (no outcome yet): colour by who is leading so far.
+  const tone = outcome || (result.wins > result.losses ? 'W' : result.wins < result.losses ? 'L' : 'T')
   return (
     <td className="result-cell">
-      <span className={outcome ? `result result-${outcome.toLowerCase()}` : 'result'}>
-        {outcome ? `${outcome} ${score}` : score}
-      </span>{' '}
+      <span className={`result result-${tone.toLowerCase()}`}>{outcome ? `${outcome} ${score}` : score}</span>{' '}
       <span className="result-opp">vs {result.opponent.name}</span>
     </td>
   )
@@ -21,19 +21,21 @@ function ResultCell({ result }: { result?: MatchupResult | null }) {
 type Props = {
   rankings: RankingsTableData
   showResult?: boolean
+  /** Header for the result column: "Result" for a finished week, "Matchup" for the live one. */
+  resultHeader?: string
   showRecord?: boolean
   /** Colour Avg Rank by place. Off for finished seasons, whose standings carry the medals. */
   medals?: boolean
 }
 
-export default function RankingsTable({ rankings, showResult, showRecord, medals = true }: Props) {
+export default function RankingsTable({ rankings, showResult, resultHeader = 'Result', showRecord, medals = true }: Props) {
   const { categories, teams } = rankings
   return (
     <table>
       <thead>
         <tr>
           <th>Team</th>
-          {showResult && <th className="result-cell">Result</th>}
+          {showResult && <th className="result-cell">{resultHeader}</th>}
           {showRecord && <th>Record</th>}
           <th>Avg Rank</th>
           <th>Med Rank</th>

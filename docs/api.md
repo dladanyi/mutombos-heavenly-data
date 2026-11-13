@@ -93,13 +93,14 @@ resource).
   completed weeks: `{"wins": 17, "losses": 10, "ties": 0}`. It's `null` for a team missing from
   the standings, and for every team when the standings couldn't be fetched (that response is
   sent `no-store`).
-- `result` is the team's head-to-head matchup that week, from Yahoo's scoreboard. It's only on
-  week responses whose `state` is `settling` or `final` (absent for the current week and the
-  season). `wins`/`losses`/`ties` count categories from this team's side. `outcome` is `"W"`,
-  `"L"`, `"T"`, or `null` if Yahoo hasn't marked the matchup finished. `result` is `null` for a
-  team with no matchup (e.g. a playoff bye) and for every team when the scoreboard couldn't be
-  fetched; that response is sent `no-store` so the gap isn't cached. A final week only gets the
-  long CDN cache when both its stats and its scoreboard were fetched as final.
+- `result` (week responses) is the team's head-to-head matchup that week, from Yahoo's
+  scoreboard. `wins`/`losses`/`ties` count categories from this team's side. `outcome` is
+  `"W"`, `"L"` or `"T"` once Yahoo marks the matchup finished, and `null` while it's in
+  progress (the current week: categories won so far, refreshed with the week's 5-minute
+  cache). `result` is `null` for a team with no matchup (e.g. a playoff bye) and for every
+  team when the scoreboard couldn't be fetched; that response is sent `no-store` so the gap
+  isn't cached. A final week only gets the long CDN cache when both its stats and its
+  scoreboard were fetched as final.
 
 ## `GET /api/seasons`
 

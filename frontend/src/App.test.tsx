@@ -62,6 +62,15 @@ describe('App', () => {
     await waitFor(() => expect(calls).toContain('/api/rankings/season?refresh=1'))
   })
 
+  it('shows the live matchup column in the current week table', async () => {
+    mockApi(happyRoutes())
+    render(<App />)
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(3))
+    const headers = [...document.querySelectorAll('table')].map((t) => [...t.querySelectorAll('th')].map((th) => th.textContent))
+    expect(headers[0][1]).toBe('Matchup')
+    expect(headers[2][1]).toBe('Result')
+  })
+
   it('requests last week without waiting for the league', () => {
     const calls = mockApi(happyRoutes())
     render(<App />)

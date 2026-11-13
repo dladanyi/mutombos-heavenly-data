@@ -1,6 +1,6 @@
 # Weekly head-to-head results on the last-week table
 
-**Date:** 2026-11-13 · **Status:** implemented
+**Date:** 2026-11-13 · **Status:** implemented; extended the same day to the live week (see decisions.md)
 
 ## Intent
 

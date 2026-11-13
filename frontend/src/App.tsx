@@ -74,6 +74,8 @@ export default function App() {
         state={current}
         onRetry={() => void current.reload()}
         showLegend
+        showResult
+        resultHeader="Matchup"
         actions={
           <>
             {justRefreshed && <span className="refresh-note">Just refreshed</span>}

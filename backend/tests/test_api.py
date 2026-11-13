@@ -276,10 +276,13 @@ def rows_by_name(response):
     return {t["name"]: t for t in response.get_json()["teams"]}
 
 
-def test_current_week_has_no_results_and_skips_scoreboard(http, client):
-    teams = rows_by_name(http.get("/api/rankings/week/current"))
-    assert all("result" not in t for t in teams.values())
-    assert not any(c[0] == "results" for c in client.calls)
+def test_current_week_rows_carry_live_matchup(http, client):
+    client.results = {"k.1": MatchupResult(None, 7, 2, 0, "k.2", "Beta"),
+                      "k.2": MatchupResult(None, 2, 7, 0, "k.1", "Alpha")}
+    teams = rows_by_name(http.get("/api/rankings/week/current?refresh=1"))
+    assert ("results", 7, "current", True) in client.calls
+    assert teams["Alpha"]["result"] == {"outcome": None, "wins": 7, "losses": 2, "ties": 0,
+                                        "opponent": {"team_key": "k.2", "name": "Beta"}}
 
 
 @pytest.mark.parametrize("state", ["settling", "final"])

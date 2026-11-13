@@ -115,18 +115,17 @@ def week_rankings(week: str):
     others = [league_result]
     results_ok = True
     results: dict[str, MatchupResult] = {}
-    if state != "current":  # head-to-head results only exist once the week is over
-        try:
-            results, results_result = _client().week_results(number, state, refresh=_refresh())
-            others.append(results_result)
-        except YahooUnavailable as exc:  # includes YahooFormatError (a subclass)
-            # The rankings are still useful without results; just don't let anything cache this.
-            log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
-            results_ok = False
+    # Head-to-head results: final once the week is over, live (category leaders so far) before.
+    try:
+        results, results_result = _client().week_results(number, state, refresh=_refresh())
+        others.append(results_result)
+    except YahooUnavailable as exc:  # includes YahooFormatError (a subclass)
+        # The rankings are still useful without results; just don't let anything cache this.
+        log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
+        results_ok = False
     body = {**_rankings_body("week", number, teams, result, *others), "state": state}
-    if state != "current":
-        for row in body["teams"]:
-            row["result"] = _result_json(results.get(row["team_key"]))
+    for row in body["teams"]:
+        row["result"] = _result_json(results.get(row["team_key"]))
     # Long CDN caching only for data that was itself fetched as final (spec §5.2): an entry
     # fetched while settling may still be served after the week turns final.
     all_final = result.final and all(o.final for o in others[1:])

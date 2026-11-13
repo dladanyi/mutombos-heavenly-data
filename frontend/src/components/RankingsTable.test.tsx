@@ -86,6 +86,21 @@ describe('RankingsTable', () => {
       expect(within(screen.getAllByRole('row')[2]).getAllByRole('cell')[2]).toHaveClass('avg-rank')
     })
 
+    it('labels a live matchup and colours it by who is leading', () => {
+      const live = { outcome: null, wins: 7, losses: 2, ties: 0, opponent: { team_key: 'k.b', name: 'Beta' } }
+      const teams = [
+        { ...team('Alpha', 1), result: live },
+        { ...team('Beta', 2), result: { ...live, wins: 2, losses: 7, opponent: { team_key: 'k.a', name: 'Alpha' } } },
+        { ...team('Gamma', 3), result: { ...live, wins: 4, losses: 4, ties: 1 } },
+      ]
+      render(<RankingsTable rankings={rankings({ teams })} showResult resultHeader="Matchup" />)
+      expect(screen.getAllByRole('columnheader')[1].textContent).toBe('Matchup')
+      expect(resultCells().map((td) => td.textContent)).toEqual(['7–2 vs Beta', '2–7 vs Alpha', '4–4–1 vs Beta'])
+      expect(resultCells().map((td) => td.querySelector('.result')!.className)).toEqual([
+        'result result-w', 'result result-l', 'result result-t',
+      ])
+    })
+
     it('shows the score without an outcome while unfinished, and a dash without a matchup', () => {
       const teams = [{ ...team('Alpha', 1), result: { ...won, outcome: null } }, { ...team('Beta', 2), result: null }, team('Gamma', 3)]
       render(<RankingsTable rankings={rankings({ teams })} showResult />)
