@@ -150,7 +150,10 @@ When the league renews (new `YAHOO_LEAGUE_ID` in `.env` and Vercel, then redeplo
    combined span is checked, and the result says PROVISIONAL. If it reports a mismatch,
    switch finality to the league scoreboard's `week_start`/`week_end` (spec risk 3).
    2026-27: re-run after 2027-03-14.
-2. Re-capture the test fixtures once week 3 has finished (`backend/tests/fixtures/README.md`),
+2. Nothing to do for past seasons: the season that just ended appears under Full Season's ‹
+   arrow automatically (via the new league's `renew` link). A 403 for an older league in the
+   logs is expected when this Yahoo account wasn't in it.
+3. Re-capture the test fixtures once week 3 has finished (`backend/tests/fixtures/README.md`),
    and update the two calendar dates pinned in `test_parsing.py`.
 
 ## Rollback

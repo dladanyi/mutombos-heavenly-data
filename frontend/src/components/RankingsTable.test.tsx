@@ -86,10 +86,51 @@ describe('RankingsTable', () => {
       expect(within(screen.getAllByRole('row')[2]).getAllByRole('cell')[2]).toHaveClass('avg-rank')
     })
 
+    it('labels a live matchup and colours it by who is leading', () => {
+      const live = { outcome: null, wins: 7, losses: 2, ties: 0, opponent: { team_key: 'k.b', name: 'Beta' } }
+      const teams = [
+        { ...team('Alpha', 1), result: live },
+        { ...team('Beta', 2), result: { ...live, wins: 2, losses: 7, opponent: { team_key: 'k.a', name: 'Alpha' } } },
+        { ...team('Gamma', 3), result: { ...live, wins: 4, losses: 4, ties: 1 } },
+      ]
+      render(<RankingsTable rankings={rankings({ teams })} showResult liveResults />)
+      expect(screen.getAllByRole('columnheader')[1].textContent).toBe('Matchup')
+      expect(resultCells().map((td) => td.textContent)).toEqual(['7–2 vs Beta', '2–7 vs Alpha', '4–4–1 vs Beta'])
+      expect(resultCells().map((td) => td.querySelector('.result')!.className)).toEqual([
+        'result result-w', 'result result-l', 'result result-t',
+      ])
+    })
+
+    it('keeps a finished week without an outcome neutral, and a 0–0 live matchup neutral', () => {
+      const undecided = { outcome: null, wins: 5, losses: 4, ties: 0, opponent: { team_key: 'k.b', name: 'Beta' } }
+      const { unmount } = render(<RankingsTable rankings={rankings({ teams: [{ ...team('Alpha', 1), result: undecided }] })} showResult />)
+      expect(screen.getAllByRole('columnheader')[1].textContent).toBe('Result')
+      expect(resultCells()[0].querySelector('.result')!.className).toBe('result')
+      unmount()
+      const start = { ...undecided, wins: 0, losses: 0 }
+      render(<RankingsTable rankings={rankings({ teams: [{ ...team('Alpha', 1), result: start }] })} showResult liveResults />)
+      expect(resultCells()[0].querySelector('.result')!.className).toBe('result')
+    })
+
     it('shows the score without an outcome while unfinished, and a dash without a matchup', () => {
       const teams = [{ ...team('Alpha', 1), result: { ...won, outcome: null } }, { ...team('Beta', 2), result: null }, team('Gamma', 3)]
       render(<RankingsTable rankings={rankings({ teams })} showResult />)
       expect(resultCells().map((td) => td.textContent)).toEqual(['5–3–1 vs Beta', '–', '–'])
+    })
+  })
+
+  describe('record column', () => {
+    it('comes right after Team and shows W–L–T', () => {
+      const teams = [{ ...team('Alpha', 1), record: { wins: 17, losses: 10, ties: 0 } }, { ...team('Beta', 2), record: null }, team('Gamma', 3)]
+      render(<RankingsTable rankings={rankings({ teams })} showRecord />)
+      expect(screen.getAllByRole('columnheader').map((th) => th.textContent).slice(0, 3)).toEqual(['Team', 'Record', 'Avg Rank'])
+      const cells = screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[1].textContent)
+      expect(cells).toEqual(['17–10–0', '–', '–'])
+    })
+
+    it('is hidden unless asked for', () => {
+      render(<RankingsTable rankings={rankings()} />)
+      expect(screen.queryByRole('columnheader', { name: 'Record' })).toBeNull()
     })
   })
 })

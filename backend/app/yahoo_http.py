@@ -9,7 +9,7 @@ from collections.abc import Callable
 
 import requests
 
-from app.errors import YahooUnavailable
+from app.errors import YahooAccessDenied, YahooUnavailable
 
 TOKEN_URL = "https://api.login.yahoo.com/oauth2/get_token"
 API_BASE = "https://fantasysports.yahooapis.com/fantasy/v2/"
@@ -89,6 +89,8 @@ class YahooHttp:
                 continue
             if attempt == 1 and status >= 500 and status != _RATE_LIMITED:
                 continue
+            if status == 403:
+                raise YahooAccessDenied(f"Yahoo returned HTTP 403 for {path}")
             raise YahooUnavailable(f"Yahoo returned HTTP {status} for {path}")
         raise AssertionError("unreachable")
 

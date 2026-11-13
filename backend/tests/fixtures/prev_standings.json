@@ -1,0 +1,1149 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/league/466.l.11070/standings",
+    "league": [
+      {
+        "league_key": "466.l.11070",
+        "league_id": "11070",
+        "name": "Mutombo's Heavenly Block Party",
+        "num_teams": 10,
+        "renew": "454_37383",
+        "current_week": "23",
+        "start_week": "1",
+        "start_date": "2025-10-21",
+        "end_week": "23",
+        "end_date": "2026-04-05",
+        "is_finished": 1,
+        "season": "2025"
+      },
+      {
+        "standings": [
+          {
+            "teams": {
+              "0": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.4"
+                    },
+                    {
+                      "team_id": "4"
+                    },
+                    {
+                      "name": "Team 4"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "7030/14301"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".492"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "3552/4363"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".814"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1922"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "19534"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "6267"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "3967"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1116"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "728"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "1987"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 1,
+                      "playoff_seed": "1",
+                      "outcome_totals": {
+                        "wins": "118",
+                        "losses": "60",
+                        "ties": "2",
+                        "percentage": ".661"
+                      }
+                    }
+                  }
+                ]
+              },
+              "1": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.3"
+                    },
+                    {
+                      "team_id": "3"
+                    },
+                    {
+                      "name": "Team 3"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "6365/13566"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".469"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "3021/3769"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".802"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1921"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "17672"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5586"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "4446"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1295"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "590"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "2167"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 2,
+                      "playoff_seed": "3",
+                      "outcome_totals": {
+                        "wins": "103",
+                        "losses": "75",
+                        "ties": "2",
+                        "percentage": ".578"
+                      }
+                    }
+                  }
+                ]
+              },
+              "2": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.9"
+                    },
+                    {
+                      "team_id": "9"
+                    },
+                    {
+                      "name": "Team 9"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "6446/13698"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".471"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "3175/3920"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".810"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1852"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "17919"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "6939"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "4343"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1085"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "638"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "2199"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 3,
+                      "playoff_seed": "4",
+                      "outcome_totals": {
+                        "wins": "96",
+                        "losses": "81",
+                        "ties": "3",
+                        "percentage": ".542"
+                      }
+                    }
+                  }
+                ]
+              },
+              "3": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.10"
+                    },
+                    {
+                      "team_id": "10"
+                    },
+                    {
+                      "name": "Team 10"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "6273/13310"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".471"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "3018/3827"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".789"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1873"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "17437"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5901"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "4393"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1076"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "733"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "2143"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 4,
+                      "playoff_seed": "2",
+                      "outcome_totals": {
+                        "wins": "106",
+                        "losses": "72",
+                        "ties": "2",
+                        "percentage": ".594"
+                      }
+                    }
+                  }
+                ]
+              },
+              "4": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.6"
+                    },
+                    {
+                      "team_id": "6"
+                    },
+                    {
+                      "name": "Team 6"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "5842/12298"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".475"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "2867/3499"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".819"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "2007"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "16558"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5326"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "3208"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1001"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "581"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "1824"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 5,
+                      "playoff_seed": "6",
+                      "outcome_totals": {
+                        "wins": "82",
+                        "losses": "95",
+                        "ties": "3",
+                        "percentage": ".464"
+                      }
+                    }
+                  }
+                ]
+              },
+              "5": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.8"
+                    },
+                    {
+                      "team_id": "8"
+                    },
+                    {
+                      "name": "Team 8"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "6254/12861"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".486"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "3066/3810"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".805"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1730"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "17304"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5457"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "3789"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1124"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "557"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "2014"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 6,
+                      "playoff_seed": "5",
+                      "outcome_totals": {
+                        "wins": "89",
+                        "losses": "90",
+                        "ties": "1",
+                        "percentage": ".497"
+                      }
+                    }
+                  }
+                ]
+              },
+              "6": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.2"
+                    },
+                    {
+                      "team_id": "2"
+                    },
+                    {
+                      "name": "Team 2"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "5679/12321"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".461"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "2887/3561"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".811"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1744"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "15989"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5726"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "4109"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "920"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "578"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "2099"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 7,
+                      "playoff_seed": "10",
+                      "outcome_totals": {
+                        "wins": "61",
+                        "losses": "114",
+                        "ties": "5",
+                        "percentage": ".353"
+                      }
+                    }
+                  }
+                ]
+              },
+              "7": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.5"
+                    },
+                    {
+                      "team_id": "5"
+                    },
+                    {
+                      "name": "Team 5"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "5924/11868"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".499"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "2831/3757"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".754"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1387"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "16066"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "6053"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "3323"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "911"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "669"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "1747"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 8,
+                      "playoff_seed": "8",
+                      "outcome_totals": {
+                        "wins": "79",
+                        "losses": "99",
+                        "ties": "2",
+                        "percentage": ".444"
+                      }
+                    }
+                  }
+                ]
+              },
+              "8": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.1"
+                    },
+                    {
+                      "team_id": "1"
+                    },
+                    {
+                      "name": "Team 1"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "5557/11885"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".468"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "2739/3399"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".806"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1634"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "15487"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5501"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "3508"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "1013"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "760"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "1845"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 9,
+                      "playoff_seed": "7",
+                      "outcome_totals": {
+                        "wins": "79",
+                        "losses": "96",
+                        "ties": "5",
+                        "percentage": ".453"
+                      }
+                    }
+                  }
+                ]
+              },
+              "9": {
+                "team": [
+                  [
+                    {
+                      "team_key": "466.l.11070.t.7"
+                    },
+                    {
+                      "team_id": "7"
+                    },
+                    {
+                      "name": "Team 7"
+                    },
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    [],
+                    []
+                  ],
+                  {
+                    "team_stats": {
+                      "coverage_type": "season",
+                      "season": "2025",
+                      "stats": [
+                        {
+                          "stat": {
+                            "stat_id": "9004003",
+                            "value": "5887/11972"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "5",
+                            "value": ".492"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "9007006",
+                            "value": "2426/3179"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "8",
+                            "value": ".763"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "10",
+                            "value": "1479"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "12",
+                            "value": "15679"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "15",
+                            "value": "5292"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "16",
+                            "value": "3679"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "17",
+                            "value": "985"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "18",
+                            "value": "553"
+                          }
+                        },
+                        {
+                          "stat": {
+                            "stat_id": "19",
+                            "value": "1783"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "team_standings": {
+                      "rank": 10,
+                      "playoff_seed": "9",
+                      "outcome_totals": {
+                        "wins": "72",
+                        "losses": "103",
+                        "ties": "5",
+                        "percentage": ".414"
+                      }
+                    }
+                  }
+                ]
+              },
+              "count": 10
+            }
+          }
+        ]
+      }
+    ],
+    "time": "50.039052963257ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}

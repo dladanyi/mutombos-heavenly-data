@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { league, rankings } from './test/data'
+import { finalSeason, league, rankings, seasonsList } from './test/data'
 
 type Route = { status?: number; body: unknown }
 type Routes = Record<string, Route | Route[]>
@@ -24,51 +24,62 @@ function mockApi(routes: Routes) {
 function happyRoutes(): Routes {
   return {
     '/api/league': { body: league() },
-    '/api/rankings/week/current': { body: rankings() },
+    '/api/rankings/week/current': { body: rankings({ state: 'current' }) },
     '/api/rankings/season': { body: rankings({ scope: 'season', week: null }) },
-    '/api/rankings/week/previous': { body: rankings({ week: 6 }) },
+    '/api/rankings/week/6': { body: rankings({ week: 6, state: 'final' }) },
+    '/api/seasons': { body: seasonsList() },
   }
 }
 
 describe('App', () => {
-  it('shows loading then three sections', async () => {
+  it('shows loading then the week and full season sections', async () => {
     mockApi(happyRoutes())
     render(<App />)
     expect(document.querySelectorAll('.skeleton').length).toBeGreaterThan(0)
     expect(await screen.findByText('Week 7')).toBeInTheDocument()
     expect(screen.getByText('Full Season')).toBeInTheDocument()
-    expect(await screen.findByText('Week 6')).toBeInTheDocument()
-    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(3))
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
+    expect(screen.queryByText('Last week')).toBeNull()
     expect(screen.getByText(/Last updated:/)).toHaveTextContent('Nov 20, 2026')
   })
 
-  it('shows the result column only in the last-week table', async () => {
-    mockApi(happyRoutes())
-    render(<App />)
-    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(3))
-    const tables = [...document.querySelectorAll('table')]
-    expect(tables.map((t) => [...t.querySelectorAll('th')].some((th) => th.textContent === 'Result'))).toEqual([false, false, true])
-  })
-
-  it('requests last week without waiting for the league', () => {
+  it('steps back through weeks with the arrows and forward to the live week', async () => {
     const calls = mockApi(happyRoutes())
     render(<App />)
-    expect(calls).toEqual(expect.arrayContaining(['/api/league', '/api/rankings/week/previous']))
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('Week 6')).toBeInTheDocument()
+    expect(calls).toContain('/api/rankings/week/6')
+    expect(screen.getByText('Final')).toBeInTheDocument()
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
+    expect(document.querySelector('table th:nth-child(2)')!.textContent).toBe('Result')
+    expect(screen.queryByText('● Live')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(await screen.findByText('Week 7')).toBeInTheDocument()
+    expect(screen.getByText('● Live')).toBeInTheDocument()
+    expect(document.querySelector('table th:nth-child(2)')!.textContent).toBe('Matchup')
+    expect(screen.getByRole('button', { name: 'Next week' })).toBeDisabled()
   })
 
-  it('hides last week when the API has no previous week', async () => {
+  it('stops at the league\'s first week', async () => {
     const routes = happyRoutes()
-    routes['/api/league'] = { body: league({ current_week: 1 }) }
-    routes['/api/rankings/week/current'] = { body: rankings({ week: 1 }) }
-    routes['/api/rankings/week/previous'] = { status: 404, body: { error: 'not_found' } }
+    routes['/api/league'] = { body: league({ start_week: 6 }) }
     mockApi(routes)
     render(<App />)
-    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.queryByText('Last week')).toBeNull()
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('Week 6')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Previous week' })).toBeDisabled()
   })
 
-  it('hides last week in week 1', async () => {
+  it('shows a settling badge for a week inside the stat-correction window', async () => {
+    const routes = happyRoutes()
+    routes['/api/rankings/week/6'] = { body: rankings({ week: 6, state: 'settling' }) }
+    mockApi(routes)
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('Settling')).toBeInTheDocument()
+  })
+
+  it('has no week arrows in week 1', async () => {
     const routes = happyRoutes()
     routes['/api/league'] = { body: league({ current_week: 1 }) }
     routes['/api/rankings/week/current'] = { body: rankings({ week: 1 }) }
@@ -76,9 +87,19 @@ describe('App', () => {
     render(<App />)
     expect(await screen.findByText('Week 1')).toBeInTheDocument()
     await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
-    expect(screen.queryByText('Week 0')).toBeNull()
-    expect(screen.queryByText('Last week')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Previous week' })).toBeNull()
     expect(calls.some((c) => c.includes('/week/0'))).toBe(false)
+  })
+
+  it('refresh still reloads the current season while it shows its final view', async () => {
+    const routes = happyRoutes()
+    routes['/api/seasons'] = { body: seasonsList({ seasons: [{ season: 2026, league_key: '478.l.1', current: true, finished: true }] }) }
+    routes['/api/seasons/2026'] = { body: finalSeason({ season: 2026 }) }
+    const calls = mockApi(routes)
+    render(<App />)
+    expect(await screen.findByText(/Champion/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    await waitFor(() => expect(calls).toContain('/api/rankings/season?refresh=1'))
   })
 
   it('shows error card and retries', async () => {
@@ -91,7 +112,7 @@ describe('App', () => {
     render(<App />)
     expect(await screen.findByText('Yahoo Fantasy is unavailable right now.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(3))
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
     expect(screen.queryByText('Yahoo Fantasy is unavailable right now.')).toBeNull()
   })
 
@@ -106,12 +127,23 @@ describe('App', () => {
   it('refresh sends refresh=1', async () => {
     const calls = mockApi(happyRoutes())
     render(<App />)
-    await screen.findByText('Week 6')
+    await screen.findByText('Week 7')
     await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
     await waitFor(() => {
       expect(calls).toContain('/api/rankings/week/current?refresh=1')
       expect(calls).toContain('/api/rankings/season?refresh=1')
-      expect(calls).toContain('/api/rankings/week/previous?refresh=1')
+    })
+  })
+
+  it('refresh also reloads the past week being viewed', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    await screen.findByText('Week 6')
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    await waitFor(() => {
+      expect(calls).toContain('/api/rankings/week/6?refresh=1')
+      expect(calls).toContain('/api/rankings/week/current?refresh=1')
     })
   })
 
@@ -121,9 +153,9 @@ describe('App', () => {
       const body = (routes[path] as Route).body as object
       routes[path] = [{ body }, { body: { ...body, refresh_throttled: true } }]
     }
-    routes['/api/rankings/week/previous'] = { body: rankings({ week: 6, state: 'final', refresh_throttled: false }) }
     mockApi(routes)
     render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
     await screen.findByText('Week 6')
     await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
     expect(await screen.findByText('Just refreshed')).toBeInTheDocument()
@@ -137,21 +169,23 @@ describe('App', () => {
     ]
     mockApi(routes)
     render(<App />)
-    await screen.findByText('Week 6')
+    await screen.findByText('Week 7')
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
     await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
     expect(await screen.findByText(/Couldn't update: Yahoo Fantasy is unavailable right now\./)).toBeInTheDocument()
-    expect(document.querySelectorAll('table')).toHaveLength(3)
+    expect(document.querySelectorAll('table')).toHaveLength(2)
   })
 
   it('drops the live badge once the season is over', async () => {
     const routes = happyRoutes()
     routes['/api/rankings/week/current'] = { body: rankings({ week: 21, state: 'final' }) }
     routes['/api/league'] = { body: league({ current_week: 21 }) }
-    routes['/api/rankings/week/previous'] = { body: rankings({ week: 20, state: 'final' }) }
     mockApi(routes)
     render(<App />)
     expect(await screen.findByText('Season over')).toBeInTheDocument()
     expect(screen.queryByText('● Live')).toBeNull()
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
+    expect(document.querySelector('table th:nth-child(2)')!.textContent).toBe('Result')
   })
 
   it('keeps the live badge when a mid-season week has ended', async () => {
@@ -159,21 +193,46 @@ describe('App', () => {
     routes['/api/rankings/week/current'] = { body: rankings({ state: 'settling' }) }
     mockApi(routes)
     render(<App />)
-    await screen.findByText('Week 6')
+    await screen.findByText('Week 7')
     expect(screen.getByText('● Live')).toBeInTheDocument()
   })
 
   it('says just refreshed when every refresh was throttled', async () => {
     const routes = happyRoutes()
-    for (const path of ['/api/rankings/week/current', '/api/rankings/season', '/api/rankings/week/previous']) {
+    for (const path of ['/api/rankings/week/current', '/api/rankings/season']) {
       const body = (routes[path] as Route).body as object
       routes[path] = [{ body }, { body: { ...body, refresh_throttled: true } }]
     }
     mockApi(routes)
     render(<App />)
-    await screen.findByText('Week 6')
+    await screen.findByText('Week 7')
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(2))
     await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
     expect(await screen.findByText('Just refreshed')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('Just refreshed')).toBeNull(), { timeout: 4000 })
+  })
+
+  it('keeps showing the chosen week when Yahoo rolls over to a new week', async () => {
+    const routes = happyRoutes()
+    routes['/api/league'] = [{ body: league() }, { body: league({ current_week: 8 }) }]
+    mockApi(routes)
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('Week 6')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Refresh/ }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.getByText('Week 6')).toBeInTheDocument()
+    expect(screen.queryByText('Week 7')).toBeNull()
+  })
+
+  it('shows no state badge for a past week that has not loaded', async () => {
+    const routes = happyRoutes()
+    routes['/api/rankings/week/6'] = { status: 503, body: { error: 'yahoo_unavailable', message: 'down' } }
+    mockApi(routes)
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Previous week' }))
+    expect(await screen.findByText('down')).toBeInTheDocument()
+    expect(screen.queryByText('Final')).toBeNull()
+    expect(screen.queryByText('Settling')).toBeNull()
   })
 })

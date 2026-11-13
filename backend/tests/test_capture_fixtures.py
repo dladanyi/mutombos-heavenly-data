@@ -165,3 +165,26 @@ def test_scoreboard_without_matchups_is_kept(matchups):
         holder["matchups"] = matchups
     out = capture_fixtures.anonymise(body)["fantasy_content"]["league"][1]["scoreboard"]
     assert out["0"] == ({} if matchups is None else {"matchups": []})
+
+
+
+def test_standings_keep_only_allowlisted():
+    meta = [{"team_key": "k.4"}, {"team_id": "4"}, {"name": "Real"}, {"managers": [{"manager": {"email": "e@x"}}]}]
+    body = {"fantasy_content": {"league": [{"league_key": "nba.l.1"}, {"standings": [{"teams": {
+        "0": {"team": [meta, {"team_stats": {"stats": []}, "team_points": {"total": "1"}},
+                       {"team_standings": {"rank": 1, "playoff_seed": "1", "games_back": "-",
+                                           "outcome_totals": {"wins": "1", "losses": "0", "ties": "0",
+                                                              "percentage": "1.000"}}}]},
+        "count": 1}}]}]}}
+    out = capture_fixtures.anonymise(body)["fantasy_content"]["league"][1]["standings"][0]["teams"]["0"]["team"]
+    assert out[0] == [{"team_key": "k.4"}, {"team_id": "4"}, {"name": "Team 4"}]
+    assert out[1:] == [{"team_stats": {"stats": []}},
+                       {"team_standings": {"rank": 1, "playoff_seed": "1", "outcome_totals": {
+                           "wins": "1", "losses": "0", "ties": "0", "percentage": "1.000"}}}]
+
+
+def test_league_meta_keeps_renew():
+    body = stats_body([{"team_key": "k.1"}, {"team_id": "1"}, {"name": "A"}],
+                      league_meta={"league_key": "nba.l.1", "season": "2025", "renew": "454_1", "url": "u"})
+    meta = capture_fixtures.anonymise(body)["fantasy_content"]["league"][0]
+    assert meta == {"league_key": "nba.l.1", "season": "2025", "renew": "454_1"}

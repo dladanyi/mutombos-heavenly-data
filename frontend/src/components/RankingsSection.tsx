@@ -1,15 +1,21 @@
 import type { ReactNode } from 'react'
-import type { Rankings } from '../api'
+import type { RankingsTableData } from '../api'
 import RankingsTable from './RankingsTable'
 
 type Props = {
   title: string
   badge?: { text: string; live?: boolean }
-  state: { data?: Rankings | null; error?: Error; loading: boolean }
+  state: { data?: RankingsTableData | null; error?: Error; loading: boolean }
   onRetry: () => void
   actions?: ReactNode
   showLegend?: boolean
   showResult?: boolean
+  liveResults?: boolean
+  showRecord?: boolean
+  medals?: boolean
+  /** Shown above the rankings table once data has loaded (e.g. a finished season's standings). */
+  intro?: ReactNode
+  caption?: string
 }
 
 const LEGEND = [
@@ -18,7 +24,9 @@ const LEGEND = [
   ['bronze', '3rd in stat'],
 ] as const
 
-export default function RankingsSection({ title, badge, state, onRetry, actions, showLegend, showResult }: Props) {
+export default function RankingsSection({
+  title, badge, state, onRetry, actions, showLegend, showResult, liveResults, showRecord, medals, intro, caption,
+}: Props) {
   return (
     <div className="section">
       <div className="section-header">
@@ -46,9 +54,17 @@ export default function RankingsSection({ title, badge, state, onRetry, actions,
       )}
       {state.data ? (
         <>
+          {intro}
+          {caption && <div className="table-caption">{caption}</div>}
           <div className="scroll-hint">← swipe to see all stats →</div>
           <div className="table-wrap">
-            <RankingsTable rankings={state.data} showResult={showResult} />
+            <RankingsTable
+              rankings={state.data}
+              showResult={showResult}
+              liveResults={liveResults}
+              showRecord={showRecord}
+              medals={medals}
+            />
           </div>
         </>
       ) : state.error && !state.loading ? (

@@ -17,8 +17,10 @@ export type TeamRow = {
   median_rank?: number
   place: number
   stats: Record<string, StatCell>
-  /** Week responses that aren't current only; null when the team had no matchup or results were unavailable. */
+  /** Week responses: the matchup (outcome null while live); null when the team had no matchup or results were unavailable. */
   result?: MatchupResult | null
+  /** Current season only: category W–L–T over completed weeks; null when standings were unavailable. */
+  record?: { wins: number; losses: number; ties: number } | null
 }
 export type Rankings = {
   scope: 'week' | 'season'
@@ -31,6 +33,29 @@ export type Rankings = {
   categories: Category[]
   teams: TeamRow[]
 }
+/** The columns a rankings table needs; a finished season carries them too. */
+export type RankingsTableData = Pick<Rankings, 'categories' | 'teams'>
+export type SeasonRef = { season: number; league_key: string; current: boolean; finished: boolean }
+export type SeasonsList = { seasons: SeasonRef[]; complete: boolean }
+export type Standing = {
+  rank: number | null
+  team_key: string
+  name: string
+  wins: number
+  losses: number
+  ties: number
+  percentage: number | null
+  playoff_seed: number | null
+}
+export type FinalSeason = Omit<Rankings, 'scope' | 'week' | 'state' | 'refresh_throttled'> & {
+  season: number
+  league_key: string
+  standings: Standing[]
+}
+
+/** 2025 -> "2025-26". */
+export const seasonLabel = (year: number) => `${year}-${String((year + 1) % 100).padStart(2, '0')}`
+
 export type League = {
   name: string
   current_week: number
@@ -69,3 +94,5 @@ export const getLeague = (opts?: Options) => getJson<League>('/api/league', opts
 export const getSeason = (opts?: Options) => getJson<Rankings>('/api/rankings/season', opts)
 export const getWeek = (week: number | 'current' | 'previous', opts?: Options) =>
   getJson<Rankings>(`/api/rankings/week/${week}`, opts)
+export const getSeasons = () => getJson<SeasonsList>('/api/seasons')
+export const getFinalSeason = (season: number) => getJson<FinalSeason>(`/api/seasons/${season}`)

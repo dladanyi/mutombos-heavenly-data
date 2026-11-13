@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from app.errors import YahooUnavailable
+from app.errors import YahooAccessDenied, YahooUnavailable
 from app.yahoo_http import API_BASE, TOKEN_URL, YahooHttp
 
 
@@ -253,3 +253,11 @@ def test_token_refresh_rejection_logs_yahoo_error(caplog):
         make(session).get_json("league/nba.l.1")
     record, = [r for r in caplog.records if r.getMessage() == "Yahoo token refresh rejected"]
     assert record.yahoo_error == "invalid_grant: Invalid refresh token"
+
+
+def test_403_raises_access_denied():
+    session = FakeSession(posts=[token()], gets=[FakeResponse(403, {})])
+    with pytest.raises(YahooAccessDenied, match="403") as exc:
+        make(session).get_json("league/454.l.37383")
+    assert isinstance(exc.value, YahooUnavailable)
+    assert len(session.get_calls) == 1

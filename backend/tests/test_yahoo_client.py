@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from app.cache import Cache
-from app.errors import YahooUnavailable
+from app.errors import YahooAccessDenied, YahooUnavailable
 from app.parsing import parse_game_weeks
 from app.yahoo_client import YahooClient, pacific_today
 
@@ -24,18 +24,23 @@ LEAGUE_ID = str(LEAGUE_META["league_id"])
 LEAGUE = f"league/nba.l.{LEAGUE_ID}"
 NUM_TEAMS = int(LEAGUE_META["num_teams"])
 WEEK3_END = parse_game_weeks(fixture("game_weeks.json"))[3].end
+PREV = "league/" + fixture("league.json")["fantasy_content"]["league"][0]["renew"].replace("_", ".l.")
+OLDEST = "league/" + fixture("prev_league.json")["fantasy_content"]["league"][0]["renew"].replace("_", ".l.")
 
 
 class FakeHttp:
     def __init__(self):
         self.calls = Counter()
         self.failing = set()
+        self.denied = set()  # paths that answer HTTP 403
         self.overrides = {}
 
     def get_json(self, path):
         self.calls[path] += 1
         if path in self.failing:
             raise YahooUnavailable(f"{path} down")
+        if path in self.denied:
+            raise YahooAccessDenied(f"Yahoo returned HTTP 403 for {path}")
         if path in self.overrides:
             return self.overrides[path]
         if path == LEAGUE:
@@ -48,6 +53,16 @@ class FakeHttp:
             return fixture("week_stats.json")
         if path.startswith(f"{LEAGUE}/scoreboard;week="):
             return fixture("scoreboard.json")
+        if path == f"{LEAGUE}/standings":
+            return fixture("prev_standings.json")  # same shape as the current league's standings
+        if path == PREV:
+            return fixture("prev_league.json")
+        if path == f"{PREV}/standings":
+            return fixture("prev_standings.json")
+        if path == f"{PREV}/teams/stats":
+            return fixture("prev_season_stats.json")
+        if path == OLDEST:
+            raise YahooAccessDenied(f"Yahoo returned HTTP 403 for {path}")
         raise AssertionError(f"unexpected path {path}")
 
 
@@ -265,3 +280,114 @@ def test_week_results_does_not_recompute_state(setup):
     client, http, *_ = setup
     client.week_results(3, "settling")
     assert http.calls["game/nba/game_weeks"] == 0
+
+
+
+def test_seasons_walks_renew_chain(setup):
+    client, http, *_ = setup
+    seasons, complete, results = client.seasons()
+    assert [(s.season, s.current, s.finished) for s in seasons] == [(2026, True, False), (2025, False, True)]
+    assert seasons[1].league_key == PREV.removeprefix("league/")
+    assert complete is True and results
+    assert http.calls[OLDEST] == 1
+
+
+def test_seasons_access_denied_stop_cached_one_day(setup):
+    client, http, clock, _ = setup
+    client.seasons()
+    clock.now += 86399
+    client.seasons()
+    assert http.calls[OLDEST] == 1
+    clock.now += 2
+    client.seasons()
+    assert http.calls[OLDEST] == 2
+
+
+def test_seasons_outage_marks_incomplete_and_is_not_cached(setup):
+    client, http, clock, _ = setup
+    http.failing.add(PREV)
+    seasons, complete, _ = client.seasons()
+    assert [s.season for s in seasons] == [2026] and complete is False
+    http.failing.discard(PREV)
+    clock.now += 31
+    seasons, complete, _ = client.seasons()
+    assert [s.season for s in seasons] == [2026, 2025] and complete is True
+
+
+def test_seasons_loop_guard(setup):
+    client, http, *_ = setup
+    looping = fixture("prev_league.json")
+    looping["fantasy_content"]["league"][0]["renew"] = PREV.removeprefix("league/").replace(".l.", "_")
+    http.overrides[PREV] = looping
+    seasons, complete, _ = client.seasons()
+    assert len(seasons) == 20
+
+
+def test_final_season_finished_cached_forever(setup):
+    client, http, clock, _ = setup
+    key = PREV.removeprefix("league/")
+    standings, std_result, teams, stats_result = client.final_season(key, finished=True)
+    clock.now += 365 * 86400
+    client.final_season(key, finished=True, refresh=True)
+    assert http.calls[f"{PREV}/standings"] == 1 and http.calls[f"{PREV}/teams/stats"] == 1
+    assert std_result.final and stats_result.final
+    assert len(standings) == len(teams) == NUM_TEAMS and standings[0].rank == 1
+
+
+def test_final_season_unfinished_uses_current_ttl(setup):
+    client, http, clock, _ = setup
+    key = PREV.removeprefix("league/")
+    client.final_season(key, finished=False)
+    clock.now += 301
+    client.final_season(key, finished=False)
+    assert http.calls[f"{PREV}/standings"] == 2
+
+
+def test_bad_credential_does_not_cache_end_of_history(setup):
+    """A 403 only means "no access to that season" when the current league loaded fine; with a
+    bad credential everything is 403, the current league is served stale, and the walk must not
+    overwrite the cached previous season with an end-of-history marker."""
+    client, http, clock, _ = setup
+    assert [s.season for s in client.seasons()[0]] == [2026, 2025]
+    clock.now += 86401  # every cached league entry has expired
+    http.denied |= {LEAGUE, PREV}
+    seasons, _, results = client.seasons()
+    assert [s.season for s in seasons] == [2026, 2025]
+    assert any(r.stale for r in results)
+    http.denied.clear()
+    clock.now += 31  # past the failure cooldown
+    assert [s.season for s in client.seasons()[0]] == [2026, 2025]
+
+
+def test_cached_current_league_does_not_vouch_for_a_403(setup):
+    """The current league served from its 5-minute cache says nothing about the credential:
+    a 403 on a previous league must be re-checked against Yahoo before ending history."""
+    client, http, clock, _ = setup
+    client.seasons()
+    clock.now += 86350
+    client.league()  # current league refetched: fresh in cache for 300 s
+    clock.now += 51  # previous-league entries have expired, the current one hasn't
+    http.denied |= {LEAGUE, PREV}
+    seasons, _, results = client.seasons()
+    assert [s.season for s in seasons] == [2026, 2025]
+    assert any(r.stale for r in results)
+
+
+def test_current_season_key_falls_back_to_configured_league(setup):
+    client, http, *_ = setup
+    league = fixture("league.json")
+    del league["fantasy_content"]["league"][0]["league_key"]
+    http.overrides[LEAGUE] = league
+    assert client.seasons()[0][0].league_key == f"nba.l.{LEAGUE_ID}"
+
+
+def test_current_standings_ttl_five_minutes(setup):
+    client, http, clock, _ = setup
+    standings, result = client.standings()
+    assert len(standings) == NUM_TEAMS and not result.final
+    clock.now += 299
+    client.standings()
+    assert http.calls[f"{LEAGUE}/standings"] == 1
+    clock.now += 2
+    client.standings()
+    assert http.calls[f"{LEAGUE}/standings"] == 2

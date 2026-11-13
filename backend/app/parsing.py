@@ -23,6 +23,22 @@ class LeagueInfo:
     current_week: int
     start_week: int
     end_week: int
+    league_key: str = ""
+    season: int | None = None
+    previous_league_key: str | None = None  # from `renew`, e.g. "466_11070" -> "466.l.11070"
+    is_finished: bool = False
+
+
+@dataclass(frozen=True)
+class Standing:
+    rank: int | None  # final finish (after the playoffs); None if Yahoo sends it blank
+    team_key: str
+    name: str
+    wins: int
+    losses: int
+    ties: int
+    percentage: float | None
+    playoff_seed: int | None
 
 
 @dataclass(frozen=True)
@@ -46,11 +62,16 @@ class MatchupResult:
 def parse_league(payload: dict) -> LeagueInfo:
     meta = _first_dict(_get(payload, "fantasy_content", "league"), "league")
     try:
+        renew = str(meta.get("renew") or "")
         return LeagueInfo(
             name=str(meta["name"]),
             current_week=int(meta["current_week"]),
             start_week=int(meta["start_week"]),
             end_week=int(meta["end_week"]),
+            league_key=str(meta.get("league_key", "")),
+            season=int(meta["season"]) if meta.get("season") not in (None, "") else None,
+            previous_league_key=renew.replace("_", ".l.", 1) if "_" in renew else None,
+            is_finished=meta.get("is_finished") in (1, "1", True),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise YahooFormatError(f"league metadata is missing or invalid: {exc}") from exc
@@ -150,6 +171,35 @@ def _team_metadata(team: Any, where: str) -> tuple[str, str]:
     if "team_key" not in metadata or "name" not in metadata:
         raise YahooFormatError(f"{where} is missing team_key or name")
     return str(metadata["team_key"]), str(metadata["name"])
+
+
+def parse_standings(payload: dict) -> list[Standing]:
+    """Final standings, sorted by rank (blank ranks last)."""
+    league = _get(payload, "fantasy_content", "league")
+    standings = _find_dict_with(league, "standings", "league")["standings"]
+    teams_container = _get(_first_dict(standings, "standings"), "teams")
+    rows = []
+    for key, value in _indexed(teams_container, "standings.teams"):
+        where = f"standings.teams.{key}"
+        team = _get(value, "team")
+        team_key, name = _team_metadata(team, where)
+        holder = next((p["team_standings"] for p in team if isinstance(p, dict) and "team_standings" in p), None)
+        totals = holder.get("outcome_totals") if isinstance(holder, dict) else None
+        if not isinstance(totals, dict):
+            raise YahooFormatError(f"{where} is missing team_standings.outcome_totals")
+        try:
+            rows.append(Standing(
+                rank=_optional_int(holder.get("rank")), team_key=team_key, name=name,
+                wins=int(totals["wins"]), losses=int(totals["losses"]), ties=int(totals.get("ties") or 0),
+                percentage=float(totals["percentage"]) if totals.get("percentage") not in (None, "") else None,
+                playoff_seed=_optional_int(holder.get("playoff_seed"))))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise YahooFormatError(f"{where} has malformed standings: {exc}") from exc
+    return sorted(rows, key=lambda r: (r.rank is None, r.rank or 0))
+
+
+def _optional_int(raw: Any) -> int | None:
+    return None if raw in (None, "", "-") else int(raw)
 
 
 def _parse_team(team: Any, where: str) -> TeamStats:

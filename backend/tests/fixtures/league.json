@@ -8,6 +8,7 @@
         "league_id": "46425",
         "name": "Mutombo's Heavenly Block Party",
         "num_teams": 10,
+        "renew": "466_11070",
         "current_week": 4,
         "start_week": "1",
         "start_date": "2026-10-20",
@@ -16,7 +17,7 @@
         "season": "2026"
       }
     ],
-    "time": "42.176008224487ms",
+    "time": "40.504932403564ms",
     "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
     "refresh_rate": "30"
   }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { ApiError, getLeague, getSeason, getWeek } from './api'
+import { getLeague, getSeason, getWeek } from './api'
+import ArrowNav from './components/ArrowNav'
 import Header from './components/Header'
+import FullSeasonSection from './components/FullSeasonSection'
 import RankingsSection from './components/RankingsSection'
 import { useApi } from './hooks/useApi'
 
@@ -20,27 +22,33 @@ export default function App() {
   const current = useApi((refresh) => getWeek('current', { refresh }), [])
   const season = useApi((refresh) => getSeason({ refresh }), [])
 
-  // The backend resolves "previous" itself, so this doesn't wait for /api/league.
-  const last = useApi((refresh) => getWeek('previous', { refresh }), [])
-
   const info = league.data
-  // 404 means there is no previous week yet (the league's first week).
-  const noLastWeek =
-    (info !== undefined && info.current_week <= info.start_week) ||
-    (last.error instanceof ApiError && last.error.status === 404)
-  const lastWeek = last.data?.week ?? (info ? info.current_week - 1 : undefined)
+  // The week chosen with the arrows (null = the live week). A week number, not an offset, so the
+  // table doesn't change under the user when Yahoo rolls over to a new week.
+  const [chosenWeek, setChosenWeek] = useState<number | null>(null)
+  const pastWeek =
+    info && chosenWeek !== null && chosenWeek < info.current_week ? Math.max(chosenWeek, info.start_week) : undefined
+  const past = useApi(
+    (refresh) => (pastWeek !== undefined ? getWeek(pastWeek, { refresh }) : Promise.resolve(undefined)),
+    [pastWeek],
+  )
+  const shown = pastWeek !== undefined ? past : current
 
   const [awaitingRefresh, setAwaitingRefresh] = useState(false)
   const [justRefreshed, setJustRefreshed] = useState(false)
-  const refreshing = league.refreshing || current.refreshing || season.refreshing || last.refreshing
+  const refreshing = league.refreshing || current.refreshing || season.refreshing || past.refreshing
 
   async function refreshAll() {
     setJustRefreshed(false)
-    await Promise.all([league.reload(true), current.reload(true), season.reload(true), last.reload(true)])
+    const reloads = [league.reload(true), current.reload(true), season.reload(true)]
+    if (pastWeek !== undefined) reloads.push(past.reload(true))
+    await Promise.all(reloads)
     setAwaitingRefresh(true)
   }
 
-  const loaded = [current.data, season.data, noLastWeek ? undefined : last.data].filter((r) => r !== undefined)
+  const loaded = [current.data, season.data, pastWeek !== undefined ? past.data : undefined].filter(
+    (r) => r !== undefined,
+  )
   // Final data ignores refresh, so only refreshable rankings decide "Just refreshed".
   const refreshable = loaded.filter((r) => r.state !== 'final')
   const allThrottled = refreshable.length > 0 && refreshable.every((r) => r.refresh_throttled)
@@ -57,7 +65,7 @@ export default function App() {
   }, [justRefreshed])
 
   const staleData = loaded.find((r) => r.stale)
-  const weekNumber = current.data?.week ?? info?.current_week
+  const weekNumber = pastWeek ?? current.data?.week ?? info?.current_week
   // Yahoo leaves current_week on the last week after the season; the backend then reports it ended.
   const seasonOver = Boolean(
     info && current.data?.state && current.data.state !== 'current' && current.data.week === info.end_week,
@@ -69,12 +77,30 @@ export default function App() {
 
       <RankingsSection
         title={weekNumber ? `Week ${weekNumber}` : 'This Week'}
-        badge={seasonOver ? { text: 'Season over' } : { text: '● Live', live: true }}
-        state={current}
-        onRetry={() => void current.reload()}
+        badge={
+          pastWeek !== undefined
+            ? past.data && { text: past.data.state === 'settling' ? 'Settling' : 'Final' }
+            : seasonOver
+              ? { text: 'Season over' }
+              : { text: '● Live', live: true }
+        }
+        state={shown}
+        onRetry={() => void shown.reload()}
         showLegend
+        showResult
+        liveResults={shown.data?.state === 'current'}
         actions={
           <>
+            {info && info.current_week > info.start_week && (
+              <ArrowNav
+                backLabel="Previous week"
+                forwardLabel="Next week"
+                canBack={(pastWeek ?? info.current_week) > info.start_week}
+                canForward={pastWeek !== undefined}
+                onBack={() => setChosenWeek((pastWeek ?? info.current_week) - 1)}
+                onForward={() => setChosenWeek(pastWeek !== undefined && pastWeek + 1 < info.current_week ? pastWeek + 1 : null)}
+              />
+            )}
             {justRefreshed && <span className="refresh-note">Just refreshed</span>}
             <button
               className={refreshing ? 'refresh-btn spinning' : 'refresh-btn'}
@@ -91,25 +117,7 @@ export default function App() {
 
       <div className="divider" />
 
-      <RankingsSection
-        title="Full Season"
-        badge={{ text: 'Season to date' }}
-        state={season}
-        onRetry={() => void season.reload()}
-      />
-
-      {!noLastWeek && (
-        <>
-          <div className="divider" />
-          <RankingsSection
-            title={lastWeek !== undefined ? `Week ${lastWeek}` : 'Last Week'}
-            badge={{ text: 'Last week' }}
-            state={last}
-            onRetry={() => void last.reload()}
-            showResult
-          />
-        </>
-      )}
+      <FullSeasonSection current={season} onRetry={() => void season.reload()} />
 
       <footer>Mutombo's Heavenly Data &mdash; Fantasy Basketball Intelligence</footer>
     </div>
