@@ -5,14 +5,15 @@ corrections), and "final" after that. Final data is cached forever. After the se
 `current_week` on the last week, so that week also goes by its calendar end date.
 """
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Literal, Protocol
 from zoneinfo import ZoneInfo
 
 from app.cache import Cache, CacheResult
-from app.errors import YahooUnavailable
-from app.parsing import (GameWeek, LeagueInfo, MatchupResult, TeamStats, parse_game_weeks, parse_league,
-                         parse_scoreboard, parse_team_stats)
+from app.errors import YahooAccessDenied, YahooUnavailable
+from app.parsing import (GameWeek, LeagueInfo, MatchupResult, Standing, TeamStats, parse_game_weeks,
+                         parse_league, parse_scoreboard, parse_standings, parse_team_stats)
 
 WeekState = Literal["current", "settling", "final"]
 
@@ -21,7 +22,17 @@ SETTLING_TTL = 3600
 FINAL_DELAY_DAYS = 3
 PACIFIC = ZoneInfo("America/Los_Angeles")
 _CALENDAR_KEY = "game_weeks"
+PREVIOUS_LEAGUE_TTL = 86400  # also how long a 403 ("no access to that season") stop is remembered
+MAX_SEASONS = 20  # loop guard for the renew walk
 _WEEK_TTL: dict[str, float | None] = {"current": CURRENT_TTL, "settling": SETTLING_TTL, "final": None}
+
+
+@dataclass(frozen=True)
+class SeasonRef:
+    season: int
+    league_key: str
+    current: bool
+    finished: bool
 
 
 class JsonGetter(Protocol):
@@ -78,6 +89,45 @@ class YahooClient:
         path = f"{self._league_path}/scoreboard;week={week}"
         result = self._fetch(path, parse_scoreboard, _WEEK_TTL[state], refresh)
         return result.data, result
+
+    def seasons(self, refresh: bool = False) -> tuple[list[SeasonRef], bool, list[CacheResult]]:
+        """Readable seasons, newest first, by following each league's `renew` link. Returns
+        (seasons, complete, results): `complete` is False when an outage cut the walk short."""
+        info, current_result = self.league(refresh=refresh)
+        seasons = [SeasonRef(info.season or 0, info.league_key, True, info.is_finished)]
+        results = [current_result]
+        key = info.previous_league_key
+        complete = True
+        while key and len(seasons) < MAX_SEASONS:
+            try:
+                result = self._cache.get_or_fetch(f"league/{key}", self._league_or_denied(key),
+                                                  PREVIOUS_LEAGUE_TTL)
+            except YahooUnavailable:
+                complete = False
+                break
+            if result.data is None:  # 403: this account can't read that season; end of history
+                break
+            results.append(result)
+            prev: LeagueInfo = result.data
+            seasons.append(SeasonRef(prev.season or 0, prev.league_key or key, False, prev.is_finished))
+            key = prev.previous_league_key
+        return seasons, complete, results
+
+    def final_season(self, league_key: str, finished: bool, refresh: bool = False
+                     ) -> tuple[list[Standing], CacheResult, list[TeamStats], CacheResult]:
+        """Final standings and whole-season stats (playoff weeks included) for a league."""
+        ttl = None if finished else CURRENT_TTL
+        standings = self._fetch(f"league/{league_key}/standings", parse_standings, ttl, refresh)
+        stats = self._fetch(f"league/{league_key}/teams/stats", parse_team_stats, ttl, refresh)
+        return standings.data, standings, stats.data, stats
+
+    def _league_or_denied(self, key: str) -> Callable[[], LeagueInfo | None]:
+        def fetch() -> LeagueInfo | None:
+            try:
+                return parse_league(self._http.get_json(f"league/{key}"))
+            except YahooAccessDenied:
+                return None
+        return fetch
 
     def _fetch(self, path: str, parse: Callable[[dict], object], ttl: float | None, refresh: bool,
                key: str | None = None) -> CacheResult:

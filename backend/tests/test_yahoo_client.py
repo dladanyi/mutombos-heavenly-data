@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from app.cache import Cache
-from app.errors import YahooUnavailable
+from app.errors import YahooAccessDenied, YahooUnavailable
 from app.parsing import parse_game_weeks
 from app.yahoo_client import YahooClient, pacific_today
 
@@ -24,6 +24,8 @@ LEAGUE_ID = str(LEAGUE_META["league_id"])
 LEAGUE = f"league/nba.l.{LEAGUE_ID}"
 NUM_TEAMS = int(LEAGUE_META["num_teams"])
 WEEK3_END = parse_game_weeks(fixture("game_weeks.json"))[3].end
+PREV = "league/" + fixture("league.json")["fantasy_content"]["league"][0]["renew"].replace("_", ".l.")
+OLDEST = "league/" + fixture("prev_league.json")["fantasy_content"]["league"][0]["renew"].replace("_", ".l.")
 
 
 class FakeHttp:
@@ -48,6 +50,14 @@ class FakeHttp:
             return fixture("week_stats.json")
         if path.startswith(f"{LEAGUE}/scoreboard;week="):
             return fixture("scoreboard.json")
+        if path == PREV:
+            return fixture("prev_league.json")
+        if path == f"{PREV}/standings":
+            return fixture("prev_standings.json")
+        if path == f"{PREV}/teams/stats":
+            return fixture("prev_season_stats.json")
+        if path == OLDEST:
+            raise YahooAccessDenied(f"Yahoo returned HTTP 403 for {path}")
         raise AssertionError(f"unexpected path {path}")
 
 
@@ -265,3 +275,64 @@ def test_week_results_does_not_recompute_state(setup):
     client, http, *_ = setup
     client.week_results(3, "settling")
     assert http.calls["game/nba/game_weeks"] == 0
+
+
+
+def test_seasons_walks_renew_chain(setup):
+    client, http, *_ = setup
+    seasons, complete, results = client.seasons()
+    assert [(s.season, s.current, s.finished) for s in seasons] == [(2026, True, False), (2025, False, True)]
+    assert seasons[1].league_key == PREV.removeprefix("league/")
+    assert complete is True and results
+    assert http.calls[OLDEST] == 1
+
+
+def test_seasons_access_denied_stop_cached_one_day(setup):
+    client, http, clock, _ = setup
+    client.seasons()
+    clock.now += 86399
+    client.seasons()
+    assert http.calls[OLDEST] == 1
+    clock.now += 2
+    client.seasons()
+    assert http.calls[OLDEST] == 2
+
+
+def test_seasons_outage_marks_incomplete_and_is_not_cached(setup):
+    client, http, clock, _ = setup
+    http.failing.add(PREV)
+    seasons, complete, _ = client.seasons()
+    assert [s.season for s in seasons] == [2026] and complete is False
+    http.failing.discard(PREV)
+    clock.now += 31
+    seasons, complete, _ = client.seasons()
+    assert [s.season for s in seasons] == [2026, 2025] and complete is True
+
+
+def test_seasons_loop_guard(setup):
+    client, http, *_ = setup
+    looping = fixture("prev_league.json")
+    looping["fantasy_content"]["league"][0]["renew"] = PREV.removeprefix("league/").replace(".l.", "_")
+    http.overrides[PREV] = looping
+    seasons, complete, _ = client.seasons()
+    assert len(seasons) == 20
+
+
+def test_final_season_finished_cached_forever(setup):
+    client, http, clock, _ = setup
+    key = PREV.removeprefix("league/")
+    standings, std_result, teams, stats_result = client.final_season(key, finished=True)
+    clock.now += 365 * 86400
+    client.final_season(key, finished=True, refresh=True)
+    assert http.calls[f"{PREV}/standings"] == 1 and http.calls[f"{PREV}/teams/stats"] == 1
+    assert std_result.final and stats_result.final
+    assert len(standings) == len(teams) == NUM_TEAMS and standings[0].rank == 1
+
+
+def test_final_season_unfinished_uses_current_ttl(setup):
+    client, http, clock, _ = setup
+    key = PREV.removeprefix("league/")
+    client.final_season(key, finished=False)
+    clock.now += 301
+    client.final_season(key, finished=False)
+    assert http.calls[f"{PREV}/standings"] == 2
