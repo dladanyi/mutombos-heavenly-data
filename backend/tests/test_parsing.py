@@ -15,7 +15,8 @@ from pathlib import Path
 import pytest
 
 from app.errors import YahooFormatError
-from app.parsing import GameWeek, parse_game_weeks, parse_league, parse_team_stats
+from app.parsing import (GameWeek, MatchupResult, parse_game_weeks, parse_league, parse_scoreboard,
+                         parse_team_stats)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -99,3 +100,83 @@ def test_parse_game_weeks_bad_date_raises():
     payload["fantasy_content"]["game"][1]["game_weeks"]["0"]["game_week"]["end"] = "soon"
     with pytest.raises(YahooFormatError):
         parse_game_weeks(payload)
+
+
+# scoreboard: fantasy_content.league[1].scoreboard = {"week": N, "0": {"matchups": {"0": {"matchup": {
+#   status, is_tied, winner_team_key, stat_winners: [{"stat_winner": {stat_id, winner_team_key | is_tied}}],
+#   "0": {"teams": {"0": {"team": [metadata_list, ...]}, "1": ..., "count": 2}}}}, ..., "count": N}}}
+
+def matchup_body(*matchups):
+    entries = {str(i): {"matchup": m} for i, m in enumerate(matchups)}
+    return {"fantasy_content": {"league": [{"league_key": "nba.l.1"},
+                                           {"scoreboard": {"week": 3, "0": {"matchups": {**entries, "count": len(matchups)}}}}]}}
+
+
+def matchup(a="k.1", b="k.2", winners=("k.1", "k.1", "k.2", None), status="postevent", tied=0, winner="k.1"):
+    team = lambda key: {"team": [[{"team_key": key}, {"team_id": key[-1]}, {"name": f"Team {key}"}, []]]}
+    m = {"status": status, "is_tied": tied,
+         "stat_winners": [{"stat_winner": {"stat_id": str(i), **({"winner_team_key": w} if w else {"is_tied": 1})}}
+                          for i, w in enumerate(winners)],
+         "0": {"teams": {"0": team(a), "1": team(b), "count": 2}}}
+    if winner:
+        m["winner_team_key"] = winner
+    return m
+
+
+def test_scoreboard_fixture_gives_every_team_a_consistent_result():
+    raw = load("scoreboard.json")
+    results = parse_scoreboard(raw)
+    league = load("league.json")["fantasy_content"]["league"][0]
+    matchups = raw["fantasy_content"]["league"][1]["scoreboard"]["0"]["matchups"]
+    assert len(results) == 2 * int(matchups["count"]) == league["num_teams"]
+    for key, r in results.items():
+        opp = results[r.opponent_key]
+        assert opp.opponent_key == key and r.opponent_name == f"Team {r.opponent_key.rsplit('.', 1)[1]}"
+        assert (r.wins, r.losses, r.ties) == (opp.losses, opp.wins, opp.ties)
+        assert r.wins + r.losses + r.ties == 9
+        assert {r.outcome, opp.outcome} == {"W", "L"} and (r.outcome == "W") == (r.wins > r.losses)
+
+
+def test_scoreboard_counts_wins_losses_and_ties():
+    results = parse_scoreboard(matchup_body(matchup()))
+    assert results["k.1"] == MatchupResult("W", 2, 1, 1, "k.2", "Team k.2")
+    assert results["k.2"] == MatchupResult("L", 1, 2, 1, "k.1", "Team k.1")
+
+
+def test_scoreboard_tied_matchup():
+    results = parse_scoreboard(matchup_body(matchup(winners=("k.1", "k.2"), tied=1, winner=None)))
+    assert results["k.1"].outcome == results["k.2"].outcome == "T"
+
+
+def test_scoreboard_unfinished_matchup_has_no_outcome():
+    results = parse_scoreboard(matchup_body(matchup(status="midevent")))
+    assert results["k.1"].outcome is None and results["k.1"].wins == 2
+
+
+@pytest.mark.parametrize("matchups", [[], None, {"count": 0}])
+def test_scoreboard_without_matchups_is_empty(matchups):
+    body = matchup_body()
+    holder = body["fantasy_content"]["league"][1]["scoreboard"]["0"]
+    if matchups is None:
+        del holder["matchups"]
+    else:
+        holder["matchups"] = matchups
+    assert parse_scoreboard(body) == {}
+
+
+@pytest.mark.parametrize("breakage", ["no_teams", "one_team", "bad_stat_winner"])
+def test_scoreboard_malformed_raises(breakage):
+    m = matchup()
+    if breakage == "no_teams":
+        del m["0"]
+    elif breakage == "one_team":
+        del m["0"]["teams"]["1"]
+    else:
+        m["stat_winners"] = [{"oops": 1}]
+    with pytest.raises(YahooFormatError):
+        parse_scoreboard(matchup_body(m))
+
+
+def test_scoreboard_finished_without_winner_has_no_outcome():
+    results = parse_scoreboard(matchup_body(matchup(winner=None)))
+    assert results["k.1"].outcome is None and results["k.2"].outcome is None

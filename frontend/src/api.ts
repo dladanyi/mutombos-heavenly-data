@@ -1,6 +1,14 @@
 // Types mirror docs/api.md.
 export type Category = { key: string; higher_is_better: boolean; detail_label?: string }
 export type StatCell = { value: number | null; rank: number; detail?: string | null }
+/** Head-to-head result for a finished week. outcome is null until Yahoo marks the matchup finished. */
+export type MatchupResult = {
+  outcome: 'W' | 'L' | 'T' | null
+  wins: number
+  losses: number
+  ties: number
+  opponent: { team_key: string; name: string }
+}
 export type TeamRow = {
   team_key: string
   name: string
@@ -9,6 +17,8 @@ export type TeamRow = {
   median_rank?: number
   place: number
   stats: Record<string, StatCell>
+  /** Week responses that aren't current only; null when the team had no matchup or results were unavailable. */
+  result?: MatchupResult | null
 }
 export type Rankings = {
   scope: 'week' | 'season'

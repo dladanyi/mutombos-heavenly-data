@@ -42,6 +42,14 @@ describe('App', () => {
     expect(screen.getByText(/Last updated:/)).toHaveTextContent('Nov 20, 2026')
   })
 
+  it('shows the result column only in the last-week table', async () => {
+    mockApi(happyRoutes())
+    render(<App />)
+    await waitFor(() => expect(document.querySelectorAll('table')).toHaveLength(3))
+    const tables = [...document.querySelectorAll('table')]
+    expect(tables.map((t) => [...t.querySelectorAll('th')].some((th) => th.textContent === 'Result'))).toEqual([false, false, true])
+  })
+
   it('requests last week without waiting for the league', () => {
     const calls = mockApi(happyRoutes())
     render(<App />)

@@ -9,6 +9,7 @@ type Props = {
   onRetry: () => void
   actions?: ReactNode
   showLegend?: boolean
+  showResult?: boolean
 }
 
 const LEGEND = [
@@ -17,7 +18,7 @@ const LEGEND = [
   ['bronze', '3rd in stat'],
 ] as const
 
-export default function RankingsSection({ title, badge, state, onRetry, actions, showLegend }: Props) {
+export default function RankingsSection({ title, badge, state, onRetry, actions, showLegend, showResult }: Props) {
   return (
     <div className="section">
       <div className="section-header">
@@ -47,7 +48,7 @@ export default function RankingsSection({ title, badge, state, onRetry, actions,
         <>
           <div className="scroll-hint">← swipe to see all stats →</div>
           <div className="table-wrap">
-            <RankingsTable rankings={state.data} />
+            <RankingsTable rankings={state.data} showResult={showResult} />
           </div>
         </>
       ) : state.error && !state.loading ? (

@@ -59,7 +59,9 @@ resource).
       "avg_rank": 2.89,
       "median_rank": 3.0,
       "place": 1,
-      "stats": {"FG%": {"value": 0.482, "rank": 3, "detail": "301/624"}}
+      "stats": {"FG%": {"value": 0.482, "rank": 3, "detail": "301/624"}},
+      "result": {"outcome": "W", "wins": 5, "losses": 3, "ties": 1,
+                 "opponent": {"team_key": "466.l.46425.t.4", "name": "Team D"}}
     }
   ]
 }
@@ -83,6 +85,13 @@ resource).
   informational only: sorting and `place` still use `avg_rank`. Browsers may hold final-week
   responses cached before `median_rank` existed for up to a day (the CDN cache is per
   deployment, so it starts empty), so clients treat it as optional.
+- `result` is the team's head-to-head matchup that week, from Yahoo's scoreboard. It's only on
+  week responses whose `state` is `settling` or `final` (absent for the current week and the
+  season). `wins`/`losses`/`ties` count categories from this team's side. `outcome` is `"W"`,
+  `"L"`, `"T"`, or `null` if Yahoo hasn't marked the matchup finished. `result` is `null` for a
+  team with no matchup (e.g. a playoff bye) and for every team when the scoreboard couldn't be
+  fetched; that response is sent `no-store` so the gap isn't cached. A final week only gets the
+  long CDN cache when both its stats and its scoreboard were fetched as final.
 
 ## Errors
 

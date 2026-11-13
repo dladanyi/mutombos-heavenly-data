@@ -250,6 +250,14 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(249,115,22,0.04); }
+/* Head-to-head result (last week's table) */
+th.result-cell, td.result-cell { text-align: left; }
+.result { font-weight: 600; color: var(--text); }
+.result-w { color: #4ade80; }
+.result-l { color: #f87171; }
+.result-t { color: var(--gold); }
+.result-opp { color: var(--muted); font-size: 0.72rem; }
+
 /* The pinned team cell is opaque, so layer the same hover tint over its background. */
 tbody tr:hover td:first-child {
     background: linear-gradient(rgba(249,115,22,0.04), rgba(249,115,22,0.04)), var(--surface);

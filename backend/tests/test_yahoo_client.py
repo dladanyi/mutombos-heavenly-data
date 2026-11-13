@@ -46,6 +46,8 @@ class FakeHttp:
             return fixture("season_stats.json")
         if path.startswith(f"{LEAGUE}/teams/stats;type=week;week="):
             return fixture("week_stats.json")
+        if path.startswith(f"{LEAGUE}/scoreboard;week="):
+            return fixture("scoreboard.json")
         raise AssertionError(f"unexpected path {path}")
 
 
@@ -225,3 +227,35 @@ def test_unavailable_without_cache_raises(setup):
     http.failing.add(LEAGUE)
     with pytest.raises(YahooUnavailable):
         client.league()
+
+
+def scoreboard_path(n):
+    return f"{LEAGUE}/scoreboard;week={n}"
+
+
+def test_week_results_final_cached_forever(setup):
+    client, http, clock, _ = setup
+    results, first = client.week_results(2, current_week=7)
+    clock.now += 365 * 86400
+    client.week_results(2, current_week=7, refresh=True)
+    assert http.calls[scoreboard_path(2)] == 1
+    assert first.final and len(results) == NUM_TEAMS
+
+
+def test_week_results_settling_ttl_one_hour(setup):
+    client, http, clock, today = setup
+    today.value = WEEK3_END + timedelta(days=1)
+    _, result = client.week_results(3, current_week=4)
+    assert not result.final
+    clock.now += 3601
+    client.week_results(3, current_week=4)
+    assert http.calls[scoreboard_path(3)] == 2
+
+
+def test_week_results_refresh_passed_through(setup):
+    client, http, clock, today = setup
+    today.value = WEEK3_END + timedelta(days=1)
+    client.week_results(3, current_week=4)
+    clock.now += 31
+    client.week_results(3, current_week=4, refresh=True)
+    assert http.calls[scoreboard_path(3)] == 2

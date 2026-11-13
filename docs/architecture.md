@@ -22,8 +22,8 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 | `errors.py` | `YahooUnavailable`, `YahooFormatError` | - |
 | `yahoo_http.py` | OAuth token refresh, GET with timeout, retry and 401 handling | requests |
 | `cache.py` | TTL / final cache, stale-on-error, refresh throttle | - |
-| `yahoo_client.py` | League, season, week and calendar fetches; current/settling/final rules | yahoo_http, cache, parsing |
-| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek` | config |
+| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules | yahoo_http, cache, parsing |
+| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, median rank, place) | config |
 | `api.py` | Flask routes, JSON errors, cache headers, local static serving | all of the above |
 | `logging_setup.py` | JSON log lines (Vercel runtime logs) | - |
