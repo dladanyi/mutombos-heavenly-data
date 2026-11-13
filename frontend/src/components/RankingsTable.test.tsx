@@ -7,7 +7,7 @@ describe('RankingsTable', () => {
   it('renders columns in category order', () => {
     render(<RankingsTable rankings={rankings()} />)
     const headers = screen.getAllByRole('columnheader').map((th) => th.textContent)
-    expect(headers).toEqual(['Team', 'Avg Rank', 'PTS', 'PTS Rk', 'FG%', 'FG% Rk', 'FGM/FGA', 'TO', 'TO Rk'])
+    expect(headers).toEqual(['Team', 'Avg Rank', 'Med Rank', 'PTS', 'PTS Rk', 'FG%', 'FG% Rk', 'FGM/FGA', 'TO', 'TO Rk'])
   })
 
   it('renders teams that share a name as separate rows', () => {
@@ -33,6 +33,22 @@ describe('RankingsTable', () => {
       ['1.50', 'medal-gold'],
       ['2.25', 'medal-bronze'],
     ])
+  })
+
+  it('shows median rank uncolored next to avg rank', () => {
+    const teams = [{ ...team('A', 1, 1.5), median_rank: 1 }, { ...team('B', 2, 2.25), median_rank: 2.5 }]
+    render(<RankingsTable rankings={rankings({ teams })} />)
+    const cells = screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[2])
+    expect(cells.map((td) => [td.textContent, td.className])).toEqual([
+      ['1', ''],
+      ['2.5', ''],
+    ])
+  })
+
+  it('shows a dash when median rank is missing from older cached data', () => {
+    const { median_rank: _, ...old } = team('A', 1)
+    render(<RankingsTable rankings={rankings({ teams: [old] })} />)
+    expect(within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2].textContent).toBe('–')
   })
 
   it('renders team names as text', () => {

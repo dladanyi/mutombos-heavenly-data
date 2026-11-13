@@ -1,5 +1,6 @@
 """Rank teams per category and overall. Plain Python; see spec §5.4 for the rules."""
 from collections.abc import Sequence
+from statistics import median
 
 from app.config import CATEGORIES, Category
 from app.parsing import TeamStats
@@ -31,11 +32,12 @@ def build_rankings(teams: list[TeamStats], categories: Sequence[Category] = CATE
     for row in rows:
         ranks = [cell["rank"] for cell in row["stats"].values()]
         row["avg_rank"] = round(sum(ranks) / len(ranks), 2) if ranks else 0.0
+        row["median_rank"] = float(median(ranks)) if ranks else 0.0
     rows.sort(key=lambda r: (r["avg_rank"], r["name"]))
     for row in rows:
         row["place"] = 1 + sum(other["avg_rank"] < row["avg_rank"] for other in rows)
     return [{"team_key": r["team_key"], "name": r["name"], "avg_rank": r["avg_rank"],
-             "place": r["place"], "stats": r["stats"]} for r in rows]
+             "median_rank": r["median_rank"], "place": r["place"], "stats": r["stats"]} for r in rows]
 
 
 def _ranks(values: list[Number | None], higher_is_better: bool) -> list[int]:

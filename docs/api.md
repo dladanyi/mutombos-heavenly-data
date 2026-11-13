@@ -57,6 +57,7 @@ resource).
       "team_key": "466.l.46425.t.1",
       "name": "Team A",
       "avg_rank": 2.89,
+      "median_rank": 3.0,
       "place": 1,
       "stats": {"FG%": {"value": 0.482, "rank": 3, "detail": "301/624"}}
     }
@@ -77,6 +78,10 @@ resource).
 - `value` is `null` if Yahoo has no value yet. Such teams get the worst rank in that category.
 - Ranks use the "min" tie method (ties share the best rank). `place` is the team's position by
   `avg_rank`, using the same tie method.
+- `avg_rank` is the mean of the category ranks (2 decimals). `median_rank` is their median.
+  With 9 categories that is always a whole number; it's sent as a float. `median_rank` is
+  informational only: sorting and `place` still use `avg_rank`. Browsers may hold final-week
+  responses cached before `median_rank` existed for up to a day, so clients treat it as optional.
 
 ## Errors
 

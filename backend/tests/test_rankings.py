@@ -70,6 +70,23 @@ def test_avg_rank_rounded_and_sorted():
     assert rows[0]["avg_rank"] == 1.33
 
 
+def test_median_rank_alongside_avg_without_changing_order():
+    three = [Category(k, k, True) for k in ("1", "2", "3")]
+    # x ranks 1, 1, 3 -> avg 1.67, median 1; y ranks 2, 2, 1 -> avg 1.67, median 2
+    # z ranks 3, 3, 2 -> avg 2.67, median 3
+    teams = [team("z", **{"1": "1", "2": "1", "3": "2"}), team("y", **{"1": "2", "2": "2", "3": "3"}),
+             team("x", **{"1": "3", "2": "3", "3": "1"})]
+    rows = build_rankings(teams, three)
+    assert [(r["name"], r["avg_rank"], r["median_rank"]) for r in rows] == [
+        ("x", 1.67, 1.0), ("y", 1.67, 2.0), ("z", 2.67, 3.0)]
+    assert [r["place"] for r in rows] == [1, 1, 3]
+
+
+def test_median_rank_even_category_count():
+    rows = build_rankings([team("a", **{"12": "9", "19": "5"}), team("b", **{"12": "5", "19": "1"})], [PTS, TO])
+    assert {r["name"]: r["median_rank"] for r in rows} == {"a": 1.5, "b": 1.5}
+
+
 def test_place_uses_min_ties():
     teams = [team("c", **{"12": "1", "19": "9"}), team("b", **{"12": "5", "19": "1"}),
              team("a", **{"12": "9", "19": "5"})]
@@ -106,7 +123,7 @@ def test_season_fixture_end_to_end():
     assert all(list(r["stats"]) == [c.key for c in CATEGORIES] for r in rows)
     assert rows[0]["place"] == 1
     assert [r["avg_rank"] for r in rows] == sorted(r["avg_rank"] for r in rows)
-    assert set(rows[0]) == {"team_key", "name", "avg_rank", "place", "stats"}
+    assert set(rows[0]) == {"team_key", "name", "avg_rank", "median_rank", "place", "stats"}
 
 
 def test_rows_carry_team_key():
