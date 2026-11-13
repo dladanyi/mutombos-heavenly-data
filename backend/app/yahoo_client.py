@@ -11,8 +11,8 @@ from zoneinfo import ZoneInfo
 
 from app.cache import Cache, CacheResult
 from app.errors import YahooUnavailable
-from app.parsing import (GameWeek, LeagueInfo, TeamStats, parse_game_weeks, parse_league,
-                         parse_team_stats)
+from app.parsing import (GameWeek, LeagueInfo, MatchupResult, TeamStats, parse_game_weeks, parse_league,
+                         parse_scoreboard, parse_team_stats)
 
 WeekState = Literal["current", "settling", "final"]
 
@@ -21,6 +21,7 @@ SETTLING_TTL = 3600
 FINAL_DELAY_DAYS = 3
 PACIFIC = ZoneInfo("America/Los_Angeles")
 _CALENDAR_KEY = "game_weeks"
+_WEEK_TTL: dict[str, float | None] = {"current": CURRENT_TTL, "settling": SETTLING_TTL, "final": None}
 
 
 class JsonGetter(Protocol):
@@ -66,10 +67,17 @@ class YahooClient:
     def week_stats(self, week: int, current_week: int,
                    refresh: bool = False) -> tuple[list[TeamStats], CacheResult, WeekState]:
         state = self.week_state(week, current_week)
-        ttl = {"current": CURRENT_TTL, "settling": SETTLING_TTL, "final": None}[state]
         path = f"{self._league_path}/teams/stats;type=week;week={week}"
-        result = self._fetch(path, parse_team_stats, ttl, refresh)
+        result = self._fetch(path, parse_team_stats, _WEEK_TTL[state], refresh)
         return result.data, result, state
+
+    def week_results(self, week: int, state: WeekState,
+                     refresh: bool = False) -> tuple[dict[str, MatchupResult], CacheResult]:
+        """Head-to-head results by team_key. Pass the state week_stats returned, so the stats and
+        the scoreboard are cached under the same state (and the calendar isn't looked up twice)."""
+        path = f"{self._league_path}/scoreboard;week={week}"
+        result = self._fetch(path, parse_scoreboard, _WEEK_TTL[state], refresh)
+        return result.data, result
 
     def _fetch(self, path: str, parse: Callable[[dict], object], ttl: float | None, refresh: bool,
                key: str | None = None) -> CacheResult:

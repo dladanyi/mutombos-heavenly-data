@@ -1,0 +1,1397 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/league/nba.l.46425/scoreboard;week=3",
+    "league": [
+      {
+        "league_key": "478.l.46425",
+        "league_id": "46425",
+        "name": "Mutombo's Heavenly Block Party",
+        "num_teams": 10,
+        "current_week": 4,
+        "start_week": "1",
+        "start_date": "2026-10-20",
+        "end_week": "22",
+        "end_date": "2027-04-04",
+        "season": "2026"
+      },
+      {
+        "scoreboard": {
+          "0": {
+            "matchups": {
+              "0": {
+                "matchup": {
+                  "week": "3",
+                  "week_start": "2026-11-02",
+                  "week_end": "2026-11-08",
+                  "status": "postevent",
+                  "is_playoffs": "0",
+                  "is_consolation": "0",
+                  "is_tied": 0,
+                  "winner_team_key": "478.l.46425.t.1",
+                  "stat_winners": [
+                    {
+                      "stat_winner": {
+                        "stat_id": "5",
+                        "winner_team_key": "478.l.46425.t.8"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "8",
+                        "winner_team_key": "478.l.46425.t.8"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "10",
+                        "winner_team_key": "478.l.46425.t.1"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "12",
+                        "winner_team_key": "478.l.46425.t.8"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "15",
+                        "winner_team_key": "478.l.46425.t.1"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "16",
+                        "winner_team_key": "478.l.46425.t.1"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "17",
+                        "is_tied": 1
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "18",
+                        "winner_team_key": "478.l.46425.t.1"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "19",
+                        "winner_team_key": "478.l.46425.t.1"
+                      }
+                    }
+                  ],
+                  "0": {
+                    "teams": {
+                      "0": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.1"
+                            },
+                            {
+                              "team_id": "1"
+                            },
+                            {
+                              "name": "Team 1"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "256/564"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".454"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "132/169"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".781"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "83"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "727"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "284"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "180"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "40"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "33"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "87"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "1": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.8"
+                            },
+                            {
+                              "team_id": "8"
+                            },
+                            {
+                              "name": "Team 8"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "255/557"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".458"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "154/184"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".837"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "66"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "730"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "266"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "165"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "40"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "18"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "96"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                }
+              },
+              "1": {
+                "matchup": {
+                  "week": "3",
+                  "week_start": "2026-11-02",
+                  "week_end": "2026-11-08",
+                  "status": "postevent",
+                  "is_playoffs": "0",
+                  "is_consolation": "0",
+                  "is_tied": 0,
+                  "winner_team_key": "478.l.46425.t.2",
+                  "stat_winners": [
+                    {
+                      "stat_winner": {
+                        "stat_id": "5",
+                        "winner_team_key": "478.l.46425.t.7"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "8",
+                        "winner_team_key": "478.l.46425.t.2"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "10",
+                        "winner_team_key": "478.l.46425.t.7"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "12",
+                        "winner_team_key": "478.l.46425.t.7"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "15",
+                        "winner_team_key": "478.l.46425.t.2"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "16",
+                        "winner_team_key": "478.l.46425.t.7"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "17",
+                        "winner_team_key": "478.l.46425.t.2"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "18",
+                        "winner_team_key": "478.l.46425.t.2"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "19",
+                        "winner_team_key": "478.l.46425.t.2"
+                      }
+                    }
+                  ],
+                  "0": {
+                    "teams": {
+                      "0": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.2"
+                            },
+                            {
+                              "team_id": "2"
+                            },
+                            {
+                              "name": "Team 2"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "255/559"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".456"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "168/208"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".808"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "49"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "727"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "264"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "153"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "48"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "28"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "93"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "1": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.7"
+                            },
+                            {
+                              "team_id": "7"
+                            },
+                            {
+                              "name": "Team 7"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "282/577"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".489"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "144/187"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".770"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "91"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "799"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "261"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "169"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "46"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "25"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "104"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                }
+              },
+              "2": {
+                "matchup": {
+                  "week": "3",
+                  "week_start": "2026-11-02",
+                  "week_end": "2026-11-08",
+                  "status": "postevent",
+                  "is_playoffs": "0",
+                  "is_consolation": "0",
+                  "is_tied": 0,
+                  "winner_team_key": "478.l.46425.t.3",
+                  "stat_winners": [
+                    {
+                      "stat_winner": {
+                        "stat_id": "5",
+                        "winner_team_key": "478.l.46425.t.3"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "8",
+                        "winner_team_key": "478.l.46425.t.3"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "10",
+                        "winner_team_key": "478.l.46425.t.5"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "12",
+                        "winner_team_key": "478.l.46425.t.5"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "15",
+                        "winner_team_key": "478.l.46425.t.5"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "16",
+                        "winner_team_key": "478.l.46425.t.5"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "17",
+                        "winner_team_key": "478.l.46425.t.3"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "18",
+                        "winner_team_key": "478.l.46425.t.3"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "19",
+                        "winner_team_key": "478.l.46425.t.3"
+                      }
+                    }
+                  ],
+                  "0": {
+                    "teams": {
+                      "0": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.3"
+                            },
+                            {
+                              "team_id": "3"
+                            },
+                            {
+                              "name": "Team 3"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "238/506"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".470"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "121/147"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".823"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "72"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "669"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "195"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "188"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "44"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "37"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "98"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "1": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.5"
+                            },
+                            {
+                              "team_id": "5"
+                            },
+                            {
+                              "name": "Team 5"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "299/642"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".466"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "179/231"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".775"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "84"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "861"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "311"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "215"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "40"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "30"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "114"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                }
+              },
+              "3": {
+                "matchup": {
+                  "week": "3",
+                  "week_start": "2026-11-02",
+                  "week_end": "2026-11-08",
+                  "status": "postevent",
+                  "is_playoffs": "0",
+                  "is_consolation": "0",
+                  "is_tied": 0,
+                  "winner_team_key": "478.l.46425.t.10",
+                  "stat_winners": [
+                    {
+                      "stat_winner": {
+                        "stat_id": "5",
+                        "winner_team_key": "478.l.46425.t.4"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "8",
+                        "winner_team_key": "478.l.46425.t.4"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "10",
+                        "winner_team_key": "478.l.46425.t.10"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "12",
+                        "winner_team_key": "478.l.46425.t.4"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "15",
+                        "winner_team_key": "478.l.46425.t.10"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "16",
+                        "winner_team_key": "478.l.46425.t.10"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "17",
+                        "winner_team_key": "478.l.46425.t.10"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "18",
+                        "winner_team_key": "478.l.46425.t.4"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "19",
+                        "winner_team_key": "478.l.46425.t.10"
+                      }
+                    }
+                  ],
+                  "0": {
+                    "teams": {
+                      "0": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.4"
+                            },
+                            {
+                              "team_id": "4"
+                            },
+                            {
+                              "name": "Team 4"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "289/578"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".500"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "145/179"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".810"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "81"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "804"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "255"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "190"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "45"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "36"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "110"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "1": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.10"
+                            },
+                            {
+                              "team_id": "10"
+                            },
+                            {
+                              "name": "Team 10"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "219/489"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".448"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "100/126"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".794"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "84"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "622"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "264"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "202"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "56"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "18"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "58"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                }
+              },
+              "4": {
+                "matchup": {
+                  "week": "3",
+                  "week_start": "2026-11-02",
+                  "week_end": "2026-11-08",
+                  "status": "postevent",
+                  "is_playoffs": "0",
+                  "is_consolation": "0",
+                  "is_tied": 0,
+                  "winner_team_key": "478.l.46425.t.6",
+                  "stat_winners": [
+                    {
+                      "stat_winner": {
+                        "stat_id": "5",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "8",
+                        "winner_team_key": "478.l.46425.t.9"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "10",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "12",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "15",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "16",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "17",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "18",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    },
+                    {
+                      "stat_winner": {
+                        "stat_id": "19",
+                        "winner_team_key": "478.l.46425.t.6"
+                      }
+                    }
+                  ],
+                  "0": {
+                    "teams": {
+                      "0": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.6"
+                            },
+                            {
+                              "team_id": "6"
+                            },
+                            {
+                              "name": "Team 6"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "241/497"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".485"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "106/141"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".752"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "77"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "665"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "224"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "164"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "45"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "17"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "72"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "1": {
+                        "team": [
+                          [
+                            {
+                              "team_key": "478.l.46425.t.9"
+                            },
+                            {
+                              "team_id": "9"
+                            },
+                            {
+                              "name": "Team 9"
+                            },
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            [],
+                            []
+                          ],
+                          {
+                            "team_stats": {
+                              "coverage_type": "week",
+                              "week": "3",
+                              "stats": [
+                                {
+                                  "stat": {
+                                    "stat_id": "9004003",
+                                    "value": "209/481"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "5",
+                                    "value": ".435"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "9007006",
+                                    "value": "140/161"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "8",
+                                    "value": ".870"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "10",
+                                    "value": "72"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "12",
+                                    "value": "630"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "15",
+                                    "value": "161"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "16",
+                                    "value": "100"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "17",
+                                    "value": "35"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "18",
+                                    "value": "16"
+                                  }
+                                },
+                                {
+                                  "stat": {
+                                    "stat_id": "19",
+                                    "value": "77"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "count": 2
+                    }
+                  }
+                }
+              },
+              "count": 5
+            }
+          },
+          "week": "3"
+        }
+      }
+    ],
+    "time": "85.317134857178ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}

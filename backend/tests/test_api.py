@@ -5,7 +5,8 @@ import pytest
 from app import create_app
 from app.cache import CacheResult
 from app.errors import YahooUnavailable
-from app.parsing import LeagueInfo, TeamStats
+from app.errors import YahooFormatError
+from app.parsing import LeagueInfo, MatchupResult, TeamStats
 
 FETCHED_AT = 1_791_000_000.0  # 2026-10-03T04:00:00Z
 
@@ -26,6 +27,11 @@ class FakeClient:
         self.league_result = result()
         self.stats_result = result()
         self.state = "current"
+        self.results = {"k.1": MatchupResult("W", 5, 3, 1, "k.2", "Beta"),
+                        "k.2": MatchupResult("L", 3, 5, 1, "k.1", "Alpha")}
+        # Final by default so the existing final-week header tests only depend on stats_result.
+        self.results_result = result(final=True)
+        self.results_error = None
         self.error = None
         self.calls = []
 
@@ -47,6 +53,12 @@ class FakeClient:
         self.calls.append(("week", week, current_week, refresh))
         self._maybe_fail()
         return TEAMS, self.stats_result, self.state
+
+    def week_results(self, week, state, refresh=False):
+        self.calls.append(("results", week, state, refresh))
+        if self.results_error:
+            raise self.results_error
+        return self.results, self.results_result
 
 
 @pytest.fixture
@@ -232,3 +244,55 @@ def test_previous_week_404_in_first_week(http, client):
 def test_week_body_reports_state(http, client, state):
     client.state = state
     assert http.get("/api/rankings/week/6").get_json()["state"] == state
+
+
+def rows_by_name(response):
+    return {t["name"]: t for t in response.get_json()["teams"]}
+
+
+def test_current_week_has_no_results_and_skips_scoreboard(http, client):
+    teams = rows_by_name(http.get("/api/rankings/week/current"))
+    assert all("result" not in t for t in teams.values())
+    assert not any(c[0] == "results" for c in client.calls)
+
+
+@pytest.mark.parametrize("state", ["settling", "final"])
+def test_finished_week_rows_carry_results(http, client, state):
+    client.state = state
+    teams = rows_by_name(http.get("/api/rankings/week/previous?refresh=1"))
+    assert ("results", 6, state, True) in client.calls
+    assert teams["Alpha"]["result"] == {"outcome": "W", "wins": 5, "losses": 3, "ties": 1,
+                                        "opponent": {"team_key": "k.2", "name": "Beta"}}
+    assert teams["Beta"]["result"]["outcome"] == "L"
+
+
+def test_team_without_matchup_gets_null_result(http, client):
+    client.state = "final"
+    client.results = {}
+    assert all(t["result"] is None for t in rows_by_name(http.get("/api/rankings/week/3")).values())
+
+
+@pytest.mark.parametrize("error", [YahooUnavailable("down"), YahooFormatError("shape")])
+def test_results_failure_keeps_rankings_and_is_not_cached(http, client, error):
+    client.state = "final"
+    client.stats_result = result(final=True)
+    client.results_error = error
+    response = http.get("/api/rankings/week/3")
+    assert response.status_code == 200
+    assert all(t["result"] is None for t in rows_by_name(response).values())
+    assert headers(response) == NO_STORE
+
+
+def test_final_week_needs_final_results_for_long_cdn_cache(http, client):
+    client.state = "final"
+    client.stats_result = result(final=True)
+    client.results_result = result(final=False)
+    assert headers(http.get("/api/rankings/week/3")) == ("public, max-age=300", "max-age=3600")
+
+
+def test_stale_results_mark_response_stale(http, client):
+    client.state = "settling"
+    client.results_result = result(stale=True)
+    response = http.get("/api/rankings/week/6")
+    assert response.get_json()["stale"] is True
+    assert headers(response) == NO_STORE

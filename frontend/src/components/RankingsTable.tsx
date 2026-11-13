@@ -1,16 +1,31 @@
-import type { Rankings } from '../api'
+import type { MatchupResult, Rankings } from '../api'
 import RankCell, { medal } from './RankCell'
 
 // Medians of whole-number ranks are whole or end in .5, so String() is enough ('3', '2.5').
 const formatMedian = (m?: number | null) => (m == null ? '–' : String(m))
 
-export default function RankingsTable({ rankings }: { rankings: Rankings }) {
+function ResultCell({ result }: { result?: MatchupResult | null }) {
+  if (!result) return <td className="result-cell">–</td>
+  const score = [result.wins, result.losses, ...(result.ties ? [result.ties] : [])].join('–')
+  const outcome = result.outcome ?? ''
+  return (
+    <td className="result-cell">
+      <span className={outcome ? `result result-${outcome.toLowerCase()}` : 'result'}>
+        {outcome ? `${outcome} ${score}` : score}
+      </span>{' '}
+      <span className="result-opp">vs {result.opponent.name}</span>
+    </td>
+  )
+}
+
+export default function RankingsTable({ rankings, showResult }: { rankings: Rankings; showResult?: boolean }) {
   const { categories, teams } = rankings
   return (
     <table>
       <thead>
         <tr>
           <th>Team</th>
+          {showResult && <th className="result-cell">Result</th>}
           <th>Avg Rank</th>
           <th>Med Rank</th>
           {categories.flatMap((c) => [
@@ -26,7 +41,8 @@ export default function RankingsTable({ rankings }: { rankings: Rankings }) {
           return (
             <tr key={team.team_key}>
               <td>{team.name}</td>
-              <td className={color ? `medal-${color}` : ''}>{team.avg_rank.toFixed(2)}</td>
+              {showResult && <ResultCell result={team.result} />}
+              <td className={color ? `avg-rank medal-${color}` : 'avg-rank'}>{team.avg_rank.toFixed(2)}</td>
               <td>{formatMedian(team.median_rank)}</td>
               {categories.map((c) => (
                 <RankCell

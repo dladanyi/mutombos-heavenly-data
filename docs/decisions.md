@@ -175,3 +175,9 @@ Newest first. Each entry: what we decided, and why.
 - **Median rank shown next to average rank, informational only (2026-11-13).** Teams are
   still ordered, and medals still assigned, by the mean. With 9 categories the median is a
   whole number, so ordering by it would create many ties between the 10 teams.
+- **Weekly head-to-head results on the last-week table (2026-11-13).** Each team row of a
+  finished week carries its matchup result (W/L/T, category score, opponent) from Yahoo's
+  scoreboard, cached by the same week-state rules as the stats. The live week isn't fetched,
+  so the current week costs no extra Yahoo call. If the scoreboard fails, the rankings are
+  still served (results null, not cached) rather than failing the whole week. This is the
+  first piece of sub-project 3 (matchups).

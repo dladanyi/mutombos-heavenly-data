@@ -27,6 +27,10 @@ TEAM_PARTS_KEEP = {"team_stats"}
 ENVELOPE_KEEP = {"xml:lang", "yahoo:uri", "time", "copyright", "refresh_rate"}
 LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "current_week",
                     "start_week", "end_week", "start_date", "end_date", "is_finished"}
+# Scoreboard: each matchup keeps its result fields; its two teams go through the team allowlists.
+MATCHUP_KEEP = {"week", "week_start", "week_end", "status", "is_playoffs", "is_consolation",
+                "is_tied", "winner_team_key", "stat_winners"}
+STAT_WINNER_KEEP = {"stat_id", "winner_team_key", "is_tied"}
 
 
 def anonymise(body: dict) -> dict:
@@ -34,7 +38,8 @@ def anonymise(body: dict) -> dict:
     allowlists and each team renamed to "Team <team_id>". The game_weeks calendar (public)
     passes through unchanged. Any other shape raises, e.g. a league part other than the
     metadata or `teams` (standings, scoreboard) or a `users` payload: it may carry team or
-    manager blocks the allowlists haven't been written for."""
+    manager blocks the allowlists haven't been written for. A scoreboard part keeps only the
+    MATCHUP_KEEP fields, and its teams go through the team allowlists."""
     body = copy.deepcopy(body)
     content = body.get("fantasy_content")
     if not isinstance(content, dict):
@@ -54,6 +59,8 @@ def anonymise(body: dict) -> dict:
             league[i] = {k: v for k, v in part.items() if k in LEAGUE_META_KEEP}
         elif "teams" in part:
             league[i] = {"teams": _anonymise_teams(part["teams"])}
+        elif "scoreboard" in part:
+            league[i] = {"scoreboard": _anonymise_scoreboard(part["scoreboard"])}
         else:
             raise ValueError(f"unknown league part {sorted(part)}; add an allowlist for it before capturing")
     body["fantasy_content"] = {k: v for k, v in content.items() if k in ENVELOPE_KEEP | {"league"}}
@@ -75,6 +82,49 @@ def _anonymise_teams(teams) -> dict:
         else:
             rebuilt[key] = {"team": _anonymise_team(entry["team"])}
     return rebuilt
+
+
+def _anonymise_scoreboard(scoreboard) -> dict:
+    """`scoreboard` is {"week": N, "0": {"matchups": {"0": {"matchup": {...}}, ..., "count": N}}}."""
+    if not isinstance(scoreboard, dict) or set(scoreboard) - {"week", "0"}:
+        raise ValueError("unknown scoreboard shape; add an allowlist for it before capturing")
+    holder = scoreboard.get("0")
+    if not isinstance(holder, dict) or set(holder) - {"matchups"}:
+        raise ValueError("unknown scoreboard holder; add an allowlist for it before capturing")
+    out: dict = {"week": scoreboard["week"]} if "week" in scoreboard else {}
+    # No matchups yet (Yahoo sends [] or leaves the key out) is valid; parse_scoreboard handles it.
+    if holder.get("matchups", []) == []:
+        out["0"] = dict(holder)
+        return out
+    if not isinstance(holder["matchups"], dict):
+        raise ValueError("scoreboard matchups is not an object; Yahoo's shape changed")
+    matchups = {}
+    for key, entry in holder["matchups"].items():
+        if key == "count":
+            matchups[key] = entry
+        elif not key.isdigit() or not isinstance(entry, dict) or not isinstance(entry.get("matchup"), dict):
+            raise ValueError(f"unknown matchups entry {key!r}; add an allowlist for it before capturing")
+        else:
+            matchups[key] = {"matchup": _anonymise_matchup(entry["matchup"])}
+    out["0"] = {"matchups": matchups}
+    return out
+
+
+def _anonymise_matchup(matchup: dict) -> dict:
+    teams_holder = matchup.get("0")
+    if not isinstance(teams_holder, dict) or set(teams_holder) != {"teams"}:
+        raise ValueError("matchup has no teams object; Yahoo's shape changed")
+    kept = {k: v for k, v in matchup.items() if k in MATCHUP_KEEP}
+    if "stat_winners" in kept:
+        winners = kept["stat_winners"]
+        if not isinstance(winners, list) or not all(
+                isinstance(w, dict) and set(w) == {"stat_winner"} and isinstance(w["stat_winner"], dict)
+                for w in winners):
+            raise ValueError("unknown stat_winners shape; add an allowlist for it before capturing")
+        kept["stat_winners"] = [{"stat_winner": {k: v for k, v in w["stat_winner"].items() if k in STAT_WINNER_KEEP}}
+                                for w in winners]
+    kept["0"] = {"teams": _anonymise_teams(teams_holder["teams"])}
+    return kept
 
 
 def _is_game_calendar(content: dict) -> bool:
@@ -125,6 +175,7 @@ def main() -> None:
         "season_stats.json": http.get_json(f"league/{league_key}/teams/stats"),
         "week_stats.json": http.get_json(f"league/{league_key}/teams/stats;type=week;week={week}"),
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
+        "scoreboard.json": http.get_json(f"league/{league_key}/scoreboard;week={week}"),
     }
     # Anonymise and write every file to a temp name first, then rename them all, so a shape or
     # write error leaves the old fixture set intact. (The renames themselves aren't one atomic
@@ -143,7 +194,7 @@ def main() -> None:
     for name, tmp in temps.items():
         tmp.replace(FIXTURES / name)
         print(f"{name}: {(FIXTURES / name).stat().st_size} bytes")
-    print(f"week_stats.json is week {week} (current week {current_week})")
+    print(f"week_stats.json and scoreboard.json are week {week} (current week {current_week})")
 
 
 if __name__ == "__main__":

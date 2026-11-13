@@ -9,6 +9,7 @@ from werkzeug.exceptions import HTTPException, NotFound
 from app.cache import CacheResult
 from app.config import CATEGORIES
 from app.errors import YahooUnavailable
+from app.parsing import MatchupResult
 from app.rankings import build_rankings
 
 log = logging.getLogger(__name__)
@@ -98,15 +99,39 @@ def week_rankings(week: str):
     else:
         raise NotFound()
     teams, result, state = _client().week_stats(number, info.current_week, refresh=_refresh())
-    body = {**_rankings_body("week", number, teams, result, league_result), "state": state}
+    others = [league_result]
+    results_ok = True
+    results: dict[str, MatchupResult] = {}
+    if state != "current":  # head-to-head results only exist once the week is over
+        try:
+            results, results_result = _client().week_results(number, state, refresh=_refresh())
+            others.append(results_result)
+        except YahooUnavailable as exc:  # includes YahooFormatError (a subclass)
+            # The rankings are still useful without results; just don't let anything cache this.
+            log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
+            results_ok = False
+    body = {**_rankings_body("week", number, teams, result, *others), "state": state}
+    if state != "current":
+        for row in body["teams"]:
+            row["result"] = _result_json(results.get(row["team_key"]))
     # Long CDN caching only for data that was itself fetched as final (spec §5.2): an entry
     # fetched while settling may still be served after the week turns final.
-    kind = _STATE_HEADERS[state] if state != "final" or result.final else "settling"
+    all_final = result.final and all(o.final for o in others[1:])
+    kind = _STATE_HEADERS[state] if state != "final" or all_final else "settling"
     # An alias names a different week after each rollover, so the CDN may only keep it briefly.
     # (The server-side cache still holds a final week forever.)
     if week in _ALIASES:
         kind = "short"
-    return _respond(body, kind, result, league_result)
+    if not results_ok:
+        kind = "none"
+    return _respond(body, kind, result, *others)
+
+
+def _result_json(r: MatchupResult | None) -> dict | None:
+    if r is None:
+        return None
+    return {"outcome": r.outcome, "wins": r.wins, "losses": r.losses, "ties": r.ties,
+            "opponent": {"team_key": r.opponent_key, "name": r.opponent_name}}
 
 
 @api.get("/", defaults={"path": ""})

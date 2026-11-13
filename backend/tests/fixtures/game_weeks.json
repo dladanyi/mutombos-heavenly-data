@@ -42,7 +42,7 @@
               "display_name": "3",
               "start": "2026-11-02",
               "end": "2026-11-08",
-              "current": "2026-11-05"
+              "current": "2026-11-08"
             }
           },
           "3": {
@@ -51,7 +51,7 @@
               "display_name": "4",
               "start": "2026-11-09",
               "end": "2026-11-15",
-              "current": "2026-11-09"
+              "current": "2026-11-13"
             }
           },
           "4": {
@@ -229,7 +229,7 @@
         }
       }
     ],
-    "time": "10.247945785522ms",
+    "time": "9.4459056854248ms",
     "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
     "refresh_rate": "30"
   }

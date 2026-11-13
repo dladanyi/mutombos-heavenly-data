@@ -113,3 +113,55 @@ def test_malformed_teams_fail_with_value_error(teams):
     body["fantasy_content"]["league"][1]["teams"] = teams
     with pytest.raises(ValueError):
         capture_fixtures.anonymise(body)
+
+
+def scoreboard_body(matchup_extra=None, scoreboard_extra=None):
+    team = lambda n: {"team": [[{"team_key": f"k.{n}"}, {"team_id": str(n)}, {"name": f"Real {n}"},
+                                {"managers": [{"manager": {"email": "e@x"}}]}],
+                               {"team_stats": {"stats": []}, "team_points": {"total": "5"}}]}
+    matchup = {"week": "3", "status": "postevent", "is_tied": 0, "winner_team_key": "k.1",
+               "is_matchup_of_the_week": "1", "matchup_recap_url": "https://recap",
+               "stat_winners": [{"stat_winner": {"stat_id": "12", "winner_team_key": "k.1", "extra": 1}},
+                                {"stat_winner": {"stat_id": "17", "is_tied": 1}}],
+               "0": {"teams": {"0": team(1), "1": team(2), "count": 2}}, **(matchup_extra or {})}
+    return {"fantasy_content": {"league": [
+        {"league_key": "nba.l.1", "name": "League"},
+        {"scoreboard": {"week": 3, "0": {"matchups": {"0": {"matchup": matchup}, "count": 1}}, **(scoreboard_extra or {})}},
+    ]}}
+
+
+def test_scoreboard_keeps_results_and_anonymises_teams():
+    out = capture_fixtures.anonymise(scoreboard_body())["fantasy_content"]["league"][1]["scoreboard"]
+    matchup = out["0"]["matchups"]["0"]["matchup"]
+    assert out["week"] == 3 and out["0"]["matchups"]["count"] == 1
+    assert set(matchup) == {"week", "status", "is_tied", "winner_team_key", "stat_winners", "0"}
+    assert matchup["stat_winners"] == [{"stat_winner": {"stat_id": "12", "winner_team_key": "k.1"}},
+                                       {"stat_winner": {"stat_id": "17", "is_tied": 1}}]
+    teams = matchup["0"]["teams"]
+    assert teams["0"]["team"] == [[{"team_key": "k.1"}, {"team_id": "1"}, {"name": "Team 1"}],
+                                  {"team_stats": {"stats": []}}]
+    assert "e@x" not in repr(out) and "Real" not in repr(out)
+
+
+@pytest.mark.parametrize("body", [
+    scoreboard_body(scoreboard_extra={"standings": []}),
+    scoreboard_body(matchup_extra={"0": {"teams": {}, "managers": []}}),
+    scoreboard_body(matchup_extra={"stat_winners": [{"oops": 1}]}),
+    scoreboard_body(matchup_extra={"stat_winners": ["x"]}),
+    scoreboard_body(matchup_extra={"stat_winners": None}),
+])
+def test_unknown_scoreboard_shapes_fail_loudly(body):
+    with pytest.raises(ValueError):
+        capture_fixtures.anonymise(body)
+
+
+@pytest.mark.parametrize("matchups", [[], None])
+def test_scoreboard_without_matchups_is_kept(matchups):
+    body = scoreboard_body()
+    holder = body["fantasy_content"]["league"][1]["scoreboard"]["0"]
+    if matchups is None:
+        del holder["matchups"]
+    else:
+        holder["matchups"] = matchups
+    out = capture_fixtures.anonymise(body)["fantasy_content"]["league"][1]["scoreboard"]
+    assert out["0"] == ({} if matchups is None else {"matchups": []})

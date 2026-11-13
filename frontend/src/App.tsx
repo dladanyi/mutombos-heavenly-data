@@ -106,6 +106,7 @@ export default function App() {
             badge={{ text: 'Last week' }}
             state={last}
             onRetry={() => void last.reload()}
+            showResult
           />
         </>
       )}
