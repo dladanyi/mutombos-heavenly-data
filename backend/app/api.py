@@ -85,7 +85,19 @@ def league():
 @api.get("/api/rankings/season")
 def season_rankings():
     teams, result = _client().season_stats(refresh=_refresh())
-    return _respond(_rankings_body("season", None, teams, result), "short", result)
+    others: list[CacheResult] = []
+    records: dict[str, dict] | None = None
+    try:
+        standings, standings_result = _client().standings(refresh=_refresh())
+        others.append(standings_result)
+        records = {s.team_key: {"wins": s.wins, "losses": s.losses, "ties": s.ties} for s in standings}
+    except YahooUnavailable as exc:  # includes YahooFormatError
+        # The rankings are still useful without records; just don't let anything cache this.
+        log.warning("Season standings unavailable", extra={"error": str(exc)})
+    body = _rankings_body("season", None, teams, result, *others)
+    for row in body["teams"]:
+        row["record"] = (records or {}).get(row["team_key"])
+    return _respond(body, "short" if records is not None else "none", result, *others)
 
 
 @api.get("/api/rankings/week/<week>")

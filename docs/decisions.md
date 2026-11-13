@@ -196,3 +196,8 @@ Newest first. Each entry: what we decided, and why.
   view during the off-season.
   The standings rows also carry each team's Avg/Med Rk and per-category ranks (user request),
   so a team's finish and its stat ranks can be compared on one line.
+- **The current season's Full Season table shows each team's record (2026-11-13).** It's the
+  category W–L–T from Yahoo's standings (completed weeks), next to the stat ranks, so how a team
+  is doing in matchups and how it ranks on stats read side by side. The standings are cached for
+  5 minutes like the rest of the live data. If they fail, the rankings are still served
+  (records null, not cached).

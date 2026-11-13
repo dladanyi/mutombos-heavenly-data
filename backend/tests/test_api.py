@@ -37,9 +37,11 @@ class FakeClient:
         self.seasons_complete = True
         self.seasons_result = result()
         self.walk_results = None  # one CacheResult per season in season_refs, when a test needs them
-        self.standings = [Standing(2, "k.2", "Beta", 90, 88, 2, 0.506, 1),
+        self.standing_rows = [Standing(2, "k.2", "Beta", 90, 88, 2, 0.506, 1),
                           Standing(1, "k.1", "Alpha", 100, 78, 2, 0.561, 3)]
         self.standings_result = result(final=True)
+        self.current_standings_result = result()
+        self.standings_error = None
         self.final_stats_result = result(final=True)
         self.error = None
         self.calls = []
@@ -68,9 +70,15 @@ class FakeClient:
         self._maybe_fail()
         return self.season_refs, self.seasons_complete, self.walk_results or [self.seasons_result]
 
+    def standings(self, refresh=False):
+        self.calls.append(("standings", refresh))
+        if self.standings_error:
+            raise self.standings_error
+        return self.standing_rows, self.current_standings_result
+
     def final_season(self, league_key, finished, refresh=False):
         self.calls.append(("final_season", league_key, finished, refresh))
-        return self.standings, self.standings_result, TEAMS, self.final_stats_result
+        return self.standing_rows, self.standings_result, TEAMS, self.final_stats_result
 
     def week_results(self, week, state, refresh=False):
         self.calls.append(("results", week, state, refresh))
@@ -392,3 +400,30 @@ def test_older_seasons_do_not_mark_a_requested_season_stale(http, client):
     response = http.get("/api/seasons/2025")
     assert response.get_json()["stale"] is False
     assert headers(response) == FINAL
+
+
+def test_season_rows_carry_record(http, client):
+    teams = rows_by_name(http.get("/api/rankings/season?refresh=1"))
+    assert teams["Alpha"]["record"] == {"wins": 100, "losses": 78, "ties": 2}
+    assert teams["Beta"]["record"] == {"wins": 90, "losses": 88, "ties": 2}
+    assert ("standings", True) in client.calls
+
+
+def test_season_team_missing_from_standings_gets_null_record(http, client):
+    client.standing_rows = [s for s in client.standing_rows if s.name == "Alpha"]
+    assert rows_by_name(http.get("/api/rankings/season"))["Beta"]["record"] is None
+
+
+@pytest.mark.parametrize("error", [YahooUnavailable("down"), YahooFormatError("shape")])
+def test_season_record_failure_keeps_rankings_and_is_not_cached(http, client, error):
+    client.standings_error = error
+    response = http.get("/api/rankings/season")
+    assert response.status_code == 200
+    assert all(t["record"] is None for t in rows_by_name(response).values())
+    assert headers(response) == NO_STORE
+
+
+def test_stale_standings_mark_season_stale(http, client):
+    client.current_standings_result = result(stale=True)
+    response = http.get("/api/rankings/season")
+    assert response.get_json()["stale"] is True and headers(response) == NO_STORE

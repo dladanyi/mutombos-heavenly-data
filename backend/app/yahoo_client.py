@@ -90,6 +90,11 @@ class YahooClient:
         result = self._fetch(path, parse_scoreboard, _WEEK_TTL[state], refresh)
         return result.data, result
 
+    def standings(self, refresh: bool = False) -> tuple[list[Standing], CacheResult]:
+        """The current league's standings (records cover completed weeks)."""
+        result = self._fetch(f"{self._league_path}/standings", parse_standings, CURRENT_TTL, refresh)
+        return result.data, result
+
     def seasons(self, refresh: bool = False) -> tuple[list[SeasonRef], bool, list[CacheResult]]:
         """Readable seasons, newest first, by following each league's `renew` link. Returns
         (seasons, complete, results): `complete` is False when an outage cut the walk short."""

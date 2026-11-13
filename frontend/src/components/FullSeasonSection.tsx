@@ -54,6 +54,7 @@ export default function FullSeasonSection({ current, onRetry }: Props) {
         state={current}
         onRetry={onRetry}
         actions={arrows}
+        showRecord
       />
     )
   }

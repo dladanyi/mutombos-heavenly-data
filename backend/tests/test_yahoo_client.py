@@ -53,6 +53,8 @@ class FakeHttp:
             return fixture("week_stats.json")
         if path.startswith(f"{LEAGUE}/scoreboard;week="):
             return fixture("scoreboard.json")
+        if path == f"{LEAGUE}/standings":
+            return fixture("prev_standings.json")  # same shape as the current league's standings
         if path == PREV:
             return fixture("prev_league.json")
         if path == f"{PREV}/standings":
@@ -377,3 +379,15 @@ def test_current_season_key_falls_back_to_configured_league(setup):
     del league["fantasy_content"]["league"][0]["league_key"]
     http.overrides[LEAGUE] = league
     assert client.seasons()[0][0].league_key == f"nba.l.{LEAGUE_ID}"
+
+
+def test_current_standings_ttl_five_minutes(setup):
+    client, http, clock, _ = setup
+    standings, result = client.standings()
+    assert len(standings) == NUM_TEAMS and not result.final
+    clock.now += 299
+    client.standings()
+    assert http.calls[f"{LEAGUE}/standings"] == 1
+    clock.now += 2
+    client.standings()
+    assert http.calls[f"{LEAGUE}/standings"] == 2

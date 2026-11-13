@@ -10,6 +10,7 @@ type Props = {
   actions?: ReactNode
   showLegend?: boolean
   showResult?: boolean
+  showRecord?: boolean
   medals?: boolean
   /** Shown above the rankings table once data has loaded (e.g. a finished season's standings). */
   intro?: ReactNode
@@ -23,7 +24,7 @@ const LEGEND = [
 ] as const
 
 export default function RankingsSection({
-  title, badge, state, onRetry, actions, showLegend, showResult, medals, intro, caption,
+  title, badge, state, onRetry, actions, showLegend, showResult, showRecord, medals, intro, caption,
 }: Props) {
   return (
     <div className="section">
@@ -56,7 +57,7 @@ export default function RankingsSection({
           {caption && <div className="table-caption">{caption}</div>}
           <div className="scroll-hint">← swipe to see all stats →</div>
           <div className="table-wrap">
-            <RankingsTable rankings={state.data} showResult={showResult} medals={medals} />
+            <RankingsTable rankings={state.data} showResult={showResult} showRecord={showRecord} medals={medals} />
           </div>
         </>
       ) : state.error && !state.loading ? (

@@ -89,6 +89,10 @@ resource).
   informational only: sorting and `place` still use `avg_rank`. Browsers may hold final-week
   responses cached before `median_rank` existed for up to a day (the CDN cache is per
   deployment, so it starts empty), so clients treat it as optional.
+- `record` (season response only) is the team's category W–L–T from Yahoo's standings, over
+  completed weeks: `{"wins": 17, "losses": 10, "ties": 0}`. It's `null` for a team missing from
+  the standings, and for every team when the standings couldn't be fetched (that response is
+  sent `no-store`).
 - `result` is the team's head-to-head matchup that week, from Yahoo's scoreboard. It's only on
   week responses whose `state` is `settling` or `final` (absent for the current week and the
   season). `wins`/`losses`/`ties` count categories from this team's side. `outcome` is `"W"`,

@@ -19,6 +19,8 @@ export type TeamRow = {
   stats: Record<string, StatCell>
   /** Week responses that aren't current only; null when the team had no matchup or results were unavailable. */
   result?: MatchupResult | null
+  /** Current season only: category W–L–T over completed weeks; null when standings were unavailable. */
+  record?: { wins: number; losses: number; ties: number } | null
 }
 export type Rankings = {
   scope: 'week' | 'season'

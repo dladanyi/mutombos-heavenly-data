@@ -36,6 +36,7 @@ describe('FullSeasonSection', () => {
     expect(back()).toBeEnabled()
     expect(forward()).toBeDisabled()
     expect(tables()).toHaveLength(1)
+    expect(screen.getByRole('columnheader', { name: 'Record' })).toBeInTheDocument()
   })
 
   it('steps back to a finished season with standings and plain avg rank', async () => {

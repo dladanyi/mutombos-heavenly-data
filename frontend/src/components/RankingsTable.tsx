@@ -21,11 +21,12 @@ function ResultCell({ result }: { result?: MatchupResult | null }) {
 type Props = {
   rankings: RankingsTableData
   showResult?: boolean
+  showRecord?: boolean
   /** Colour Avg Rank by place. Off for finished seasons, whose standings carry the medals. */
   medals?: boolean
 }
 
-export default function RankingsTable({ rankings, showResult, medals = true }: Props) {
+export default function RankingsTable({ rankings, showResult, showRecord, medals = true }: Props) {
   const { categories, teams } = rankings
   return (
     <table>
@@ -33,6 +34,7 @@ export default function RankingsTable({ rankings, showResult, medals = true }: P
         <tr>
           <th>Team</th>
           {showResult && <th className="result-cell">Result</th>}
+          {showRecord && <th>Record</th>}
           <th>Avg Rank</th>
           <th>Med Rank</th>
           {categories.flatMap((c) => [
@@ -49,6 +51,9 @@ export default function RankingsTable({ rankings, showResult, medals = true }: P
             <tr key={team.team_key}>
               <td>{team.name}</td>
               {showResult && <ResultCell result={team.result} />}
+              {showRecord && (
+                <td>{team.record ? `${team.record.wins}–${team.record.losses}–${team.record.ties}` : '–'}</td>
+              )}
               <td className={color ? `avg-rank medal-${color}` : 'avg-rank'}>{team.avg_rank.toFixed(2)}</td>
               <td>{formatMedian(team.median_rank)}</td>
               {categories.map((c) => (

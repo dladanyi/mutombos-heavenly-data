@@ -92,4 +92,19 @@ describe('RankingsTable', () => {
       expect(resultCells().map((td) => td.textContent)).toEqual(['5–3–1 vs Beta', '–', '–'])
     })
   })
+
+  describe('record column', () => {
+    it('comes right after Team and shows W–L–T', () => {
+      const teams = [{ ...team('Alpha', 1), record: { wins: 17, losses: 10, ties: 0 } }, { ...team('Beta', 2), record: null }, team('Gamma', 3)]
+      render(<RankingsTable rankings={rankings({ teams })} showRecord />)
+      expect(screen.getAllByRole('columnheader').map((th) => th.textContent).slice(0, 3)).toEqual(['Team', 'Record', 'Avg Rank'])
+      const cells = screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[1].textContent)
+      expect(cells).toEqual(['17–10–0', '–', '–'])
+    })
+
+    it('is hidden unless asked for', () => {
+      render(<RankingsTable rankings={rankings()} />)
+      expect(screen.queryByRole('columnheader', { name: 'Record' })).toBeNull()
+    })
+  })
 })
