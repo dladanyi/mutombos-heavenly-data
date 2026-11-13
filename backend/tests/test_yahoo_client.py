@@ -32,12 +32,15 @@ class FakeHttp:
     def __init__(self):
         self.calls = Counter()
         self.failing = set()
+        self.denied = set()  # paths that answer HTTP 403
         self.overrides = {}
 
     def get_json(self, path):
         self.calls[path] += 1
         if path in self.failing:
             raise YahooUnavailable(f"{path} down")
+        if path in self.denied:
+            raise YahooAccessDenied(f"Yahoo returned HTTP 403 for {path}")
         if path in self.overrides:
             return self.overrides[path]
         if path == LEAGUE:
@@ -336,3 +339,19 @@ def test_final_season_unfinished_uses_current_ttl(setup):
     clock.now += 301
     client.final_season(key, finished=False)
     assert http.calls[f"{PREV}/standings"] == 2
+
+
+def test_bad_credential_does_not_cache_end_of_history(setup):
+    """A 403 only means "no access to that season" when the current league loaded fine; with a
+    bad credential everything is 403, the current league is served stale, and the walk must not
+    overwrite the cached previous season with an end-of-history marker."""
+    client, http, clock, _ = setup
+    assert [s.season for s in client.seasons()[0]] == [2026, 2025]
+    clock.now += 86401  # every cached league entry has expired
+    http.denied |= {LEAGUE, PREV}
+    seasons, _, results = client.seasons()
+    assert [s.season for s in seasons] == [2026, 2025]
+    assert any(r.stale for r in results)
+    http.denied.clear()
+    clock.now += 31  # past the failure cooldown
+    assert [s.season for s in client.seasons()[0]] == [2026, 2025]

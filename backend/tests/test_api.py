@@ -366,7 +366,7 @@ def test_current_finished_season_served(http, client):
     assert ("final_season", "478.l.1", True, False) in client.calls
 
 
-@pytest.mark.parametrize("season", ["abc", "2025-26", "1999", "-1"])
+@pytest.mark.parametrize("season", ["abc", "2025-26", "1999", "-1", "9" * 5000, "٢٠٢٥", "02025"])
 def test_bad_season_404(http, season):
     response = http.get(f"/api/seasons/{season}")
     assert response.status_code == 404 and response.get_json() == {"error": "not_found"}

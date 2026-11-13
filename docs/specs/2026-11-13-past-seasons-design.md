@@ -147,7 +147,7 @@ FULL SEASON   ‹  2025-26  ›                         [ Final ]
 
   ```json
   {
-    "season": 2025, "league_key": "466.l.11070", "name": "...",
+    "season": 2025, "league_key": "466.l.11070",
     "fetched_at": "...", "stale": false,
     "categories": [ ... same as rankings ... ],
     "standings": [
@@ -194,7 +194,7 @@ FULL SEASON   ‹  2025-26  ›                         [ Final ]
 
 ### Frontend
 
-- `api.ts`: `getSeasons()`, `getPastSeason(season)` and their types.
+- `api.ts`: `getSeasons()`, `getFinalSeason(season)` and their types.
 - **Full Season section:** holds the selected season. It loads `/api/seasons` once on page
   load and chooses the view by `finished`, not by `current`:
   - an in-progress season gets today's view from `/api/rankings/season`

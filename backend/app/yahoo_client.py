@@ -94,13 +94,16 @@ class YahooClient:
         """Readable seasons, newest first, by following each league's `renew` link. Returns
         (seasons, complete, results): `complete` is False when an outage cut the walk short."""
         info, current_result = self.league(refresh=refresh)
+        # A 403 only means "this account wasn't in that season" when the current league loaded
+        # fine; a bad credential makes everything 403 and leaves the current league stale.
+        denied_ends_walk = not current_result.stale
         seasons = [SeasonRef(info.season or 0, info.league_key, True, info.is_finished)]
         results = [current_result]
         key = info.previous_league_key
         complete = True
         while key and len(seasons) < MAX_SEASONS:
             try:
-                result = self._cache.get_or_fetch(f"league/{key}", self._league_or_denied(key),
+                result = self._cache.get_or_fetch(f"league/{key}", self._league_or_denied(key, denied_ends_walk),
                                                   PREVIOUS_LEAGUE_TTL)
             except YahooUnavailable:
                 complete = False
@@ -121,11 +124,13 @@ class YahooClient:
         stats = self._fetch(f"league/{league_key}/teams/stats", parse_team_stats, ttl, refresh)
         return standings.data, standings, stats.data, stats
 
-    def _league_or_denied(self, key: str) -> Callable[[], LeagueInfo | None]:
+    def _league_or_denied(self, key: str, denied_ends_walk: bool) -> Callable[[], LeagueInfo | None]:
         def fetch() -> LeagueInfo | None:
             try:
                 return parse_league(self._http.get_json(f"league/{key}"))
             except YahooAccessDenied:
+                if not denied_ends_walk:
+                    raise  # an outage, not an end of history: the cache serves the old entry stale
                 return None
         return fetch
 

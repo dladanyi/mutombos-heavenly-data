@@ -1,5 +1,6 @@
 """JSON API routes, cache headers and error handling (spec §5.5)."""
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -145,7 +146,7 @@ def seasons():
 @api.get("/api/seasons/<season>")
 def final_season(season: str):
     """A finished season: any past season, or the current one once Yahoo marks it finished."""
-    if not season.isdecimal():
+    if not re.fullmatch(r"[0-9]{4}", season):  # ASCII only: isdecimal() lets in 5000-digit and non-ASCII digits
         raise NotFound()
     refs, complete, walk_results = _client().seasons(refresh=_refresh())
     ref = next((s for s in refs if s.season == int(season)), None)
