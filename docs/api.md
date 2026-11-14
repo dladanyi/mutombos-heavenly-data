@@ -16,6 +16,7 @@ All endpoints return JSON.
 | `GET /api/seasons` | Seasons this Yahoo account can read, newest first |
 | `GET /api/seasons/<season>` | A finished season: final standings plus whole-season rankings |
 | `GET /api/stars` | Star Power: teams ranked by players in the season-to-date top 10/25/50 |
+| `GET /api/stars/<season>` | A finished season's Star Power: final full-season ranks, end-of-season rosters |
 | `GET /healthz` | Returns `ok`; never calls Yahoo. If a required env var is missing the function can't start, so this returns Vercel's own 500 |
 
 ## Caching headers
@@ -27,7 +28,7 @@ All endpoints return JSON.
 | Final week (ended 3+ days ago), by number only | `public, max-age=86400` | `max-age=31536000` |
 | `/api/seasons` | `public, max-age=60` | `max-age=60` |
 | `/api/stars` | `public, max-age=300` | `max-age=3600` |
-| `/api/seasons/<season>`, finished and fetched as final | `public, max-age=86400` | `max-age=31536000` |
+| `/api/seasons/<season>` and `/api/stars/<season>`, finished and fetched as final | `public, max-age=86400` | `max-age=31536000` |
 | `?refresh=1`, `/healthz`, errors, stale responses, an incomplete season list | `no-store` | `no-store` |
 
 Adding `?refresh=1` to any `/api` endpoint skips the server cache (at most once every 30 s per
@@ -172,6 +173,18 @@ a season that isn't in the list. 503 if the season isn't found while the list is
 - `unowned` lists top-50 players on no team: `freeagents`, `waivers`, or `team` for an owner the
   league's team list doesn't have.
 - Cached 1 hour on the server and the CDN (Yahoo updates season ranks about daily).
+
+## `GET /api/stars/<season>`
+
+The same body as `/api/stars`, plus `"season": 2025` and `"league_key": "466.l.11070"`, for a
+finished season: any past season, or the current one once Yahoo marks it finished.
+
+- For a past league Yahoo returns the **final full-season ranks** and **end-of-season
+  ownership**, so a player traded mid-season counts for the team that finished with him.
+- `season` is matched the same way as `/api/seasons/<season>`: 404 for the in-progress season,
+  an unknown season or bad input, and 503 if an outage cut the season list short.
+- A finished season is cached forever on the server, with final headers once both the players
+  and the team list are final. Otherwise the 1-hour Star Power headers apply.
 
 ## Errors
 

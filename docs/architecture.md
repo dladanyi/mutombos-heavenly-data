@@ -22,7 +22,7 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 | `errors.py` | `YahooUnavailable`, `YahooFormatError`, `YahooAccessDenied` (HTTP 403) | - |
 | `yahoo_http.py` | OAuth token refresh, GET with timeout, retry and 401 handling | requests |
 | `cache.py` | TTL / final cache, stale-on-error, refresh throttle | - |
-| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules; past-season walk (`renew`) and final standings; top-50 players (1 h) | yahoo_http, cache, parsing |
+| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules; past-season walk (`renew`) and final standings; top-50 players (1 h, or forever for a finished season) | yahoo_http, cache, parsing |
 | `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult`, `Standing`, `RankedPlayer` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, median rank, place) | config |
 | `stars.py` | Ranked players + teams → Star Power (top-10/25/50 counts, order, unowned) | parsing |
@@ -38,7 +38,8 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirror
 [api.md](api.md). A tab bar (`TabBar`) switches between two screens, kept in the URL hash
 (`#stars` = Star Power) so a screen can be bookmarked and Back works. Star Power
-(`StarPowerSection`, `StarPowerTable`) loads only when its tab is opened. The Rankings screen has
+(`StarPowerSection`, `StarPowerTable`) loads only when its tab is opened, and has its own ‹ › season
+arrows (a finished season via `/api/stars/<season>`). The Rankings screen has
 two sections: the week section (opens on the live week; ‹ ›
 step back through finished weeks via `/api/rankings/week/<n>`) and Full Season. Components:
 `Header`, `RankingsSection`, `RankingsTable`, `RankCell`, `ArrowNav` (the shared ‹ › buttons),
@@ -65,6 +66,7 @@ Two layers:
 | Season list (`/api/seasons`) | current league 5 min, previous leagues 1 day | 60 s | 60 s |
 | Finished season's standings and stats | forever | 1 year | 1 day |
 | Star Power (top-50 players) | 1 h | 1 h | 5 min |
+| Finished season's Star Power | forever | 1 year | 1 day |
 
 A week becomes final once it is more than 3 days past its end date (Pacific time, using
 Yahoo's game-week calendar), which leaves time for Yahoo's stat corrections. Finality is
