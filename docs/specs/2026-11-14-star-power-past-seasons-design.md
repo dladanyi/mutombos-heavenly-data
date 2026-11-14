@@ -38,10 +38,13 @@ the final full-season ranks, and `ownership` shows the end-of-season owner.
 - **Client:** `season_top_players(league_key, finished)` and `season_teams(league_key, finished)`.
   A finished season is cached forever, with final CDN headers once both are final.
   `season_teams` uses the same cache entry as `final_season`'s stats.
-- **Frontend:** `StarPowerSection` fetches `/api/seasons` and shows `ArrowNav` when there is more
-  than one season. It uses the same rule as Full Season for when to show the final view.
+- **Frontend:** a shared `useSeasonNav` hook (season list, ‹ › arrows and the rule for when to
+  show the final view) now drives both Full Season and Star Power.
+  - **Loading:** Star Power waits for the season list before fetching, so in the off-season it
+    goes straight to the finished current season instead of fetching today's view first.
   - **Badge:** "Final · top 50" (or "Past season · top 50").
-  - **Caption:** "Full-season ranks · rosters at season end" instead of "As of".
+  - **Caption:** "Full-season ranks · rosters at season end" instead of "As of" (only for a
+    season Yahoo has marked finished).
   - **Refresh:** no button, because the data is final.
 
 ## Calls made (not discussed)

@@ -43,6 +43,7 @@ arrows (a finished season via `/api/stars/<season>`). The Rankings screen has
 two sections: the week section (opens on the live week; ‹ ›
 step back through finished weeks via `/api/rankings/week/<n>`) and Full Season. Components:
 `Header`, `RankingsSection`, `RankingsTable`, `RankCell`, `ArrowNav` (the shared ‹ › buttons),
+`useSeasonNav` (the season list and ‹ › arrows shared by Full Season and Star Power),
 `FullSeasonSection` (the ‹ › season arrows; today's view while a season is in progress, the
 final view once finished) and `StandingsTable` (champion line and final standings, with each team's Avg/Med Rk and
 per-category ranks next to its finish).
