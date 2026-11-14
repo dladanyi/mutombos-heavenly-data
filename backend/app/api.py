@@ -12,6 +12,7 @@ from app.config import CATEGORIES
 from app.errors import YahooUnavailable
 from app.parsing import MatchupResult, Standing
 from app.rankings import build_rankings
+from app.stars import LEVELS, build_star_power
 
 log = logging.getLogger(__name__)
 api = Blueprint("api", __name__)
@@ -144,6 +145,20 @@ def _result_json(r: MatchupResult | None) -> dict | None:
         return None
     return {"outcome": r.outcome, "wins": r.wins, "losses": r.losses, "ties": r.ties,
             "opponent": {"team_key": r.opponent_key, "name": r.opponent_name}}
+
+
+@api.get("/api/stars")
+def stars():
+    players, players_result = _client().top_players(refresh=_refresh())
+    teams, teams_result = _client().season_stats()  # the league's team list (names, keys)
+    body = {
+        "fetched_at": _iso(players_result.fetched_at),
+        "stale": players_result.stale or teams_result.stale,
+        "refresh_throttled": players_result.refresh_throttled,
+        "levels": list(LEVELS),
+        **build_star_power(players, teams),
+    }
+    return _respond(body, "settling", players_result, teams_result)  # 5 min browser, 1 h CDN
 
 
 @api.get("/api/seasons")

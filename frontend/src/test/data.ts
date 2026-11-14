@@ -1,4 +1,4 @@
-import type { Category, FinalSeason, League, Rankings, SeasonsList, Standing, TeamRow } from '../api'
+import type { Category, FinalSeason, League, Rankings, SeasonsList, Standing, StarPower, TeamRow } from '../api'
 
 export const categories: Category[] = [
   { key: 'PTS', higher_is_better: true },
@@ -67,6 +67,26 @@ export function finalSeason(overrides: Partial<FinalSeason> = {}): FinalSeason {
       standing(4, 'Team 10', { playoff_seed: null }),
     ],
     teams: [team('Team 4', 1), team('Team 3', 2), team('Team 9', 3)],
+    ...overrides,
+  }
+}
+
+const star = (rank: number, name: string, nba_team = 'SAS', position = 'C') => ({ rank, player_key: `p.${rank}`, name, nba_team, position })
+
+export function starPower(overrides: Partial<StarPower> = {}): StarPower {
+  return {
+    fetched_at: '2026-11-20T18:30:00Z',
+    stale: false,
+    refresh_throttled: false,
+    levels: [10, 25, 50],
+    teams: [
+      { team_key: 't.1', name: 'Alpha', place: 1, counts: { '10': 2, '25': 3, '50': 4 },
+        players: [star(1, 'Victor Wembanyama'), star(8, 'Player Eight'), star(14, 'Player Fourteen'), star(31, 'Player ThirtyOne')] },
+      { team_key: 't.2', name: 'Beta', place: 2, counts: { '10': 1, '25': 1, '50': 1 }, players: [star(3, 'Player Three')] },
+      { team_key: 't.3', name: 'Gamma', place: 3, counts: { '10': 0, '25': 0, '50': 1 }, players: [star(40, 'Player Forty')] },
+      { team_key: 't.4', name: 'Delta', place: 4, counts: { '10': 0, '25': 0, '50': 0 }, players: [] },
+    ],
+    unowned: [{ ...star(37, 'Player X'), status: 'freeagents' }, { ...star(48, 'Player Y'), status: 'waivers' }],
     ...overrides,
   }
 }

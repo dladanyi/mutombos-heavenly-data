@@ -59,6 +59,17 @@ class MatchupResult:
     opponent_name: str
 
 
+@dataclass(frozen=True)
+class RankedPlayer:
+    rank: int  # position in Yahoo's season-to-date "actual rank" order (1 = best)
+    player_key: str
+    name: str
+    nba_team: str
+    position: str
+    ownership_type: str  # "team", "freeagents" or "waivers"
+    owner_team_key: str | None
+
+
 def parse_league(payload: dict) -> LeagueInfo:
     meta = _first_dict(_get(payload, "fantasy_content", "league"), "league")
     try:
@@ -171,6 +182,37 @@ def _team_metadata(team: Any, where: str) -> tuple[str, str]:
     if "team_key" not in metadata or "name" not in metadata:
         raise YahooFormatError(f"{where} is missing team_key or name")
     return str(metadata["team_key"]), str(metadata["name"])
+
+
+def parse_ranked_players(payload: dict, start: int) -> list[RankedPlayer]:
+    """One page of `players;sort=AR;...;start=N`: Yahoo sends no rank number, so a player's rank
+    is his position in the sorted page (start + index + 1). An empty page gives []."""
+    league = _get(payload, "fantasy_content", "league")
+    players = _find_dict_with(league, "players", "league")["players"]
+    if not isinstance(players, dict):  # Yahoo sends [] when there are none
+        return []
+    out = []
+    for i, (key, value) in enumerate(_indexed(players, "players")):
+        where = f"players.{key}"
+        player = _get(value, "player")
+        if not isinstance(player, list):
+            raise YahooFormatError(f"{where}.player is not a list")
+        meta = _merged_metadata(player)
+        own = next((p["ownership"] for p in player if isinstance(p, dict) and "ownership" in p), None)
+        name = meta.get("name")
+        full = name.get("full") if isinstance(name, dict) else None
+        if "player_key" not in meta or not full:
+            raise YahooFormatError(f"{where} is missing player_key or name")
+        # Without ownership every star would silently count as a free agent; fail instead
+        # (the cache then serves the last good list, or the endpoint returns 503).
+        if not isinstance(own, dict) or not own.get("ownership_type"):
+            raise YahooFormatError(f"{where} is missing ownership")
+        out.append(RankedPlayer(
+            rank=start + i + 1, player_key=str(meta["player_key"]), name=str(full),
+            nba_team=str(meta.get("editorial_team_abbr", "")), position=str(meta.get("display_position", "")),
+            ownership_type=str(own["ownership_type"]),
+            owner_team_key=str(own["owner_team_key"]) if own.get("owner_team_key") else None))
+    return out
 
 
 def parse_standings(payload: dict) -> list[Standing]:

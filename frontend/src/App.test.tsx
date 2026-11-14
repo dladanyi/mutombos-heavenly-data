@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { finalSeason, league, rankings, seasonsList } from './test/data'
+import { finalSeason, league, rankings, seasonsList, starPower } from './test/data'
 
 type Route = { status?: number; body: unknown }
 type Routes = Record<string, Route | Route[]>
@@ -28,10 +28,77 @@ function happyRoutes(): Routes {
     '/api/rankings/season': { body: rankings({ scope: 'season', week: null }) },
     '/api/rankings/week/6': { body: rankings({ week: 6, state: 'final' }) },
     '/api/seasons': { body: seasonsList() },
+    '/api/stars': { body: starPower() },
   }
 }
 
 describe('App', () => {
+  beforeEach(() => {
+    window.location.hash = ''
+  })
+
+  it('opens on the Rankings tab without loading Star Power', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    expect(await screen.findByRole('tab', { name: 'Rankings' })).toHaveAttribute('aria-selected', 'true')
+    await screen.findByText('Week 7')
+    expect(calls).not.toContain('/api/stars')
+  })
+
+  it('switches to Star Power and back with the tabs and the URL hash', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('tab', { name: 'Star Power' }))
+    expect(window.location.hash).toBe('#stars')
+    expect(await screen.findByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()
+    expect(calls).toContain('/api/stars')
+    expect(screen.getByText('Week 7')).not.toBeVisible()
+    window.location.hash = ''
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    expect(await screen.findByText('Week 7')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Rankings' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('keeps each tab loaded after switching away and back', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('tab', { name: 'Star Power' }))
+    await screen.findByText(/Not on a team/)
+    await userEvent.click(screen.getByRole('tab', { name: 'Rankings' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Star Power' }))
+    expect(screen.getByText(/Not on a team/)).toBeVisible()
+    expect(calls.filter((c) => c === '/api/stars')).toHaveLength(1)
+  })
+
+  it('leaves the URL clean and history untouched when choosing tabs', async () => {
+    mockApi(happyRoutes())
+    render(<App />)
+    const before = window.history.length
+    await userEvent.click(await screen.findByRole('tab', { name: 'Rankings' }))
+    expect(window.history.length).toBe(before)
+    await userEvent.click(screen.getByRole('tab', { name: 'Star Power' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Rankings' }))
+    expect(window.location.href.endsWith('#')).toBe(false)
+    expect(window.location.hash).toBe('')
+  })
+
+  it('hides the rankings timestamp in the header on Star Power', async () => {
+    mockApi(happyRoutes())
+    render(<App />)
+    await screen.findByText(/Last updated:/)
+    await userEvent.click(screen.getByRole('tab', { name: 'Star Power' }))
+    await screen.findByText(/Not on a team/)
+    expect(screen.queryByText(/Last updated:/)).toBeNull()
+  })
+
+  it('opens Star Power when the page loads with #stars', async () => {
+    window.location.hash = '#stars'
+    mockApi(happyRoutes())
+    render(<App />)
+    expect(await screen.findByRole('tab', { name: 'Star Power' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText(/Not on a team/)).toBeInTheDocument()
+  })
+
   it('shows loading then the week and full season sections', async () => {
     mockApi(happyRoutes())
     render(<App />)

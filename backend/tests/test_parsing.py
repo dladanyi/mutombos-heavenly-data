@@ -16,7 +16,7 @@ import pytest
 
 from app.errors import YahooFormatError
 from app.parsing import (GameWeek, MatchupResult, parse_game_weeks, parse_league, parse_scoreboard,
-                         parse_standings, parse_team_stats)
+                         parse_ranked_players, parse_standings, parse_team_stats)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -265,3 +265,69 @@ def test_parse_league_is_finished_forms(raw, expected):
     payload = load("prev_league.json")
     payload["fantasy_content"]["league"][0]["is_finished"] = raw
     assert parse_league(payload).is_finished is expected
+
+
+
+# players: fantasy_content.league[1].players = {"0": {"player": [metadata_list, {"ownership": {
+#   ownership_type: team|freeagents|waivers, owner_team_key?}}]}, ..., "count": N}
+
+def test_parse_ranked_players_fixture():
+    players = parse_ranked_players(load("top_players_0.json"), start=0)
+    assert [p.rank for p in players] == list(range(1, 26))
+    assert all(p.ownership_type in {"team", "freeagents", "waivers"} for p in players)
+    assert all(p.owner_team_key for p in players if p.ownership_type == "team")
+    assert all(p.name and p.nba_team and p.position and p.player_key for p in players)
+
+
+def test_parse_ranked_players_offsets_rank():
+    assert parse_ranked_players(load("top_players_25.json"), start=25)[0].rank == 26
+
+
+def players_body(*players):
+    entries = {str(i): {"player": [[{"player_key": f"p.{i}"}, {"name": {"full": f"Player {i}"}},
+                                    {"editorial_team_abbr": "SAS"}, {"display_position": "C"}, []],
+                                   {"ownership": own}]} for i, own in enumerate(players)}
+    return {"fantasy_content": {"league": [{"league_key": "nba.l.1"},
+                                           {"players": {**entries, "count": len(entries)}}]}}
+
+
+@pytest.mark.parametrize("players", [[], None])
+def test_parse_ranked_players_empty(players):
+    body = players_body()
+    if players is None:
+        del body["fantasy_content"]["league"][1]["players"]
+        body["fantasy_content"]["league"][1] = {"players": []}
+    else:
+        body["fantasy_content"]["league"][1]["players"] = players
+    assert parse_ranked_players(body, start=25) == []
+
+
+def test_parse_ranked_players_short_page():
+    body = players_body({"ownership_type": "team", "owner_team_key": "t.1"},
+                        {"ownership_type": "freeagents"}, {"ownership_type": "waivers"})
+    players = parse_ranked_players(body, start=25)
+    assert [(p.rank, p.ownership_type, p.owner_team_key) for p in players] == [
+        (26, "team", "t.1"), (27, "freeagents", None), (28, "waivers", None)]
+    assert players[0].name == "Player 0" and players[0].nba_team == "SAS" and players[0].position == "C"
+
+
+@pytest.mark.parametrize("ownership", [None, {}, {"owner_team_key": "t.1"}])
+def test_parse_ranked_players_missing_ownership_raises(ownership):
+    """Without ownership every star would silently count as a free agent (and be cached an hour)."""
+    body = players_body({"ownership_type": "team", "owner_team_key": "t.1"})
+    player = body["fantasy_content"]["league"][1]["players"]["0"]["player"]
+    if ownership is None:
+        player.pop()
+    else:
+        player[1] = {"ownership": ownership}
+    with pytest.raises(YahooFormatError):
+        parse_ranked_players(body, start=0)
+
+
+@pytest.mark.parametrize("drop", ["name", "player_key"])
+def test_parse_ranked_players_malformed_raises(drop):
+    body = players_body({"ownership_type": "freeagents"})
+    meta = body["fantasy_content"]["league"][1]["players"]["0"]["player"][0]
+    meta[:] = [d for d in meta if not (isinstance(d, dict) and drop in d)]
+    with pytest.raises(YahooFormatError):
+        parse_ranked_players(body, start=0)

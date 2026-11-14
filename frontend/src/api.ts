@@ -56,6 +56,25 @@ export type FinalSeason = Omit<Rankings, 'scope' | 'week' | 'state' | 'refresh_t
 /** 2025 -> "2025-26". */
 export const seasonLabel = (year: number) => `${year}-${String((year + 1) % 100).padStart(2, '0')}`
 
+export type StarPlayer = { rank: number; player_key: string; name: string; nba_team: string; position: string }
+export type StarTeam = {
+  team_key: string
+  name: string
+  place: number
+  /** Players in the top N, keyed by N ("10", "25", "50"); cumulative. */
+  counts: Record<string, number>
+  players: StarPlayer[]
+}
+export type StarPower = {
+  fetched_at: string
+  stale: boolean
+  refresh_throttled: boolean
+  levels: number[]
+  teams: StarTeam[]
+  /** Top-50 players on no team: status is "freeagents", "waivers" (or "team" for an unknown team). */
+  unowned: (StarPlayer & { status: string })[]
+}
+
 export type League = {
   name: string
   current_week: number
@@ -96,3 +115,4 @@ export const getWeek = (week: number | 'current' | 'previous', opts?: Options) =
   getJson<Rankings>(`/api/rankings/week/${week}`, opts)
 export const getSeasons = () => getJson<SeasonsList>('/api/seasons')
 export const getFinalSeason = (season: number) => getJson<FinalSeason>(`/api/seasons/${season}`)
+export const getStars = (opts?: Options) => getJson<StarPower>('/api/stars', opts)

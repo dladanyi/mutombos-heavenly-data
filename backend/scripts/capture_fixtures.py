@@ -25,6 +25,9 @@ FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 TEAM_META_KEEP = {"team_key", "team_id", "name"}
 TEAM_PARTS_KEEP = {"team_stats", "team_standings"}
 STANDINGS_KEEP = {"rank", "playoff_seed", "outcome_totals"}
+# Players are public NBA athletes; keep only what parse_ranked_players reads.
+PLAYER_META_KEEP = {"player_key", "player_id", "name", "editorial_team_abbr", "display_position"}
+OWNERSHIP_KEEP = {"ownership_type", "owner_team_key"}
 # Top-level fantasy_content keys besides `league` / `game` (Yahoo's response envelope).
 ENVELOPE_KEEP = {"xml:lang", "yahoo:uri", "time", "copyright", "refresh_rate"}
 LEAGUE_META_KEEP = {"league_key", "league_id", "name", "season", "num_teams", "current_week",
@@ -65,6 +68,8 @@ def anonymise(body: dict) -> dict:
             league[i] = {"scoreboard": _anonymise_scoreboard(part["scoreboard"])}
         elif "standings" in part:
             league[i] = {"standings": _anonymise_standings(part["standings"])}
+        elif "players" in part:
+            league[i] = {"players": _anonymise_players(part["players"])}
         else:
             raise ValueError(f"unknown league part {sorted(part)}; add an allowlist for it before capturing")
     body["fantasy_content"] = {k: v for k, v in content.items() if k in ENVELOPE_KEEP | {"league"}}
@@ -85,6 +90,29 @@ def _anonymise_teams(teams) -> dict:
             raise ValueError(f"teams.{key} has no team list; Yahoo's shape changed")
         else:
             rebuilt[key] = {"team": _anonymise_team(entry["team"])}
+    return rebuilt
+
+
+def _anonymise_players(players):
+    """`players` is {"0": {"player": [metadata_list, {"ownership": {...}}]}, ..., "count": N} (or [])."""
+    if players == []:
+        return []
+    if not isinstance(players, dict):
+        raise ValueError("unknown players shape; add an allowlist for it before capturing")
+    rebuilt = {}
+    for key, entry in players.items():
+        if key == "count":
+            rebuilt[key] = entry
+        elif not key.isdigit() or not isinstance(entry, dict) or not isinstance(entry.get("player"), list) \
+                or not entry["player"] or not isinstance(entry["player"][0], list):
+            raise ValueError(f"unknown players entry {key!r}; add an allowlist for it before capturing")
+        else:
+            meta, *parts = entry["player"]
+            kept_meta = [item for item in meta
+                         if item == [] or (isinstance(item, dict) and set(item) <= PLAYER_META_KEEP)]
+            kept_parts = [{"ownership": {k: v for k, v in p["ownership"].items() if k in OWNERSHIP_KEEP}}
+                          for p in parts if isinstance(p, dict) and isinstance(p.get("ownership"), dict)]
+            rebuilt[key] = {"player": [kept_meta, *kept_parts]}
     return rebuilt
 
 
@@ -196,6 +224,8 @@ def main() -> None:
         "week_stats.json": http.get_json(f"league/{league_key}/teams/stats;type=week;week={week}"),
         "game_weeks.json": http.get_json("game/nba/game_weeks"),
         "scoreboard.json": http.get_json(f"league/{league_key}/scoreboard;week={week}"),
+        "top_players_0.json": http.get_json(f"league/{league_key}/players;sort=AR;sort_type=season;start=0;count=25/ownership"),
+        "top_players_25.json": http.get_json(f"league/{league_key}/players;sort=AR;sort_type=season;start=25;count=25/ownership"),
     }
     prev = parse_league(league).previous_league_key
     if prev:  # last season's league, for the past-seasons view

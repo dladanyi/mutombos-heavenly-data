@@ -210,3 +210,12 @@ Newest first. Each entry: what we decided, and why.
   any finished week (Final or Settling badge, Result column), fetched by number so final
   weeks get the long CDN cache. Refresh also refreshes the week being viewed. This is the
   "pick any week" half of sub-project 2; trends over time remain.
+- **Star Power tab (2026-11-13).** A second screen ranks teams by how many of their players are
+  in Yahoo's season-to-date top 10, 25 and 50 ("who has the most stars"). Teams are ordered by
+  top-10 count, then top 25, then top 50 (the user's choice). Counts are cumulative. Top-50
+  players on no team are listed so the counts make sense. It's cached for 1 hour, since season
+  ranks change about daily. Tabs use the URL hash instead of a router: there's no new
+  dependency and no Vercel rewrite, and it's still bookmarkable.
+  Each tab stays mounted once opened (hidden when inactive), so switching back keeps its data
+  and the chosen past season. The header's time and outage notice belong to the rankings and are
+  hidden on Star Power, which shows its own.

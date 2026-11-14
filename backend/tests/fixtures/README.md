@@ -14,10 +14,12 @@ Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 202
 | `prev_league.json` | `league/466.l.11070` (last season, via the current league's `renew`) |
 | `prev_standings.json` | `league/466.l.11070/standings` |
 | `prev_season_stats.json` | `league/466.l.11070/teams/stats` |
+| `top_players_0.json` | `league/nba.l.46425/players;sort=AR;sort_type=season;start=0;count=25/ownership` |
+| `top_players_25.json` | same, `start=25` (ranks 26-50) |
 
 **The repo is public**, so the script anonymises the responses before saving them, using
 **allowlists** (`TEAM_META_KEEP`, `TEAM_PARTS_KEEP`, `LEAGUE_META_KEEP`, `MATCHUP_KEEP`,
-`STAT_WINNER_KEEP`, `STANDINGS_KEEP` in the script):
+`STAT_WINNER_KEEP`, `STANDINGS_KEEP`, `PLAYER_META_KEEP`, `OWNERSHIP_KEEP` in the script):
 
 - Each team keeps only `team_key`, `team_id`, `name` (renamed to `Team <team_id>`; the
   parser requires it) and its `team_stats`. Everything else is dropped: managers, logos, URLs,
@@ -33,6 +35,9 @@ Real Yahoo Fantasy API responses for league 46425 (2026-27 season), captured 202
 - Scoreboard matchups keep only their result fields (`MATCHUP_KEEP`: week, dates, status,
   playoff flags, `is_tied`, `winner_team_key`, `stat_winners`, each stat winner reduced to
   `STAT_WINNER_KEEP`). Their two teams go through the same team allowlists as above.
+- Players (public NBA athletes) keep only `player_key`, `player_id`, `name`,
+  `editorial_team_abbr` and `display_position`, and their `ownership` only `ownership_type` and
+  `owner_team_key` (no owner team name, headshots, URLs or notes).
 - `game_weeks.json` is saved as returned. It's Yahoo's public NBA calendar.
 - The wrappers around these are rebuilt with only their known keys too: the `teams` part,
   each team entry, and the top-level `fantasy_content` envelope.
