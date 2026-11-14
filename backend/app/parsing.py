@@ -198,16 +198,19 @@ def parse_ranked_players(payload: dict, start: int) -> list[RankedPlayer]:
         if not isinstance(player, list):
             raise YahooFormatError(f"{where}.player is not a list")
         meta = _merged_metadata(player)
-        own = next((p["ownership"] for p in player if isinstance(p, dict) and "ownership" in p), {})
+        own = next((p["ownership"] for p in player if isinstance(p, dict) and "ownership" in p), None)
         name = meta.get("name")
         full = name.get("full") if isinstance(name, dict) else None
         if "player_key" not in meta or not full:
             raise YahooFormatError(f"{where} is missing player_key or name")
-        own = own if isinstance(own, dict) else {}
+        # Without ownership every star would silently count as a free agent; fail instead
+        # (the cache then serves the last good list, or the endpoint returns 503).
+        if not isinstance(own, dict) or not own.get("ownership_type"):
+            raise YahooFormatError(f"{where} is missing ownership")
         out.append(RankedPlayer(
             rank=start + i + 1, player_key=str(meta["player_key"]), name=str(full),
             nba_team=str(meta.get("editorial_team_abbr", "")), position=str(meta.get("display_position", "")),
-            ownership_type=str(own.get("ownership_type", "freeagents")),
+            ownership_type=str(own["ownership_type"]),
             owner_team_key=str(own["owner_team_key"]) if own.get("owner_team_key") else None))
     return out
 

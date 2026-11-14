@@ -311,6 +311,19 @@ def test_parse_ranked_players_short_page():
     assert players[0].name == "Player 0" and players[0].nba_team == "SAS" and players[0].position == "C"
 
 
+@pytest.mark.parametrize("ownership", [None, {}, {"owner_team_key": "t.1"}])
+def test_parse_ranked_players_missing_ownership_raises(ownership):
+    """Without ownership every star would silently count as a free agent (and be cached an hour)."""
+    body = players_body({"ownership_type": "team", "owner_team_key": "t.1"})
+    player = body["fantasy_content"]["league"][1]["players"]["0"]["player"]
+    if ownership is None:
+        player.pop()
+    else:
+        player[1] = {"ownership": ownership}
+    with pytest.raises(YahooFormatError):
+        parse_ranked_players(body, start=0)
+
+
 @pytest.mark.parametrize("drop", ["name", "player_key"])
 def test_parse_ranked_players_malformed_raises(drop):
     body = players_body({"ownership_type": "freeagents"})

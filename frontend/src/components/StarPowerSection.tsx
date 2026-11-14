@@ -1,5 +1,6 @@
 import { getStars } from '../api'
 import { useApi } from '../hooks/useApi'
+import { formatTime } from './Header'
 import StarPowerTable from './StarPowerTable'
 
 /** The Star Power tab: teams ranked by players in the season-to-date top 10, 25 and 50. */
@@ -19,6 +20,14 @@ export default function StarPowerSection() {
           Refresh
         </button>
       </div>
+      {stars.data && (
+        <div className="table-caption">As of {formatTime(stars.data.fetched_at)}</div>
+      )}
+      {stars.data?.stale && (
+        <div className="notice" role="status">
+          Showing data as of {formatTime(stars.data.fetched_at)} (Yahoo unavailable)
+        </div>
+      )}
       {stars.data && stars.error && (
         <div className="notice" role="alert">
           Couldn't update: {stars.error.message}
