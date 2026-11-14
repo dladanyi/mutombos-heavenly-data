@@ -22,7 +22,6 @@ _HEADERS = {
     "short": ("public, max-age=60", "max-age=60"),
     "settling": ("public, max-age=300", "max-age=3600"),
     "final": ("public, max-age=86400", "max-age=31536000"),
-    "stars": ("public, max-age=300", "max-age=3600"),
     "none": ("no-store", "no-store"),
 }
 _STATE_HEADERS = {"current": "short", "settling": "settling", "final": "final"}
@@ -159,7 +158,7 @@ def stars():
         "levels": list(LEVELS),
         **build_star_power(players, teams),
     }
-    return _respond(body, "stars", players_result, teams_result)
+    return _respond(body, "settling", players_result, teams_result)  # 5 min browser, 1 h CDN
 
 
 @api.get("/api/seasons")

@@ -216,3 +216,6 @@ Newest first. Each entry: what we decided, and why.
   players on no team are listed so the counts make sense. It's cached for 1 hour, since season
   ranks change about daily. Tabs use the URL hash instead of a router: there's no new
   dependency and no Vercel rewrite, and it's still bookmarkable.
+  Each tab stays mounted once opened (hidden when inactive), so switching back keeps its data
+  and the chosen past season. The header's time and outage notice belong to the rankings and are
+  hidden on Star Power, which shows its own.

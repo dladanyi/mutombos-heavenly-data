@@ -52,11 +52,43 @@ describe('App', () => {
     expect(window.location.hash).toBe('#stars')
     expect(await screen.findByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()
     expect(calls).toContain('/api/stars')
-    expect(screen.queryByText('Week 7')).toBeNull()
+    expect(screen.getByText('Week 7')).not.toBeVisible()
     window.location.hash = ''
     window.dispatchEvent(new HashChangeEvent('hashchange'))
     expect(await screen.findByText('Week 7')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Rankings' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('keeps each tab loaded after switching away and back', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('tab', { name: 'Star Power' }))
+    await screen.findByText(/Not on a team/)
+    await userEvent.click(screen.getByRole('tab', { name: 'Rankings' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Star Power' }))
+    expect(screen.getByText(/Not on a team/)).toBeVisible()
+    expect(calls.filter((c) => c === '/api/stars')).toHaveLength(1)
+  })
+
+  it('leaves the URL clean and history untouched when choosing tabs', async () => {
+    mockApi(happyRoutes())
+    render(<App />)
+    const before = window.history.length
+    await userEvent.click(await screen.findByRole('tab', { name: 'Rankings' }))
+    expect(window.history.length).toBe(before)
+    await userEvent.click(screen.getByRole('tab', { name: 'Star Power' }))
+    await userEvent.click(screen.getByRole('tab', { name: 'Rankings' }))
+    expect(window.location.href.endsWith('#')).toBe(false)
+    expect(window.location.hash).toBe('')
+  })
+
+  it('hides the rankings timestamp in the header on Star Power', async () => {
+    mockApi(happyRoutes())
+    render(<App />)
+    await screen.findByText(/Last updated:/)
+    await userEvent.click(screen.getByRole('tab', { name: 'Star Power' }))
+    await screen.findByText(/Not on a team/)
+    expect(screen.queryByText(/Last updated:/)).toBeNull()
   })
 
   it('opens Star Power when the page loads with #stars', async () => {

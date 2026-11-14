@@ -28,6 +28,12 @@ describe('StarPowerTable', () => {
     expect(screen.getByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()
   })
 
+  it('labels a top-50 player whose team is not in the league list', () => {
+    const data = starPower({ unowned: [{ rank: 7, player_key: 'p.7', name: 'Player Z', nba_team: 'NYK', position: 'SF', status: 'team' }] })
+    render(<StarPowerTable data={data} />)
+    expect(screen.getByText('Not on a team: 7 Player Z (other team)')).toBeInTheDocument()
+  })
+
   it('omits the unowned line when every top-50 player is on a team', () => {
     render(<StarPowerTable data={starPower({ unowned: [] })} />)
     expect(screen.queryByText(/Not on a team/)).toBeNull()

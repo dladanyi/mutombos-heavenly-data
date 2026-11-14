@@ -420,3 +420,16 @@ def test_top_players_second_page_failure_not_cached(setup):
     clock.now += 31
     players, _ = client.top_players()
     assert len(players) == 50 and http.calls[TOP0] == 2
+
+
+def test_top_players_dedupes_a_player_on_both_pages(setup):
+    """If Yahoo re-ranks between the two calls, a player can appear on both pages."""
+    client, http, *_ = setup
+    page0, page25 = fixture("top_players_0.json"), fixture("top_players_25.json")
+    last = page0["fantasy_content"]["league"][1]["players"]["24"]
+    page25["fantasy_content"]["league"][1]["players"]["0"] = last
+    http.overrides[TOP25] = page25
+    players, _ = client.top_players()
+    keys = [p.player_key for p in players]
+    assert len(keys) == len(set(keys)) == 49
+    assert next(p.rank for p in players if p.player_key == keys[24]) == 25  # keeps the better rank

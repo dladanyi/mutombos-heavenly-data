@@ -102,7 +102,10 @@ class YahooClient:
                 path = (f"{self._league_path}/players;sort=AR;sort_type=season;"
                         f"start={start};count=25/ownership")
                 players.extend(parse_ranked_players(self._http.get_json(path), start))
-            return players
+            # If Yahoo re-ranks between the two calls a player can appear on both pages; keep his
+            # first (better) rank so no team is double-counted.
+            seen: set[str] = set()
+            return [p for p in players if not (p.player_key in seen or seen.add(p.player_key))]
         result = self._cache.get_or_fetch(f"{self._league_path}/players:top50", fetch, TOP_PLAYERS_TTL, refresh)
         return result.data, result
 

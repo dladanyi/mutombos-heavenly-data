@@ -122,5 +122,7 @@ STAR POWER   Season to date · top 50                    [Refresh]
 - **Cache:** 1-hour server/CDN cache for Star Power.
 - **Display:** ★ marks top-10 players; places 1–3 get medals; teams are listed even with 0
   top-50 players.
-- **Navigation:** the tab bar sits under the header. The "Last updated" time in the header
-  keeps following the rankings data.
+- **Navigation:** the tab bar sits under the header. The header's "Last updated" time and
+  outage notice describe the rankings, so they're hidden on the Star Power tab, which shows its
+  own "As of" time and stale notice (changed after review). A tab stays mounted once opened, so
+  switching back keeps its data.

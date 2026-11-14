@@ -1,7 +1,7 @@
 import type { StarPlayer, StarPower } from '../api'
 import { medal } from './RankCell'
 
-const STATUS = { freeagents: 'FA', waivers: 'W' } as Record<string, string>
+const STATUS = { freeagents: 'FA', waivers: 'W', team: 'other team' } as Record<string, string>
 const describe = (p: StarPlayer) => `${p.rank} ${p.name} ${p.nba_team} ${p.position}`
 
 export default function StarPowerTable({ data }: { data: StarPower }) {
