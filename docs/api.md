@@ -15,6 +15,7 @@ All endpoints return JSON.
 | `GET /api/rankings/week/<n>` | Rankings for week `n` |
 | `GET /api/seasons` | Seasons this Yahoo account can read, newest first |
 | `GET /api/seasons/<season>` | A finished season: final standings plus whole-season rankings |
+| `GET /api/stars` | Star Power: teams ranked by players in the season-to-date top 10/25/50 |
 | `GET /healthz` | Returns `ok`; never calls Yahoo. If a required env var is missing the function can't start, so this returns Vercel's own 500 |
 
 ## Caching headers
@@ -25,6 +26,7 @@ All endpoints return JSON.
 | Week that ended less than 3 days ago | `public, max-age=300` | `max-age=3600` |
 | Final week (ended 3+ days ago), by number only | `public, max-age=86400` | `max-age=31536000` |
 | `/api/seasons` | `public, max-age=60` | `max-age=60` |
+| `/api/stars` | `public, max-age=300` | `max-age=3600` |
 | `/api/seasons/<season>`, finished and fetched as final | `public, max-age=86400` | `max-age=31536000` |
 | `?refresh=1`, `/healthz`, errors, stale responses, an incomplete season list | `no-store` | `no-store` |
 
@@ -143,6 +145,33 @@ a season that isn't in the list. 503 if the season isn't found while the list is
 - `wins`/`losses`/`ties` count categories over the **regular season**.
 - `teams` has the same rows as the rankings response, computed from Yahoo's **whole-season
   totals, playoff weeks included**.
+
+## `GET /api/stars`
+
+```json
+{
+  "fetched_at": "2026-11-13T21:40:00Z", "stale": false, "refresh_throttled": false,
+  "levels": [10, 25, 50],
+  "teams": [
+    {"team_key": "478.l.46425.t.7", "name": "Team A", "place": 1,
+     "counts": {"10": 3, "25": 4, "50": 5},
+     "players": [{"rank": 2, "player_key": "466.p.6014", "name": "Luka Dončić",
+                  "nba_team": "LAL", "position": "PG,SG"}]}
+  ],
+  "unowned": [{"rank": 37, "player_key": "...", "name": "...", "nba_team": "...",
+               "position": "...", "status": "freeagents"}]
+}
+```
+
+- Rankings are Yahoo's season-to-date "actual rank" in this league's categories
+  (`players;sort=AR;sort_type=season`), top 50, fetched in two pages of 25. `rank` is the
+  position in that order.
+- `counts` are cumulative (the top 25 includes the top 10). Teams are ordered by top-10 count,
+  then top 25, then top 50, then name. `place` is shared on ties.
+- Every team is listed, including teams with no top-50 players.
+- `unowned` lists top-50 players on no team: `freeagents`, `waivers`, or `team` for an owner the
+  league's team list doesn't have.
+- Cached 1 hour on the server and the CDN (Yahoo updates season ranks about daily).
 
 ## Errors
 

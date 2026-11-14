@@ -22,9 +22,10 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 | `errors.py` | `YahooUnavailable`, `YahooFormatError`, `YahooAccessDenied` (HTTP 403) | - |
 | `yahoo_http.py` | OAuth token refresh, GET with timeout, retry and 401 handling | requests |
 | `cache.py` | TTL / final cache, stale-on-error, refresh throttle | - |
-| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules; past-season walk (`renew`) and final standings | yahoo_http, cache, parsing |
-| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult`, `Standing` | config |
+| `yahoo_client.py` | League, season, week, scoreboard and calendar fetches; current/settling/final rules; past-season walk (`renew`) and final standings; top-50 players (1 h) | yahoo_http, cache, parsing |
+| `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult`, `Standing`, `RankedPlayer` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, median rank, place) | config |
+| `stars.py` | Ranked players + teams → Star Power (top-10/25/50 counts, order, unowned) | parsing |
 | `api.py` | Flask routes, JSON errors, cache headers, local static serving | all of the above |
 | `logging_setup.py` | JSON log lines (Vercel runtime logs) | - |
 
@@ -35,7 +36,10 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 ## Frontend (`frontend/src/`)
 
 React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirror
-[api.md](api.md). The page has two sections: the week section (opens on the live week; ‹ ›
+[api.md](api.md). A tab bar (`TabBar`) switches between two screens, kept in the URL hash
+(`#stars` = Star Power) so a screen can be bookmarked and Back works. Star Power
+(`StarPowerSection`, `StarPowerTable`) loads only when its tab is opened. The Rankings screen has
+two sections: the week section (opens on the live week; ‹ ›
 step back through finished weeks via `/api/rankings/week/<n>`) and Full Season. Components:
 `Header`, `RankingsSection`, `RankingsTable`, `RankCell`, `ArrowNav` (the shared ‹ › buttons),
 `FullSeasonSection` (the ‹ › season arrows; today's view while a season is in progress, the
@@ -60,6 +64,7 @@ Two layers:
 | Final week (ended 3+ days before fetch) | forever | 1 year | 1 day |
 | Season list (`/api/seasons`) | current league 5 min, previous leagues 1 day | 60 s | 60 s |
 | Finished season's standings and stats | forever | 1 year | 1 day |
+| Star Power (top-50 players) | 1 h | 1 h | 5 min |
 
 A week becomes final once it is more than 3 days past its end date (Pacific time, using
 Yahoo's game-week calendar), which leaves time for Yahoo's stat corrections. Finality is
