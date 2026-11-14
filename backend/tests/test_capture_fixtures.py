@@ -188,3 +188,18 @@ def test_league_meta_keeps_renew():
                       league_meta={"league_key": "nba.l.1", "season": "2025", "renew": "454_1", "url": "u"})
     meta = capture_fixtures.anonymise(body)["fantasy_content"]["league"][0]
     assert meta == {"league_key": "nba.l.1", "season": "2025", "renew": "454_1"}
+
+
+
+def test_players_keep_only_allowlisted():
+    meta = [{"player_key": "p.1"}, {"player_id": "1"}, {"name": {"full": "A B"}}, {"url": "https://u"},
+            {"editorial_team_abbr": "SAS"}, {"headshot": {"url": "https://h"}}, {"display_position": "C"},
+            {"has_player_notes": 1}, []]
+    body = {"fantasy_content": {"league": [{"league_key": "nba.l.1"}, {"players": {
+        "0": {"player": [meta, {"ownership": {"ownership_type": "team", "owner_team_key": "t.5",
+                                              "owner_team_name": "Name", "teams": {"x": 1}}}]},
+        "count": 1}}]}}
+    out = capture_fixtures.anonymise(body)["fantasy_content"]["league"][1]["players"]["0"]["player"]
+    assert out[0] == [{"player_key": "p.1"}, {"player_id": "1"}, {"name": {"full": "A B"}},
+                      {"editorial_team_abbr": "SAS"}, {"display_position": "C"}, []]
+    assert out[1:] == [{"ownership": {"ownership_type": "team", "owner_team_key": "t.5"}}]

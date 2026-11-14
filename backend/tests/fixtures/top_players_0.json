@@ -1,0 +1,919 @@
+{
+  "fantasy_content": {
+    "xml:lang": "en-US",
+    "yahoo:uri": "/fantasy/v2/league/nba.l.46425/players;sort=AR;sort_type=season;start=0;count=25/ownership",
+    "league": [
+      {
+        "league_key": "478.l.46425",
+        "league_id": "46425",
+        "name": "Mutombo's Heavenly Block Party",
+        "num_teams": 10,
+        "renew": "466_11070",
+        "current_week": 4,
+        "start_week": "1",
+        "start_date": "2026-10-20",
+        "end_week": "22",
+        "end_date": "2027-04-04",
+        "season": "2026"
+      },
+      {
+        "players": {
+          "0": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.10094"
+                },
+                {
+                  "player_id": "10094"
+                },
+                {
+                  "name": {
+                    "full": "Victor Wembanyama",
+                    "first": "Victor",
+                    "last": "Wembanyama",
+                    "ascii_first": "Victor",
+                    "ascii_last": "Wembanyama"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "display_position": "C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.5"
+                }
+              }
+            ]
+          },
+          "1": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6014"
+                },
+                {
+                  "player_id": "6014"
+                },
+                {
+                  "name": {
+                    "full": "Luka Dončić",
+                    "first": "Luka",
+                    "last": "Dončić",
+                    "ascii_first": "Luka",
+                    "ascii_last": "Dončić"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "LAL"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.7"
+                }
+              }
+            ]
+          },
+          "2": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6413"
+                },
+                {
+                  "player_id": "6413"
+                },
+                {
+                  "name": {
+                    "full": "Tyrese Maxey",
+                    "first": "Tyrese",
+                    "last": "Maxey",
+                    "ascii_first": "Tyrese",
+                    "ascii_last": "Maxey"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "PHI"
+                },
+                {
+                  "display_position": "PG"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.10"
+                }
+              }
+            ]
+          },
+          "3": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5352"
+                },
+                {
+                  "player_id": "5352"
+                },
+                {
+                  "name": {
+                    "full": "Nikola Jokić",
+                    "first": "Nikola",
+                    "last": "Jokić",
+                    "ascii_first": "Nikola",
+                    "ascii_last": "Jokić"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "DEN"
+                },
+                {
+                  "display_position": "C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.3"
+                }
+              }
+            ]
+          },
+          "4": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.10468"
+                },
+                {
+                  "player_id": "10468"
+                },
+                {
+                  "name": {
+                    "full": "Cooper Flagg",
+                    "first": "Cooper",
+                    "last": "Flagg",
+                    "ascii_first": "Cooper",
+                    "ascii_last": "Flagg"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "DAL"
+                },
+                {
+                  "display_position": "SG,SF,PF"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.2"
+                }
+              }
+            ]
+          },
+          "5": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6712"
+                },
+                {
+                  "player_id": "6712"
+                },
+                {
+                  "name": {
+                    "full": "Walker Kessler",
+                    "first": "Walker",
+                    "last": "Kessler",
+                    "ascii_first": "Walker",
+                    "ascii_last": "Kessler"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "LAL"
+                },
+                {
+                  "display_position": "C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.7"
+                }
+              }
+            ]
+          },
+          "6": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4612"
+                },
+                {
+                  "player_id": "4612"
+                },
+                {
+                  "name": {
+                    "full": "Stephen Curry",
+                    "first": "Stephen",
+                    "last": "Curry",
+                    "ascii_first": "Stephen",
+                    "ascii_last": "Curry"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "GSW"
+                },
+                {
+                  "display_position": "PG"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.4"
+                }
+              }
+            ]
+          },
+          "7": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5007"
+                },
+                {
+                  "player_id": "5007"
+                },
+                {
+                  "name": {
+                    "full": "Anthony Davis",
+                    "first": "Anthony",
+                    "last": "Davis",
+                    "ascii_first": "Anthony",
+                    "ascii_last": "Davis"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "WAS"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.7"
+                }
+              }
+            ]
+          },
+          "8": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6512"
+                },
+                {
+                  "player_id": "6512"
+                },
+                {
+                  "name": {
+                    "full": "Cade Cunningham",
+                    "first": "Cade",
+                    "last": "Cunningham",
+                    "ascii_first": "Cade",
+                    "ascii_last": "Cunningham"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "DET"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.6"
+                }
+              }
+            ]
+          },
+          "9": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5638"
+                },
+                {
+                  "player_id": "5638"
+                },
+                {
+                  "name": {
+                    "full": "Jamal Murray",
+                    "first": "Jamal",
+                    "last": "Murray",
+                    "ascii_first": "Jamal",
+                    "ascii_last": "Murray"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "DEN"
+                },
+                {
+                  "display_position": "PG"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.8"
+                }
+              }
+            ]
+          },
+          "10": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6022"
+                },
+                {
+                  "player_id": "6022"
+                },
+                {
+                  "name": {
+                    "full": "Shai Gilgeous-Alexander",
+                    "first": "Shai",
+                    "last": "Gilgeous-Alexander",
+                    "ascii_first": "Shai",
+                    "ascii_last": "Gilgeous-Alexander"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "OKC"
+                },
+                {
+                  "display_position": "PG"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.1"
+                }
+              }
+            ]
+          },
+          "11": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6693"
+                },
+                {
+                  "player_id": "6693"
+                },
+                {
+                  "name": {
+                    "full": "Jabari Smith Jr.",
+                    "first": "Jabari",
+                    "last": "Smith Jr.",
+                    "ascii_first": "Jabari",
+                    "ascii_last": "Smith Jr."
+                  }
+                },
+                {
+                  "editorial_team_abbr": "HOU"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.2"
+                }
+              }
+            ]
+          },
+          "12": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6698"
+                },
+                {
+                  "player_id": "6698"
+                },
+                {
+                  "name": {
+                    "full": "Dyson Daniels",
+                    "first": "Dyson",
+                    "last": "Daniels",
+                    "ascii_first": "Dyson",
+                    "ascii_last": "Daniels"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "ATL"
+                },
+                {
+                  "display_position": "SG,SF"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.10"
+                }
+              }
+            ]
+          },
+          "13": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6606"
+                },
+                {
+                  "player_id": "6606"
+                },
+                {
+                  "name": {
+                    "full": "Austin Reaves",
+                    "first": "Austin",
+                    "last": "Reaves",
+                    "ascii_first": "Austin",
+                    "ascii_last": "Reaves"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "LAL"
+                },
+                {
+                  "display_position": "PG,SG,SF"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.5"
+                }
+              }
+            ]
+          },
+          "14": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5473"
+                },
+                {
+                  "player_id": "5473"
+                },
+                {
+                  "name": {
+                    "full": "Devin Booker",
+                    "first": "Devin",
+                    "last": "Booker",
+                    "ascii_first": "Devin",
+                    "ascii_last": "Booker"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "PHX"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.2"
+                }
+              }
+            ]
+          },
+          "15": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6163"
+                },
+                {
+                  "player_id": "6163"
+                },
+                {
+                  "name": {
+                    "full": "Zion Williamson",
+                    "first": "Zion",
+                    "last": "Williamson",
+                    "ascii_first": "Zion",
+                    "ascii_last": "Williamson"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "NOP"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.6"
+                }
+              }
+            ]
+          },
+          "16": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5765"
+                },
+                {
+                  "player_id": "5765"
+                },
+                {
+                  "name": {
+                    "full": "Jayson Tatum",
+                    "first": "Jayson",
+                    "last": "Tatum",
+                    "ascii_first": "Jayson",
+                    "ascii_last": "Tatum"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "BOS"
+                },
+                {
+                  "display_position": "SF,PF"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.9"
+                }
+              }
+            ]
+          },
+          "17": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6580"
+                },
+                {
+                  "player_id": "6580"
+                },
+                {
+                  "name": {
+                    "full": "Ayo Dosunmu",
+                    "first": "Ayo",
+                    "last": "Dosunmu",
+                    "ascii_first": "Ayo",
+                    "ascii_last": "Dosunmu"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "MIN"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.1"
+                }
+              }
+            ]
+          },
+          "18": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.4725"
+                },
+                {
+                  "player_id": "4725"
+                },
+                {
+                  "name": {
+                    "full": "Paul George",
+                    "first": "Paul",
+                    "last": "George",
+                    "ascii_first": "Paul",
+                    "ascii_last": "George"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "BOS"
+                },
+                {
+                  "display_position": "SF,PF"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.8"
+                }
+              }
+            ]
+          },
+          "19": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5826"
+                },
+                {
+                  "player_id": "5826"
+                },
+                {
+                  "name": {
+                    "full": "Donovan Mitchell",
+                    "first": "Donovan",
+                    "last": "Mitchell",
+                    "ascii_first": "Donovan",
+                    "ascii_last": "Mitchell"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "CLE"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.7"
+                }
+              }
+            ]
+          },
+          "20": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5827"
+                },
+                {
+                  "player_id": "5827"
+                },
+                {
+                  "name": {
+                    "full": "Bam Adebayo",
+                    "first": "Bam",
+                    "last": "Adebayo",
+                    "ascii_first": "Bam",
+                    "ascii_last": "Adebayo"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "MIA"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.2"
+                }
+              }
+            ]
+          },
+          "21": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.5432"
+                },
+                {
+                  "player_id": "5432"
+                },
+                {
+                  "name": {
+                    "full": "Karl-Anthony Towns",
+                    "first": "Karl-Anthony",
+                    "last": "Towns",
+                    "ascii_first": "Karl-Anthony",
+                    "ascii_last": "Towns"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "NYK"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.1"
+                }
+              }
+            ]
+          },
+          "22": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.10454"
+                },
+                {
+                  "player_id": "10454"
+                },
+                {
+                  "name": {
+                    "full": "VJ Edgecombe",
+                    "first": "VJ",
+                    "last": "Edgecombe",
+                    "ascii_first": "VJ",
+                    "ascii_last": "Edgecombe"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "PHI"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.4"
+                }
+              }
+            ]
+          },
+          "23": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.10467"
+                },
+                {
+                  "player_id": "10467"
+                },
+                {
+                  "name": {
+                    "full": "Dylan Harper",
+                    "first": "Dylan",
+                    "last": "Harper",
+                    "ascii_first": "Dylan",
+                    "ascii_last": "Harper"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "SAS"
+                },
+                {
+                  "display_position": "PG,SG"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.8"
+                }
+              }
+            ]
+          },
+          "24": {
+            "player": [
+              [
+                {
+                  "player_key": "478.p.6558"
+                },
+                {
+                  "player_id": "6558"
+                },
+                {
+                  "name": {
+                    "full": "Alperen Şengün",
+                    "first": "Alperen",
+                    "last": "Şengün",
+                    "ascii_first": "Alperen",
+                    "ascii_last": "Şengün"
+                  }
+                },
+                {
+                  "editorial_team_abbr": "HOU"
+                },
+                {
+                  "display_position": "PF,C"
+                },
+                [],
+                [],
+                []
+              ],
+              {
+                "ownership": {
+                  "ownership_type": "team",
+                  "owner_team_key": "478.l.46425.t.5"
+                }
+              }
+            ]
+          },
+          "count": 25
+        }
+      }
+    ],
+    "time": "327.0468711853ms",
+    "copyright": "Certain Data by Sportradar, Stats Perform and Rotowire",
+    "refresh_rate": "30"
+  }
+}
