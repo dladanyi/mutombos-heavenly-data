@@ -24,6 +24,8 @@ LEAGUE_ID = str(LEAGUE_META["league_id"])
 LEAGUE = f"league/nba.l.{LEAGUE_ID}"
 NUM_TEAMS = int(LEAGUE_META["num_teams"])
 WEEK3_END = parse_game_weeks(fixture("game_weeks.json"))[3].end
+TOP0 = f"{LEAGUE}/players;sort=AR;sort_type=season;start=0;count=25/ownership"
+TOP25 = f"{LEAGUE}/players;sort=AR;sort_type=season;start=25;count=25/ownership"
 PREV = "league/" + fixture("league.json")["fantasy_content"]["league"][0]["renew"].replace("_", ".l.")
 OLDEST = "league/" + fixture("prev_league.json")["fantasy_content"]["league"][0]["renew"].replace("_", ".l.")
 
@@ -53,6 +55,10 @@ class FakeHttp:
             return fixture("week_stats.json")
         if path.startswith(f"{LEAGUE}/scoreboard;week="):
             return fixture("scoreboard.json")
+        if path == f"{LEAGUE}/players;sort=AR;sort_type=season;start=0;count=25/ownership":
+            return fixture("top_players_0.json")
+        if path == TOP25:
+            return fixture("top_players_25.json")
         if path == f"{LEAGUE}/standings":
             return fixture("prev_standings.json")  # same shape as the current league's standings
         if path == PREV:
@@ -391,3 +397,26 @@ def test_current_standings_ttl_five_minutes(setup):
     clock.now += 2
     client.standings()
     assert http.calls[f"{LEAGUE}/standings"] == 2
+
+
+def test_top_players_two_pages_cached_one_hour(setup):
+    client, http, clock, _ = setup
+    players, result = client.top_players()
+    assert [p.rank for p in players] == list(range(1, 51)) and not result.final
+    clock.now += 3599
+    client.top_players()
+    assert http.calls[TOP0] == http.calls[TOP25] == 1
+    clock.now += 2
+    client.top_players()
+    assert http.calls[TOP0] == http.calls[TOP25] == 2
+
+
+def test_top_players_second_page_failure_not_cached(setup):
+    client, http, clock, _ = setup
+    http.failing.add(TOP25)
+    with pytest.raises(YahooUnavailable):
+        client.top_players()
+    http.failing.discard(TOP25)
+    clock.now += 31
+    players, _ = client.top_players()
+    assert len(players) == 50 and http.calls[TOP0] == 2

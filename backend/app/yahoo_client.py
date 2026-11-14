@@ -12,8 +12,9 @@ from zoneinfo import ZoneInfo
 
 from app.cache import Cache, CacheResult
 from app.errors import YahooAccessDenied, YahooUnavailable
-from app.parsing import (GameWeek, LeagueInfo, MatchupResult, Standing, TeamStats, parse_game_weeks,
-                         parse_league, parse_scoreboard, parse_standings, parse_team_stats)
+from app.parsing import (GameWeek, LeagueInfo, MatchupResult, RankedPlayer, Standing, TeamStats,
+                         parse_game_weeks, parse_league, parse_ranked_players, parse_scoreboard,
+                         parse_standings, parse_team_stats)
 
 WeekState = Literal["current", "settling", "final"]
 
@@ -22,6 +23,8 @@ SETTLING_TTL = 3600
 FINAL_DELAY_DAYS = 3
 PACIFIC = ZoneInfo("America/Los_Angeles")
 _CALENDAR_KEY = "game_weeks"
+TOP_PLAYERS_TTL = 3600  # Yahoo updates season ranks about daily
+TOP_PLAYERS_PAGES = (0, 25)  # Yahoo returns at most 25 players per call
 PREVIOUS_LEAGUE_TTL = 86400  # also how long a 403 ("no access to that season") stop is remembered
 MAX_SEASONS = 20  # loop guard for the renew walk
 _WEEK_TTL: dict[str, float | None] = {"current": CURRENT_TTL, "settling": SETTLING_TTL, "final": None}
@@ -88,6 +91,19 @@ class YahooClient:
         the scoreboard are cached under the same state (and the calendar isn't looked up twice)."""
         path = f"{self._league_path}/scoreboard;week={week}"
         result = self._fetch(path, parse_scoreboard, _WEEK_TTL[state], refresh)
+        return result.data, result
+
+    def top_players(self, refresh: bool = False) -> tuple[list[RankedPlayer], CacheResult]:
+        """Season-to-date top 50 with ownership. Both pages are fetched inside one cached fetch,
+        so a failure on either page caches nothing (never half a list for an hour)."""
+        def fetch() -> list[RankedPlayer]:
+            players: list[RankedPlayer] = []
+            for start in TOP_PLAYERS_PAGES:
+                path = (f"{self._league_path}/players;sort=AR;sort_type=season;"
+                        f"start={start};count=25/ownership")
+                players.extend(parse_ranked_players(self._http.get_json(path), start))
+            return players
+        result = self._cache.get_or_fetch(f"{self._league_path}/players:top50", fetch, TOP_PLAYERS_TTL, refresh)
         return result.data, result
 
     def standings(self, refresh: bool = False) -> tuple[list[Standing], CacheResult]:

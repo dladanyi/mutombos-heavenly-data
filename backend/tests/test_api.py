@@ -6,7 +6,7 @@ from app import create_app
 from app.cache import CacheResult
 from app.errors import YahooUnavailable
 from app.errors import YahooFormatError
-from app.parsing import LeagueInfo, MatchupResult, Standing, TeamStats
+from app.parsing import LeagueInfo, MatchupResult, RankedPlayer, Standing, TeamStats
 from app.yahoo_client import SeasonRef
 
 FETCHED_AT = 1_791_000_000.0  # 2026-10-03T04:00:00Z
@@ -36,7 +36,10 @@ class FakeClient:
         self.season_refs = [SeasonRef(2026, "478.l.1", True, False), SeasonRef(2025, "466.l.1", False, True)]
         self.seasons_complete = True
         self.seasons_result = result()
-        self.walk_results = None  # one CacheResult per season in season_refs, when a test needs them
+        self.walk_results = None
+        self.top = [RankedPlayer(1, "p.1", "Victor Wembanyama", "SAS", "C", "team", "k.2"),
+                    RankedPlayer(2, "p.2", "Free Agent", "BOS", "PG", "freeagents", None)]
+        self.top_result = result()  # one CacheResult per season in season_refs, when a test needs them
         self.standing_rows = [Standing(2, "k.2", "Beta", 90, 88, 2, 0.506, 1),
                           Standing(1, "k.1", "Alpha", 100, 78, 2, 0.561, 3)]
         self.standings_result = result(final=True)
@@ -69,6 +72,11 @@ class FakeClient:
         self.calls.append(("seasons", refresh))
         self._maybe_fail()
         return self.season_refs, self.seasons_complete, self.walk_results or [self.seasons_result]
+
+    def top_players(self, refresh=False):
+        self.calls.append(("top_players", refresh))
+        self._maybe_fail()
+        return self.top, self.top_result
 
     def standings(self, refresh=False):
         self.calls.append(("standings", refresh))
@@ -430,3 +438,30 @@ def test_stale_standings_mark_season_stale(http, client):
     client.current_standings_result = result(stale=True)
     response = http.get("/api/rankings/season")
     assert response.get_json()["stale"] is True and headers(response) == NO_STORE
+
+
+STARS = ("public, max-age=300", "max-age=3600")
+
+
+def test_stars_body_and_headers(http, client):
+    response = http.get("/api/stars")
+    body = response.get_json()
+    assert body["levels"] == [10, 25, 50] and body["stale"] is False
+    assert [(t["name"], t["place"], t["counts"]["10"]) for t in body["teams"]] == [("Beta", 1, 1), ("Alpha", 2, 0)]
+    assert body["teams"][0]["players"][0]["name"] == "Victor Wembanyama"
+    assert [u["name"] for u in body["unowned"]] == ["Free Agent"]
+    assert body["fetched_at"] == "2026-10-03T04:00:00Z"
+    assert headers(response) == STARS
+
+
+def test_stars_refresh_and_stale_no_store(http, client):
+    response = http.get("/api/stars?refresh=1")
+    assert ("top_players", True) in client.calls and headers(response) == NO_STORE
+    client.top_result = result(stale=True)
+    response = http.get("/api/stars")
+    assert response.get_json()["stale"] is True and headers(response) == NO_STORE
+
+
+def test_stars_yahoo_down_503(http, client):
+    client.error = YahooUnavailable("down")
+    assert http.get("/api/stars").status_code == 503
