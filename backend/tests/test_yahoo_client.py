@@ -433,3 +433,45 @@ def test_top_players_dedupes_a_player_on_both_pages(setup):
     keys = [p.player_key for p in players]
     assert len(keys) == len(set(keys)) == 49
     assert next(p.rank for p in players if p.player_key == keys[24]) == 25  # keeps the better rank
+
+
+PREV_TOP0 = f"{PREV}/players;sort=AR;sort_type=season;start=0;count=25/ownership"
+PREV_TOP25 = f"{PREV}/players;sort=AR;sort_type=season;start=25;count=25/ownership"
+
+
+@pytest.fixture
+def past_top(setup):
+    client, http, *_ = setup
+    http.overrides[PREV_TOP0] = fixture("top_players_0.json")
+    http.overrides[PREV_TOP25] = fixture("top_players_25.json")
+    return setup
+
+
+def test_season_top_players_finished_cached_forever(past_top):
+    client, http, clock, _ = past_top
+    key = PREV.removeprefix("league/")
+    players, result = client.season_top_players(key, finished=True)
+    assert [p.rank for p in players] == list(range(1, 51)) and result.final
+    clock.now += 365 * 86400
+    client.season_top_players(key, finished=True, refresh=True)
+    assert http.calls[PREV_TOP0] == http.calls[PREV_TOP25] == 1
+    assert http.calls[TOP0] == 0  # the current league's list is separate
+
+
+def test_season_top_players_unfinished_cached_one_hour(past_top):
+    client, http, clock, _ = past_top
+    key = PREV.removeprefix("league/")
+    _, result = client.season_top_players(key, finished=False)
+    assert not result.final
+    clock.now += 3601
+    client.season_top_players(key, finished=False)
+    assert http.calls[PREV_TOP0] == 2
+
+
+def test_season_teams_shares_the_final_season_cache(setup):
+    client, http, *_ = setup
+    key = PREV.removeprefix("league/")
+    teams, result = client.season_teams(key, finished=True)
+    client.final_season(key, finished=True)
+    assert len(teams) == NUM_TEAMS and result.final
+    assert http.calls[f"{PREV}/teams/stats"] == 1

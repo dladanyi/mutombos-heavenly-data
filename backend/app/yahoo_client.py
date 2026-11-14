@@ -94,19 +94,31 @@ class YahooClient:
         return result.data, result
 
     def top_players(self, refresh: bool = False) -> tuple[list[RankedPlayer], CacheResult]:
-        """Season-to-date top 50 with ownership. Both pages are fetched inside one cached fetch,
-        so a failure on either page caches nothing (never half a list for an hour)."""
+        """Season-to-date top 50 with ownership for the current league."""
+        return self._top_players(self._league_path, TOP_PLAYERS_TTL, refresh)
+
+    def season_top_players(self, league_key: str, finished: bool, refresh: bool = False
+                           ) -> tuple[list[RankedPlayer], CacheResult]:
+        """A given season's top 50. For a past league Yahoo reports the final full-season ranks
+        and end-of-season ownership, so a finished season is cached forever."""
+        ttl = None if finished else TOP_PLAYERS_TTL
+        return self._top_players(f"league/{league_key}", ttl, refresh)
+
+    def _top_players(self, league_path: str, ttl: float | None, refresh: bool
+                     ) -> tuple[list[RankedPlayer], CacheResult]:
+        """Both pages are fetched inside one cached fetch, so a failure on either page caches
+        nothing (never half a list for an hour)."""
         def fetch() -> list[RankedPlayer]:
             players: list[RankedPlayer] = []
             for start in TOP_PLAYERS_PAGES:
-                path = (f"{self._league_path}/players;sort=AR;sort_type=season;"
+                path = (f"{league_path}/players;sort=AR;sort_type=season;"
                         f"start={start};count=25/ownership")
                 players.extend(parse_ranked_players(self._http.get_json(path), start))
             # If Yahoo re-ranks between the two calls a player can appear on both pages; keep his
             # first (better) rank so no team is double-counted.
             seen: set[str] = set()
             return [p for p in players if not (p.player_key in seen or seen.add(p.player_key))]
-        result = self._cache.get_or_fetch(f"{self._league_path}/players:top50", fetch, TOP_PLAYERS_TTL, refresh)
+        result = self._cache.get_or_fetch(f"{league_path}/players:top50", fetch, ttl, refresh)
         return result.data, result
 
     def standings(self, refresh: bool = False) -> tuple[list[Standing], CacheResult]:
@@ -143,8 +155,15 @@ class YahooClient:
         """Final standings and whole-season stats (playoff weeks included) for a league."""
         ttl = None if finished else CURRENT_TTL
         standings = self._fetch(f"league/{league_key}/standings", parse_standings, ttl, refresh)
-        stats = self._fetch(f"league/{league_key}/teams/stats", parse_team_stats, ttl, refresh)
-        return standings.data, standings, stats.data, stats
+        teams, stats = self.season_teams(league_key, finished, refresh)
+        return standings.data, standings, teams, stats
+
+    def season_teams(self, league_key: str, finished: bool, refresh: bool = False
+                     ) -> tuple[list[TeamStats], CacheResult]:
+        """A league's whole-season team stats (also its team list); shared with final_season."""
+        ttl = None if finished else CURRENT_TTL
+        result = self._fetch(f"league/{league_key}/teams/stats", parse_team_stats, ttl, refresh)
+        return result.data, result
 
     def _league_or_denied(self, key: str) -> Callable[[], LeagueInfo | None]:
         """Fetch a previous league; None means this account can't read it (end of history).
