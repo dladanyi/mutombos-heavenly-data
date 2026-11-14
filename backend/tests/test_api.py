@@ -490,6 +490,12 @@ def test_past_stars_body_and_final_headers(http, client):
     assert headers(response) == FINAL
 
 
+def test_past_stars_refresh_reaches_both_fetches(http, client):
+    http.get("/api/stars/2025?refresh=1")
+    assert ("season_top_players", "466.l.1", True, True) in client.calls
+    assert ("season_teams", "466.l.1", True, True) in client.calls
+
+
 def test_past_stars_final_headers_only_when_both_final(http, client):
     client.past_top_result = result(final=False)
     assert headers(http.get("/api/stars/2025")) == STARS

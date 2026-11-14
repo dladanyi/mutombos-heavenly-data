@@ -1,38 +1,24 @@
-import { useState } from 'react'
-import { getPastStars, getSeasons, getStars, seasonLabel } from '../api'
+import { getPastStars, getStars } from '../api'
 import { useApi } from '../hooks/useApi'
-import ArrowNav from './ArrowNav'
+import { useSeasonNav } from '../hooks/useSeasonNav'
 import { formatTime } from './Header'
 import StarPowerTable from './StarPowerTable'
 
 /** The Star Power tab: teams ranked by players in the top 10, 25 and 50, with ‹ › for past seasons. */
 export default function StarPowerSection() {
-  const list = useApi(() => getSeasons(), [])
-  const seasons = list.data?.seasons ?? []
-  const [index, setIndex] = useState(0) // 0 = newest
-  const selected = seasons[index]
-  const finished = selected?.finished ?? false
-  // Same rule as Full Season: a past season, or the current one once finished, shows the final
-  // view (full-season ranks, end-of-season rosters). Until the list loads, show today's view.
-  const showFinal = finished || (selected !== undefined && !selected.current)
-  const year = showFinal ? selected?.season : undefined
+  const { pending, selected, finished, showFinal, arrows } = useSeasonNav()
+  // Wait for the season list before fetching: in the off-season the current season is shown
+  // final, and fetching today's view first would cost a wasted Yahoo call and a visible flip.
+  const target = pending ? 'pending' : showFinal ? selected?.season ?? 'current' : 'current'
   const stars = useApi(
-    (refresh) => (year !== undefined ? getPastStars(year) : getStars({ refresh })),
-    [year],
+    (refresh) =>
+      target === 'pending'
+        ? new Promise<never>(() => {}) // stays loading; replaced once the list arrives
+        : target === 'current'
+          ? getStars({ refresh })
+          : getPastStars(target),
+    [target],
   )
-
-  const arrows =
-    seasons.length > 1 && selected ? (
-      <ArrowNav
-        label={seasonLabel(selected.season)}
-        backLabel="Previous season"
-        forwardLabel="Next season"
-        canBack={index < seasons.length - 1}
-        canForward={index > 0}
-        onBack={() => setIndex(index + 1)}
-        onForward={() => setIndex(index - 1)}
-      />
-    ) : undefined
 
   return (
     <div className="section">
@@ -55,7 +41,7 @@ export default function StarPowerSection() {
       </div>
       {stars.data && (
         <div className="table-caption">
-          {showFinal ? 'Full-season ranks · rosters at season end' : `As of ${formatTime(stars.data.fetched_at)}`}
+          {finished ? 'Full-season ranks · rosters at season end' : `As of ${formatTime(stars.data.fetched_at)}`}
         </div>
       )}
       {stars.data?.stale && (

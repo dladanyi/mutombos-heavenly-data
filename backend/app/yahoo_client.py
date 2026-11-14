@@ -107,7 +107,7 @@ class YahooClient:
     def _top_players(self, league_path: str, ttl: float | None, refresh: bool
                      ) -> tuple[list[RankedPlayer], CacheResult]:
         """Both pages are fetched inside one cached fetch, so a failure on either page caches
-        nothing (never half a list for an hour)."""
+        nothing: never half a list for an hour, or forever for a finished season."""
         def fetch() -> list[RankedPlayer]:
             players: list[RankedPlayer] = []
             for start in TOP_PLAYERS_PAGES:

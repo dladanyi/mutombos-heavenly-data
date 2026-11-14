@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { getFinalSeason, getSeasons, seasonLabel, type Rankings } from '../api'
+import { getFinalSeason, type Rankings } from '../api'
 import type { ApiState } from '../hooks/useApi'
 import { useApi } from '../hooks/useApi'
-import ArrowNav from './ArrowNav'
+import { useSeasonNav } from '../hooks/useSeasonNav'
 import RankingsSection from './RankingsSection'
 import StandingsTable from './StandingsTable'
 
@@ -10,32 +9,12 @@ type Props = { current: ApiState<Rankings>; onRetry: () => void }
 
 /** Full Season with ‹ › arrows: today's view while a season is in progress, the final view once finished. */
 export default function FullSeasonSection({ current, onRetry }: Props) {
-  const list = useApi(() => getSeasons(), [])
-  const seasons = list.data?.seasons ?? []
-  const [index, setIndex] = useState(0) // 0 = newest
-  const selected = seasons[index]
-  const finished = selected?.finished ?? false
-  // Anything but the current season gets its own data, even if Yahoo hasn't flagged it finished;
-  // the current season switches to the final view once it is finished (the off-season).
-  const showFinal = finished || (selected !== undefined && !selected.current)
+  const { selected, finished, showFinal, arrows } = useSeasonNav()
   const year = selected?.season
   const final = useApi(
     () => (showFinal && year !== undefined ? getFinalSeason(year) : Promise.resolve(undefined)),
     [year, showFinal],
   )
-
-  const arrows =
-    seasons.length > 1 && year !== undefined ? (
-      <ArrowNav
-        label={seasonLabel(year)}
-        backLabel="Previous season"
-        forwardLabel="Next season"
-        canBack={index < seasons.length - 1}
-        canForward={index > 0}
-        onBack={() => setIndex(index + 1)}
-        onForward={() => setIndex(index - 1)}
-      />
-    ) : undefined
 
   if (!showFinal) {
     return (

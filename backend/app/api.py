@@ -166,7 +166,7 @@ def past_stars(season: str):
     """Star Power for a finished season: final full-season ranks and end-of-season rosters."""
     ref, walk_results = _finished_season(season)
     players, players_result = _client().season_top_players(ref.league_key, ref.finished, refresh=_refresh())
-    teams, teams_result = _client().season_teams(ref.league_key, ref.finished)
+    teams, teams_result = _client().season_teams(ref.league_key, ref.finished, refresh=_refresh())
     results = (players_result, teams_result, *walk_results)
     body = {
         "season": ref.season,
@@ -179,6 +179,7 @@ def past_stars(season: str):
     }
     kind = "final" if players_result.final and teams_result.final else "settling"
     return _respond(body, kind, *results)
+
 
 @api.get("/api/seasons")
 def seasons():
@@ -266,4 +267,3 @@ def register_error_handlers(app: Flask) -> None:
     def unexpected(exc: Exception):
         log.exception("Unhandled error", extra={"path": request.path})
         return _error(500, {"error": "internal", "message": "Internal error"})
-

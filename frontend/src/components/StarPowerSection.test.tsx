@@ -67,6 +67,18 @@ describe('StarPowerSection', () => {
     expect(await screen.findByText(/Victor Wembanyama/)).toBeInTheDocument()
   })
 
+  it('in the off-season goes straight to the finished current season', async () => {
+    const offSeason = seasonsList({ seasons: [{ season: 2026, league_key: '478.l.1', current: true, finished: true }] })
+    const calls = stubFetch({
+      '/api/seasons': () => json(offSeason),
+      '/api/stars/2026': () => json({ ...starPower(), season: 2026 }),
+    })
+    render(<StarPowerSection />)
+    expect(await screen.findByText('Final · top 50')).toBeInTheDocument()
+    expect(await screen.findByText(/Victor Wembanyama/)).toBeInTheDocument()
+    expect(calls.filter((u) => u.startsWith('/api/stars'))).toEqual(['/api/stars/2026'])
+  })
+
   it('hides the arrows with one season', async () => {
     stubFetch({
       '/api/seasons': () => json(seasonsList({ seasons: [seasonsList().seasons[0]] })),
