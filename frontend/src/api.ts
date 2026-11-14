@@ -66,6 +66,9 @@ export type StarTeam = {
   players: StarPlayer[]
 }
 export type StarPower = {
+  /** Set on a finished season's Star Power (/api/stars/<season>). */
+  season?: number
+  league_key?: string
   fetched_at: string
   stale: boolean
   refresh_throttled: boolean
@@ -116,3 +119,4 @@ export const getWeek = (week: number | 'current' | 'previous', opts?: Options) =
 export const getSeasons = () => getJson<SeasonsList>('/api/seasons')
 export const getFinalSeason = (season: number) => getJson<FinalSeason>(`/api/seasons/${season}`)
 export const getStars = (opts?: Options) => getJson<StarPower>('/api/stars', opts)
+export const getPastStars = (season: number) => getJson<StarPower>(`/api/stars/${season}`)

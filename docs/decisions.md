@@ -219,3 +219,9 @@ Newest first. Each entry: what we decided, and why.
   Each tab stays mounted once opened (hidden when inactive), so switching back keeps its data
   and the chosen past season. The header's time and outage notice belong to the rankings and are
   hidden on Star Power, which shows its own.
+- **Star Power for past seasons uses end-of-season rosters (2026-11-14).** The user's choice. The
+  same Yahoo request works on a past league and returns final ranks with end-of-season owners, so
+  it costs no extra calls and can be cached forever. Counting who drafted a player, or who had him
+  longest, would mean draft results or about 230 past-week roster calls. Star Power has its own
+  season arrows, independent of Full Season's. See
+  `docs/specs/2026-11-14-star-power-past-seasons-design.md`.

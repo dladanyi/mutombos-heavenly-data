@@ -39,7 +39,8 @@ class FakeClient:
         self.walk_results = None
         self.top = [RankedPlayer(1, "p.1", "Victor Wembanyama", "SAS", "C", "team", "k.2"),
                     RankedPlayer(2, "p.2", "Free Agent", "BOS", "PG", "freeagents", None)]
-        self.top_result = result()  # one CacheResult per season in season_refs, when a test needs them
+        self.top_result = result()
+        self.past_top_result = result(final=True)
         self.standing_rows = [Standing(2, "k.2", "Beta", 90, 88, 2, 0.506, 1),
                           Standing(1, "k.1", "Alpha", 100, 78, 2, 0.561, 3)]
         self.standings_result = result(final=True)
@@ -77,6 +78,16 @@ class FakeClient:
         self.calls.append(("top_players", refresh))
         self._maybe_fail()
         return self.top, self.top_result
+
+    def season_top_players(self, league_key, finished, refresh=False):
+        self.calls.append(("season_top_players", league_key, finished, refresh))
+        self._maybe_fail()
+        return self.top, self.past_top_result
+
+    def season_teams(self, league_key, finished, refresh=False):
+        self.calls.append(("season_teams", league_key, finished, refresh))
+        self._maybe_fail()
+        return TEAMS, self.final_stats_result
 
     def standings(self, refresh=False):
         self.calls.append(("standings", refresh))
@@ -465,3 +476,61 @@ def test_stars_refresh_and_stale_no_store(http, client):
 def test_stars_yahoo_down_503(http, client):
     client.error = YahooUnavailable("down")
     assert http.get("/api/stars").status_code == 503
+
+
+def test_past_stars_body_and_final_headers(http, client):
+    response = http.get("/api/stars/2025")
+    body = response.get_json()
+    assert (body["season"], body["league_key"], body["stale"]) == (2025, "466.l.1", False)
+    assert body["levels"] == [10, 25, 50] and body["fetched_at"] == "2026-10-03T04:00:00Z"
+    assert [(t["name"], t["place"]) for t in body["teams"]] == [("Beta", 1), ("Alpha", 2)]
+    assert [u["name"] for u in body["unowned"]] == ["Free Agent"]
+    assert ("season_top_players", "466.l.1", True, False) in client.calls
+    assert ("season_teams", "466.l.1", True, False) in client.calls
+    assert headers(response) == FINAL
+
+
+def test_past_stars_refresh_reaches_both_fetches(http, client):
+    http.get("/api/stars/2025?refresh=1")
+    assert ("season_top_players", "466.l.1", True, True) in client.calls
+    assert ("season_teams", "466.l.1", True, True) in client.calls
+
+
+def test_past_stars_final_headers_only_when_both_final(http, client):
+    client.past_top_result = result(final=False)
+    assert headers(http.get("/api/stars/2025")) == STARS
+    client.past_top_result = result(final=True)
+    client.final_stats_result = result(final=False)
+    assert headers(http.get("/api/stars/2025")) == STARS
+
+
+def test_past_stars_current_in_progress_404(http):
+    response = http.get("/api/stars/2026")
+    assert response.status_code == 404 and response.get_json() == {"error": "not_found"}
+
+
+def test_past_stars_current_finished_served(http, client):
+    client.season_refs = [SeasonRef(2026, "478.l.1", True, True), client.season_refs[1]]
+    assert http.get("/api/stars/2026").get_json()["season"] == 2026
+    assert ("season_top_players", "478.l.1", True, False) in client.calls
+
+
+@pytest.mark.parametrize("season", ["abc", "1999", "9" * 5000, "٢٠٢٥"])
+def test_past_stars_bad_season_404(http, season):
+    assert http.get(f"/api/stars/{season}").status_code == 404
+
+
+def test_past_stars_unknown_season_while_incomplete_503(http, client):
+    client.seasons_complete = False
+    assert http.get("/api/stars/2024").status_code == 503
+
+
+def test_past_stars_stale_no_store(http, client):
+    client.past_top_result = result(stale=True, final=True)
+    response = http.get("/api/stars/2025")
+    assert response.get_json()["stale"] is True and headers(response) == NO_STORE
+
+
+def test_past_stars_yahoo_down_503(http, client):
+    client.error = YahooUnavailable("down")
+    assert http.get("/api/stars/2025").status_code == 503

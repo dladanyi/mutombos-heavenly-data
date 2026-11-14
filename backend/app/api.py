@@ -161,6 +161,26 @@ def stars():
     return _respond(body, "settling", players_result, teams_result)  # 5 min browser, 1 h CDN
 
 
+@api.get("/api/stars/<season>")
+def past_stars(season: str):
+    """Star Power for a finished season: final full-season ranks and end-of-season rosters."""
+    ref, walk_results = _finished_season(season)
+    players, players_result = _client().season_top_players(ref.league_key, ref.finished, refresh=_refresh())
+    teams, teams_result = _client().season_teams(ref.league_key, ref.finished, refresh=_refresh())
+    results = (players_result, teams_result, *walk_results)
+    body = {
+        "season": ref.season,
+        "league_key": ref.league_key,
+        "fetched_at": _iso(players_result.fetched_at),
+        "stale": any(r.stale for r in results),
+        "refresh_throttled": players_result.refresh_throttled,
+        "levels": list(LEVELS),
+        **build_star_power(players, teams),
+    }
+    kind = "final" if players_result.final and teams_result.final else "settling"
+    return _respond(body, kind, *results)
+
+
 @api.get("/api/seasons")
 def seasons():
     refs, complete, results = _client().seasons(refresh=_refresh())
@@ -169,22 +189,28 @@ def seasons():
     return _respond(body, "short" if complete else "none", *results)
 
 
-@api.get("/api/seasons/<season>")
-def final_season(season: str):
-    """A finished season: any past season, or the current one once Yahoo marks it finished."""
+def _finished_season(season: str):
+    """The SeasonRef for a finished season (any past season, or the current one once Yahoo marks
+    it finished) plus the renew-walk results up to it. 404 for anything else."""
     if not re.fullmatch(r"[0-9]{4}", season):  # ASCII only: isdecimal() lets in 5000-digit and non-ASCII digits
         raise NotFound()
     refs, complete, walk_results = _client().seasons(refresh=_refresh())
     index = next((i for i, s in enumerate(refs) if s.season == int(season)), None)
-    ref = refs[index] if index is not None else None
-    # Walk results line up with refs; only the leagues up to the requested one matter here.
-    walk_results = walk_results[:index + 1] if index is not None else walk_results
-    if ref is None:
+    if index is None:
         if not complete:  # an outage cut the walk short, so "not found" isn't known
             raise YahooUnavailable("season list incomplete")
         raise NotFound()
+    ref = refs[index]
     if ref.current and not ref.finished:
-        raise NotFound()  # the in-progress season is served by /api/rankings/season
+        raise NotFound()  # the in-progress season is served by the current-season endpoints
+    # Walk results line up with refs; only the leagues up to the requested one matter here.
+    return ref, walk_results[:index + 1]
+
+
+@api.get("/api/seasons/<season>")
+def final_season(season: str):
+    """A finished season: any past season, or the current one once Yahoo marks it finished."""
+    ref, walk_results = _finished_season(season)
     standings, standings_result, teams, stats_result = _client().final_season(
         ref.league_key, ref.finished, refresh=_refresh())
     body = {
