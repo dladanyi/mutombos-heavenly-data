@@ -4,6 +4,8 @@ import ArrowNav from './components/ArrowNav'
 import Header from './components/Header'
 import FullSeasonSection from './components/FullSeasonSection'
 import RankingsSection from './components/RankingsSection'
+import StarPowerSection from './components/StarPowerSection'
+import TabBar, { type Tab } from './components/TabBar'
 import { useApi } from './hooks/useApi'
 
 const JUST_REFRESHED_MS = 3000
@@ -17,7 +19,21 @@ function RefreshIcon() {
   )
 }
 
+const tabFromHash = (): Tab => (window.location.hash === '#stars' ? 'stars' : 'rankings')
+
 export default function App() {
+  // The screen is chosen by the URL hash (#stars = Star Power), so it can be bookmarked and Back works.
+  const [tab, setTab] = useState<Tab>(tabFromHash)
+  useEffect(() => {
+    const onHash = () => setTab(tabFromHash())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  function chooseTab(next: Tab) {
+    window.location.hash = next === 'stars' ? 'stars' : ''
+    setTab(next)
+  }
+
   const league = useApi((refresh) => getLeague({ refresh }), [])
   const current = useApi((refresh) => getWeek('current', { refresh }), [])
   const season = useApi((refresh) => getSeason({ refresh }), [])
@@ -75,49 +91,57 @@ export default function App() {
     <div className="wrapper">
       <Header fetchedAt={(staleData ?? current.data ?? season.data)?.fetched_at} stale={Boolean(staleData)} />
 
-      <RankingsSection
-        title={weekNumber ? `Week ${weekNumber}` : 'This Week'}
-        badge={
-          pastWeek !== undefined
-            ? past.data && { text: past.data.state === 'settling' ? 'Settling' : 'Final' }
-            : seasonOver
-              ? { text: 'Season over' }
-              : { text: '● Live', live: true }
-        }
-        state={shown}
-        onRetry={() => void shown.reload()}
-        showLegend
-        showResult
-        liveResults={shown.data?.state === 'current'}
-        actions={
-          <>
-            {info && info.current_week > info.start_week && (
-              <ArrowNav
-                backLabel="Previous week"
-                forwardLabel="Next week"
-                canBack={(pastWeek ?? info.current_week) > info.start_week}
-                canForward={pastWeek !== undefined}
-                onBack={() => setChosenWeek((pastWeek ?? info.current_week) - 1)}
-                onForward={() => setChosenWeek(pastWeek !== undefined && pastWeek + 1 < info.current_week ? pastWeek + 1 : null)}
-              />
-            )}
-            {justRefreshed && <span className="refresh-note">Just refreshed</span>}
-            <button
-              className={refreshing ? 'refresh-btn spinning' : 'refresh-btn'}
-              onClick={() => void refreshAll()}
-              disabled={refreshing}
-              title="Refresh"
-            >
-              <RefreshIcon />
-              Refresh
-            </button>
-          </>
-        }
-      />
+      <TabBar tab={tab} onChange={chooseTab} />
 
-      <div className="divider" />
+      {tab === 'stars' ? (
+        <StarPowerSection />
+      ) : (
+        <>
+          <RankingsSection
+            title={weekNumber ? `Week ${weekNumber}` : 'This Week'}
+            badge={
+              pastWeek !== undefined
+                ? past.data && { text: past.data.state === 'settling' ? 'Settling' : 'Final' }
+                : seasonOver
+                  ? { text: 'Season over' }
+                  : { text: '● Live', live: true }
+            }
+            state={shown}
+            onRetry={() => void shown.reload()}
+            showLegend
+            showResult
+            liveResults={shown.data?.state === 'current'}
+            actions={
+              <>
+                {info && info.current_week > info.start_week && (
+                  <ArrowNav
+                    backLabel="Previous week"
+                    forwardLabel="Next week"
+                    canBack={(pastWeek ?? info.current_week) > info.start_week}
+                    canForward={pastWeek !== undefined}
+                    onBack={() => setChosenWeek((pastWeek ?? info.current_week) - 1)}
+                    onForward={() => setChosenWeek(pastWeek !== undefined && pastWeek + 1 < info.current_week ? pastWeek + 1 : null)}
+                  />
+                )}
+                {justRefreshed && <span className="refresh-note">Just refreshed</span>}
+                <button
+                  className={refreshing ? 'refresh-btn spinning' : 'refresh-btn'}
+                  onClick={() => void refreshAll()}
+                  disabled={refreshing}
+                  title="Refresh"
+                >
+                  <RefreshIcon />
+                  Refresh
+                </button>
+              </>
+            }
+          />
 
-      <FullSeasonSection current={season} onRetry={() => void season.reload()} />
+          <div className="divider" />
+
+          <FullSeasonSection current={season} onRetry={() => void season.reload()} />
+        </>
+      )}
 
       <footer>Mutombo's Heavenly Data &mdash; Fantasy Basketball Intelligence</footer>
     </div>

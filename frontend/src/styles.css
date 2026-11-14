@@ -250,6 +250,39 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: rgba(249,115,22,0.04); }
+/* Tabs: Rankings | Star Power */
+.tab-bar { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+.tab {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.9rem;
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    cursor: pointer;
+}
+.tab.active { color: var(--accent); border-color: var(--accent); background: rgba(249,115,22,0.08); }
+
+/* Star Power: each team row is followed by a full-width line of its top-50 players */
+.star-wrap td:first-child, .star-wrap th:first-child {
+    position: static; min-width: 0; width: 3rem; box-shadow: none; text-align: right;
+    font-family: 'DM Mono', monospace; font-weight: 600; background: transparent;
+}
+.star-wrap th:nth-child(2) { text-align: left; }
+.star-wrap tr.star-team td:nth-child(2) {
+    text-align: left; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.88rem; color: var(--text);
+}
+.star-wrap tr.star-team { border-bottom: none; }
+.star-wrap tr.star-players td {
+    text-align: left; white-space: normal; padding-top: 0; padding-left: 4rem;
+    font-size: 0.72rem; color: var(--muted); line-height: 1.6;
+}
+.star-wrap .star-top { color: var(--gold); }
+.star-unowned { margin-top: 0.6rem; }
+
 /* Full Season: season arrows, champion line, standings */
 .season-nav { display: inline-flex; align-items: center; gap: 0.4rem; }
 .season-arrow { font-size: 0.85rem; line-height: 1; padding: 0.15rem 0.5rem; }
@@ -457,6 +490,10 @@ footer {
     }
     thead th:first-child { min-width: 120px; }
     .standings-wrap td:nth-child(2) { min-width: 0; font-size: 0.75rem; }
+    .star-wrap th, .star-wrap td { padding-left: 0.4rem; padding-right: 0.4rem; }
+    .star-wrap td:first-child, .star-wrap th:first-child { width: 2rem; }
+    .star-wrap tr.star-team td:nth-child(2) { font-size: 0.78rem; }
+    .star-wrap tr.star-players td { padding-left: 2.4rem; font-size: 0.66rem; }
 }
 
 

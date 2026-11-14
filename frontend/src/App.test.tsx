@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { finalSeason, league, rankings, seasonsList } from './test/data'
+import { finalSeason, league, rankings, seasonsList, starPower } from './test/data'
 
 type Route = { status?: number; body: unknown }
 type Routes = Record<string, Route | Route[]>
@@ -28,10 +28,45 @@ function happyRoutes(): Routes {
     '/api/rankings/season': { body: rankings({ scope: 'season', week: null }) },
     '/api/rankings/week/6': { body: rankings({ week: 6, state: 'final' }) },
     '/api/seasons': { body: seasonsList() },
+    '/api/stars': { body: starPower() },
   }
 }
 
 describe('App', () => {
+  beforeEach(() => {
+    window.location.hash = ''
+  })
+
+  it('opens on the Rankings tab without loading Star Power', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    expect(await screen.findByRole('tab', { name: 'Rankings' })).toHaveAttribute('aria-selected', 'true')
+    await screen.findByText('Week 7')
+    expect(calls).not.toContain('/api/stars')
+  })
+
+  it('switches to Star Power and back with the tabs and the URL hash', async () => {
+    const calls = mockApi(happyRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('tab', { name: 'Star Power' }))
+    expect(window.location.hash).toBe('#stars')
+    expect(await screen.findByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()
+    expect(calls).toContain('/api/stars')
+    expect(screen.queryByText('Week 7')).toBeNull()
+    window.location.hash = ''
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    expect(await screen.findByText('Week 7')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Rankings' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('opens Star Power when the page loads with #stars', async () => {
+    window.location.hash = '#stars'
+    mockApi(happyRoutes())
+    render(<App />)
+    expect(await screen.findByRole('tab', { name: 'Star Power' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText(/Not on a team/)).toBeInTheDocument()
+  })
+
   it('shows loading then the week and full season sections', async () => {
     mockApi(happyRoutes())
     render(<App />)
