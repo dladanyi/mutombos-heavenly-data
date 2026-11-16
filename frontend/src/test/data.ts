@@ -1,4 +1,4 @@
-import type { Category, FinalSeason, League, Rankings, SeasonsList, Standing, StarPower, TeamRow } from '../api'
+import type { AllPlaySeason, AllPlaySeasonRow, Category, FinalSeason, League, Rankings, SeasonsList, Standing, StarPower, TeamRow } from '../api'
 
 export const categories: Category[] = [
   { key: 'PTS', higher_is_better: true },
@@ -87,6 +87,64 @@ export function starPower(overrides: Partial<StarPower> = {}): StarPower {
       { team_key: 't.4', name: 'Delta', place: 4, counts: { '10': 0, '25': 0, '50': 0 }, players: [] },
     ],
     unowned: [{ ...star(37, 'Player X'), status: 'freeagents' }, { ...star(48, 'Player Y'), status: 'waivers' }],
+    ...overrides,
+  }
+}
+
+/** Gives each team all-play numbers: earlier teams beat later ones 6–3–0, so list order is all-play order. */
+export function withAllPlay(teams: TeamRow[]): TeamRow[] {
+  const n = teams.length
+  return teams.map((t, i) => ({
+    ...t,
+    all_play: {
+      avg_cats: 6 - i * 0.5,
+      wins: n - 1 - i,
+      losses: i,
+      ties: 0,
+      pct: n > 1 ? (n - 1 - i) / (n - 1) : 0,
+      place: i + 1,
+      order: i + 1,
+      vs: Object.fromEntries(
+        teams.filter((o) => o !== t).map((o) => {
+          const ahead = teams.indexOf(o) > i
+          return [o.team_key, ahead ? { wins: 6, losses: 3, ties: 0 } : { wins: 3, losses: 6, ties: 0 }]
+        }),
+      ),
+    },
+  }))
+}
+
+export function allPlayRow(name: string, place: number, overrides: Partial<AllPlaySeasonRow> = {}): AllPlaySeasonRow {
+  return {
+    team_key: `466.l.1.t.${name}`,
+    name,
+    place,
+    wins: 20 - place,
+    losses: place + 2,
+    ties: 1,
+    pct: 0.8 - place * 0.1,
+    avg_cats: 6 - place * 0.4,
+    weeks: 6,
+    record: { wins: 30, losses: 20, ties: 4 },
+    luck: 0.25,
+    ...overrides,
+  }
+}
+
+export function allPlaySeason(overrides: Partial<AllPlaySeason> = {}): AllPlaySeason {
+  return {
+    scope: 'allplay-season',
+    fetched_at: '2026-11-20T18:30:00Z',
+    stale: false,
+    refresh_throttled: false,
+    weeks: 6,
+    first_week: 1,
+    last_week: 6,
+    teams: [
+      allPlayRow('Alpha', 1, { luck: 0.25 }),
+      allPlayRow('Beta', 2, { luck: -0.75 }),
+      allPlayRow('Gamma', 3, { luck: 0, record: null }),
+    ],
     ...overrides,
   }
 }
