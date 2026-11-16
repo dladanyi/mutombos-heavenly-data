@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-from app.all_play import CatScore, compare, week_all_play
+from app.all_play import CatScore, compare, season_all_play, week_all_play
 from app.config import Category
-from app.parsing import TeamStats, parse_scoreboard, parse_team_stats
+from app.parsing import MatchupResult, TeamStats, parse_scoreboard, parse_team_stats
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -83,3 +83,63 @@ def test_matches_yahoo_scoreboard_on_real_week():
     assert results
     for key, r in results.items():
         assert compare(teams[key], teams[r.opponent_key]) == CatScore(r.wins, r.losses, r.ties), key
+
+
+# A and B played each other for real; C had a bye.
+RES = {"A": MatchupResult("W", 2, 0, 1, "B", "B"), "B": MatchupResult("L", 0, 2, 1, "A", "A")}
+
+
+def test_two_identical_weeks_sum_and_average():
+    rows = season_all_play([[A, B, C], [A, B, C]], [RES, RES], CATS)
+    assert [r["team_key"] for r in rows] == ["A", "B", "C"]
+    a = rows[0]
+    assert (a["wins"], a["losses"], a["ties"], a["pct"], a["avg_cats"], a["weeks"]) == (4, 0, 0, 1.0, 2.25, 2)
+    assert (a["name"], a["place"]) == ("A", 1)
+    assert a["record"] == {"wins": 4, "losses": 0, "ties": 2}
+    assert a["luck"] == 0.25  # 2.5 real categories − 2.25 Avg Cats, each week
+    assert rows[1]["luck"] == -0.75  # 0.5 − 1.25
+
+
+def test_bye_counts_for_all_play_but_not_record_or_luck():
+    c = season_all_play([[A, B, C]], [RES], CATS)[2]
+    assert (c["team_key"], c["wins"], c["losses"]) == ("C", 0, 2)
+    assert c["record"] is None and c["luck"] is None
+
+
+def test_team_missing_from_a_week_averaged_over_its_weeks():
+    rows = {r["team_key"]: r for r in season_all_play([[A, B], [A, B, C]], None, CATS)}
+    assert rows["C"]["weeks"] == 1 and rows["C"]["avg_cats"] == 1.0
+    assert rows["A"]["weeks"] == 2 and rows["A"]["wins"] == 3
+
+
+def test_no_results_blanks_record_and_luck_for_everyone():
+    assert all(r["record"] is None and r["luck"] is None
+               for r in season_all_play([[A, B, C]], None, CATS))
+
+
+def test_season_place_by_win_pct_then_avg_cats_orders():
+    week = [stats("W", 0, 0, 0), stats("X", 0, 0, 1), stats("Y", 0, 0, 2), stats("Z", 0, 1, 1)]
+    rows = season_all_play([week], None, (PTS, REB, AST))
+    # Y and Z both have Win % .833; Z averages 2.0 categories, Y 1.83.
+    assert [r["team_key"] for r in rows] == ["Z", "Y", "X", "W"]
+    assert [r["place"] for r in rows] == [1, 1, 3, 4]
+    assert (rows[0]["pct"], rows[1]["pct"]) == (0.833, 0.833)
+
+
+def test_zero_luck_is_not_negative_zero():
+    p = TeamStats("P", "P", {"12": "100"})
+    q = TeamStats("Q", "Q", {"12": "90"})
+    res = {"P": MatchupResult("W", 1, 0, 0, "Q", "Q"), "Q": MatchupResult("L", 0, 1, 0, "P", "P")}
+    rows = season_all_play([[p, q]], [res], (PTS,))
+    assert [r["luck"] for r in rows] == [0.0, 0.0]
+    assert [str(r["luck"]) for r in rows] == ["0.0", "0.0"]
+
+
+def test_name_comes_from_the_latest_week():
+    renamed = TeamStats("A", "A2", A.values)
+    rows = season_all_play([[A, B], [renamed, B]], None, CATS)
+    assert rows[0]["name"] == "A2"
+
+
+def test_no_weeks():
+    assert season_all_play([], None) == []
