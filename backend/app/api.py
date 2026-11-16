@@ -7,7 +7,7 @@ from pathlib import Path
 from flask import Blueprint, Flask, Response, current_app, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException, NotFound
 
-from app.all_play import week_all_play
+from app.all_play import season_all_play, week_all_play
 from app.cache import CacheResult
 from app.config import CATEGORIES
 from app.errors import YahooUnavailable
@@ -141,6 +141,45 @@ def week_rankings(week: str):
     if not results_ok:
         kind = "none"
     return _respond(body, kind, result, *others)
+
+
+@api.get("/api/allplay/season")
+def allplay_season():
+    """Weekly all-play summed over the current season's completed weeks (spec: all-play)."""
+    info, league_result = _client().league()
+    current = info.current_week
+    last = current if _client().week_state(current, current) != "current" else current - 1
+    numbers = list(range(info.start_week, last + 1))
+    weeks, week_results, inputs = [], [], []
+    results_ok = True
+    for number in numbers:
+        # A week Yahoo can't return (and that isn't cached) fails the whole request: no
+        # silently short season.
+        teams, stats_result, state = _client().week_stats(number, current, refresh=_refresh())
+        weeks.append(teams)
+        inputs.append(stats_result)
+        if not results_ok:
+            continue
+        try:
+            results, results_result = _client().week_results(number, state, refresh=_refresh())
+            week_results.append(results)
+            inputs.append(results_result)
+        except YahooUnavailable as exc:  # includes YahooFormatError
+            # All-play still works without the real results; Record and Luck go blank.
+            log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
+            results_ok = False
+    live = [r for r in inputs if not r.final]
+    body = {
+        "scope": "allplay-season",
+        "fetched_at": _iso(min(r.fetched_at for r in inputs) if inputs else league_result.fetched_at),
+        "stale": any(r.stale for r in inputs),
+        "refresh_throttled": bool(live) and all(r.refresh_throttled for r in live),
+        "weeks": len(numbers),
+        "first_week": numbers[0] if numbers else None,
+        "last_week": numbers[-1] if numbers else None,
+        "teams": season_all_play(weeks, week_results if results_ok else None),
+    }
+    return _respond(body, "short" if results_ok else "none", *inputs)
 
 
 def _result_json(r: MatchupResult | None) -> dict | None:

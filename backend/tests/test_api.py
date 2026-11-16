@@ -48,6 +48,10 @@ class FakeClient:
         self.standings_error = None
         self.final_stats_result = result(final=True)
         self.error = None
+        self.week_teams = {}  # week -> teams; default TEAMS
+        self.week_stats_errors = {}  # week -> exception
+        self.results_errors = {}  # week -> exception
+        self.current_week_state = "current"
         self.calls = []
 
     def _maybe_fail(self):
@@ -67,7 +71,13 @@ class FakeClient:
     def week_stats(self, week, current_week, refresh=False):
         self.calls.append(("week", week, current_week, refresh))
         self._maybe_fail()
-        return TEAMS, self.stats_result, self.state
+        if week in self.week_stats_errors:
+            raise self.week_stats_errors[week]
+        return self.week_teams.get(week, TEAMS), self.stats_result, self.state
+
+    def week_state(self, week, current_week):
+        self.calls.append(("week_state", week, current_week))
+        return self.current_week_state if week == current_week else "final"
 
     def seasons(self, refresh=False):
         self.calls.append(("seasons", refresh))
@@ -103,6 +113,8 @@ class FakeClient:
         self.calls.append(("results", week, state, refresh))
         if self.results_error:
             raise self.results_error
+        if week in self.results_errors:
+            raise self.results_errors[week]
         return self.results, self.results_result
 
 
@@ -547,3 +559,65 @@ def test_week_rows_carry_all_play(http):
 def test_season_rows_have_no_all_play(http):
     body = http.get("/api/rankings/season").get_json()
     assert all("all_play" not in t for t in body["teams"])
+
+
+def test_allplay_season_counts_completed_weeks_only(http, client):
+    body = http.get("/api/allplay/season").get_json()
+    assert body["scope"] == "allplay-season"
+    assert (body["weeks"], body["first_week"], body["last_week"]) == (6, 1, 6)
+    assert [c[1] for c in client.calls if c[0] == "week"] == [1, 2, 3, 4, 5, 6]
+    assert body["teams"][0]["team_key"] == "k.1" and body["teams"][0]["wins"] == 6
+    assert body["teams"][0]["record"] == {"wins": 30, "losses": 18, "ties": 6}
+    assert body["fetched_at"] == "2026-10-03T04:00:00Z"
+
+
+def test_allplay_season_includes_last_week_after_season(http, client):
+    client.league_info = LeagueInfo("L", current_week=21, start_week=1, end_week=21)
+    client.current_week_state = "settling"
+    assert http.get("/api/allplay/season").get_json()["last_week"] == 21
+
+
+def test_allplay_season_week_one_is_empty(http, client):
+    client.league_info = LeagueInfo("L", current_week=1, start_week=1, end_week=21)
+    body = http.get("/api/allplay/season").get_json()
+    assert body["weeks"] == 0 and body["teams"] == []
+    assert body["first_week"] is None and body["last_week"] is None
+
+
+def test_allplay_season_failed_week_stats_is_503(http, client):
+    client.week_stats_errors = {3: YahooUnavailable("down")}
+    assert http.get("/api/allplay/season").status_code == 503
+
+
+def test_allplay_season_failed_scoreboard_blanks_record_and_luck(http, client):
+    client.results_errors = {2: YahooUnavailable("down")}
+    resp = http.get("/api/allplay/season")
+    assert resp.status_code == 200
+    assert all(t["record"] is None and t["luck"] is None for t in resp.get_json()["teams"])
+    assert resp.headers["Cache-Control"] == "no-store"
+
+
+def test_allplay_season_headers_and_refresh(http, client):
+    assert http.get("/api/allplay/season").headers["Cache-Control"] == "public, max-age=60"
+    client.calls.clear()
+    resp = http.get("/api/allplay/season?refresh=1")
+    assert resp.headers["Cache-Control"] == "no-store"
+    fetches = [c for c in client.calls if c[0] in ("week", "results")]
+    assert fetches and all(c[-1] is True for c in fetches)
+
+
+def test_allplay_season_stale_input_is_no_store(http, client):
+    client.results_result = result(stale=True)
+    resp = http.get("/api/allplay/season")
+    assert resp.get_json()["stale"] is True
+    assert resp.headers["Cache-Control"] == "no-store"
+
+
+def test_allplay_season_refresh_throttled_only_when_every_live_input_is(http, client):
+    client.stats_result = result(throttled=True)
+    client.results_result = result(throttled=True)
+    assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is True
+    client.results_result = result(final=True)  # final inputs ignore refresh
+    assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is True
+    client.stats_result = result()
+    assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is False
