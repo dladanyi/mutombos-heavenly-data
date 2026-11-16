@@ -68,7 +68,10 @@ resource).
       "place": 1,
       "stats": {"FG%": {"value": 0.482, "rank": 3, "detail": "301/624"}},
       "result": {"outcome": "W", "wins": 5, "losses": 3, "ties": 1,
-                 "opponent": {"team_key": "466.l.46425.t.4", "name": "Team D"}}
+                 "opponent": {"team_key": "466.l.46425.t.4", "name": "Team D"}},
+      "all_play": {"avg_cats": 5.67, "wins": 9, "losses": 1, "ties": 0, "pct": 0.9,
+                   "place": 1, "order": 1,
+                   "vs": {"466.l.46425.t.4": {"wins": 6, "losses": 3, "ties": 0}}}
     }
   ]
 }
@@ -104,6 +107,17 @@ resource).
   team when the scoreboard couldn't be fetched; that response is sent `no-store` so the gap
   isn't cached. A final week only gets the long CDN cache when both its stats and its
   scoreboard were fetched as final.
+- `all_play` (week responses only) plays this team against every other team that week, using
+  the week's totals. Per category the higher value wins (lower for TO), equal values tie, a
+  value beats a missing one and two missing values tie. `vs` holds the category W–L–T against
+  each opponent, keyed by `team_key`, from this team's side. A matchup is a W when the team
+  took more categories than it lost, T when equal. `wins`/`losses`/`ties` count those all-play
+  matchups. `avg_cats` is categories won (ties count half) per opponent, 2 decimals; `pct` is
+  `(wins + ties/2) / opponents`, 3 decimals. All-play order is `avg_cats`, then `pct` (both
+  descending), then name; `order` is the 1-based position in it, and `place` is 1 + the number
+  of teams with a higher `avg_cats` (ties share a place). The `teams` list itself stays in avg
+  rank order. Clients treat `all_play` as optional: browsers may hold final-week responses
+  cached before it existed for up to a day.
 
 ## `GET /api/seasons`
 

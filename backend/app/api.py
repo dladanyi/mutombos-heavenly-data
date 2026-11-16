@@ -7,6 +7,7 @@ from pathlib import Path
 from flask import Blueprint, Flask, Response, current_app, jsonify, request, send_from_directory
 from werkzeug.exceptions import HTTPException, NotFound
 
+from app.all_play import week_all_play
 from app.cache import CacheResult
 from app.config import CATEGORIES
 from app.errors import YahooUnavailable
@@ -125,8 +126,10 @@ def week_rankings(week: str):
         log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
         results_ok = False
     body = {**_rankings_body("week", number, teams, result, *others), "state": state}
+    all_play = week_all_play(teams)
     for row in body["teams"]:
         row["result"] = _result_json(results.get(row["team_key"]))
+        row["all_play"] = all_play[row["team_key"]]
     # Long CDN caching only for data that was itself fetched as final (spec §5.2): an entry
     # fetched while settling may still be served after the week turns final.
     all_final = result.final and all(o.final for o in others[1:])

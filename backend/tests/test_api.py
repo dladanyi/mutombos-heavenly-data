@@ -534,3 +534,16 @@ def test_past_stars_stale_no_store(http, client):
 def test_past_stars_yahoo_down_503(http, client):
     client.error = YahooUnavailable("down")
     assert http.get("/api/stars/2025").status_code == 503
+
+
+def test_week_rows_carry_all_play(http):
+    body = http.get("/api/rankings/week/current").get_json()
+    alpha = next(t for t in body["teams"] if t["team_key"] == "k.1")
+    assert alpha["all_play"]["place"] == 1
+    # Alpha wins PTS, FG% and TO; the other 6 categories are missing for both teams, so they tie.
+    assert alpha["all_play"]["vs"]["k.2"] == {"wins": 3, "losses": 0, "ties": 6}
+
+
+def test_season_rows_have_no_all_play(http):
+    body = http.get("/api/rankings/season").get_json()
+    assert all("all_play" not in t for t in body["teams"])
