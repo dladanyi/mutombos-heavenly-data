@@ -27,6 +27,13 @@ category by a lot and loses the rest narrowly; all-play counts what wins head-to
   - Current season only.
   - Place is a medal-coloured number in a pinned `#` column, like the standings, rather than
     emoji medals.
+- **After the PR #15 review:** the season section shows its own "Showing data as of …
+  (Yahoo unavailable)" notice, a stale league lookup marks the season response stale, a week
+  cached before this change says "Tap Refresh to see all-play numbers" (a page reload can get
+  the same browser-cached JSON), and season averages and Win % are compared as exact fractions
+  so equal records tie-break by name. Not changed: fetching each week's stats and scoreboard
+  as separate tasks, cancelling the remaining weeks after a failure, a shared section-body
+  component, and moving "final data ignores refresh" into the cache.
 
 ## 2026-11-06: Sub-project 1 complete; start sub-project 2
 

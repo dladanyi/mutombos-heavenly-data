@@ -4,6 +4,7 @@ import type { ApiState } from '../hooks/useApi'
 import AllPlaySeasonTable from './AllPlaySeasonTable'
 import AllPlayTable from './AllPlayTable'
 import HeadToHeadGrid from './HeadToHeadGrid'
+import { formatTime } from './Header'
 import { byAllPlayOrder } from './allPlayFormat'
 
 type Props = {
@@ -64,7 +65,7 @@ export default function AllPlaySection({ title, badge, actions, week, live, seas
         <Body state={week}>
           {teams.length === 0 && week.data?.teams.length ? (
             <div className="notice" role="status">
-              Reload to see all-play numbers
+              Tap Refresh to see all-play numbers
             </div>
           ) : (
             <>
@@ -89,6 +90,11 @@ export default function AllPlaySection({ title, badge, actions, week, live, seas
           {season.data && (
             <>
               <div className="table-caption">{weeksCaption(season.data)}</div>
+              {season.data.stale && (
+                <div className="notice" role="status">
+                  Showing data as of {formatTime(season.data.fetched_at)} (Yahoo unavailable)
+                </div>
+              )}
               {season.data.teams.length > 0 && <AllPlaySeasonTable data={season.data} />}
             </>
           )}

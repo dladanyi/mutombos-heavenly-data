@@ -110,7 +110,6 @@ export default function App() {
     info && current.data?.state && current.data.state !== 'current' && current.data.week === info.end_week,
   )
 
-
   // The week section's title, badge and controls, shared by the Rankings and All-Play tabs.
   const weekTitle = weekNumber ? `Week ${weekNumber}` : 'This Week'
   const weekBadge =

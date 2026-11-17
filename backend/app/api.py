@@ -178,7 +178,8 @@ def allplay_season():
     body = {
         "scope": "allplay-season",
         "fetched_at": _iso(min(r.fetched_at for r in inputs) if inputs else league_result.fetched_at),
-        "stale": any(r.stale for r in inputs),
+        # A stale league lookup may mean an old current_week, so a short season: count it too.
+        "stale": league_result.stale or any(r.stale for r in inputs),
         # Final inputs ignore refresh, so with none live a refresh was ignored entirely.
         "refresh_throttled": refresh and all(r.refresh_throttled for r in live),
         "weeks": len(numbers),
@@ -186,7 +187,7 @@ def allplay_season():
         "last_week": numbers[-1] if numbers else None,
         "teams": season_all_play(weeks, [f[2] for f in fetched] if results_ok else None),
     }
-    return _respond(body, "short" if results_ok else "none", *inputs)
+    return _respond(body, "short" if results_ok else "none", league_result, *inputs)
 
 
 def _result_json(r: MatchupResult | None) -> dict | None:

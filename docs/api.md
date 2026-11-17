@@ -235,7 +235,8 @@ finished season: any past season, or the current one once Yahoo marks it finishe
 - The week stats and scoreboards come through the same cache as the week route (final weeks
   are kept forever), so a cold instance makes about two Yahoo calls per counted week, up to
   6 weeks at a time.
-- `fetched_at` is the oldest input's fetch time. `stale` is true when any input is stale.
+- `fetched_at` is the oldest input's fetch time. `stale` is true when any input is stale,
+  including the league lookup that decides which weeks count.
   `refresh_throttled` is true on `?refresh=1` when every non-final input reported a throttled
   refresh, including when every input is final (final data ignores refresh).
 - A counted week whose stats can't be fetched (and aren't cached) fails the request with the

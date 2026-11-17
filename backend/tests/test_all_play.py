@@ -143,3 +143,18 @@ def test_name_comes_from_the_latest_week():
 
 def test_no_weeks():
     assert season_all_play([], None) == []
+
+
+def test_equal_season_averages_tie_break_by_name_despite_float_order():
+    # One category, four teams. Zed's weekly Avg Cats are 1, 1/6, 1/6; Abe's are 1/6, 1/6, 1.
+    # Mathematically equal (and equal Win %), but the float means differ by the order added
+    # (Zed's comes out 1 ulp higher), so only exact arithmetic lets the name decide.
+    def week(abe, zed):
+        filler = "10" if 200 in (abe, zed) else "50"
+        return [TeamStats("Abe", "Abe", {"12": str(abe)}), TeamStats("Zed", "Zed", {"12": str(zed)}),
+                TeamStats("F1", "F1", {"12": filler}), TeamStats("F2", "F2", {"12": "100"})]
+    rows = season_all_play([week(10, 200), week(10, 10), week(200, 10)], None, (PTS,))
+    keys = [r["team_key"] for r in rows]
+    abe, zed = rows[keys.index("Abe")], rows[keys.index("Zed")]
+    assert (abe["pct"], abe["avg_cats"]) == (zed["pct"], zed["avg_cats"])
+    assert keys.index("Abe") < keys.index("Zed")

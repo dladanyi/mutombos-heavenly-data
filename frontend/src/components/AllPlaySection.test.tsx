@@ -39,9 +39,9 @@ describe('AllPlaySection', () => {
     expect(document.querySelectorAll('table')).toHaveLength(2)
   })
 
-  it('asks for a reload when the week has no all-play numbers, and still shows the season', () => {
+  it('points to Refresh when the week has no all-play numbers, and still shows the season', () => {
     show(state(rankings({ state: 'final' })), state(allPlaySeason()))
-    expect(screen.getByText('Reload to see all-play numbers')).toBeInTheDocument()
+    expect(screen.getByText('Tap Refresh to see all-play numbers')).toBeInTheDocument()
     expect(screen.getByText('Season All-Play')).toBeInTheDocument()
     expect(document.querySelectorAll('table')).toHaveLength(1)
   })
@@ -75,5 +75,10 @@ describe('AllPlaySection', () => {
     expect(rows[2][5]).toHaveTextContent('–')
     expect(rows[2][6]).toHaveTextContent('0.00')
     expect(rows[2][6]).not.toHaveClass('luck-pos')
+  })
+
+  it('flags a stale season table', () => {
+    show(state(week()), state(allPlaySeason({ stale: true })))
+    expect(screen.getByRole('status')).toHaveTextContent(/Showing data as of .* \(Yahoo unavailable\)/)
   })
 })

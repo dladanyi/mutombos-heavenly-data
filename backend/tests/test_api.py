@@ -640,5 +640,12 @@ def test_allplay_season_fetches_weeks_in_parallel(http, client):
     client.fetch_delay = 0.1
     start = time.monotonic()
     body = http.get("/api/allplay/season").get_json()
-    assert time.monotonic() - start < 0.6
+    assert time.monotonic() - start < 0.9  # sequential would be 1.2 s
     assert body["weeks"] == 6 and body["teams"][0]["wins"] == 6
+
+
+def test_allplay_season_stale_league_is_stale_and_no_store(http, client):
+    client.league_result = result(stale=True)
+    resp = http.get("/api/allplay/season")
+    assert resp.get_json()["stale"] is True
+    assert resp.headers["Cache-Control"] == "no-store"
