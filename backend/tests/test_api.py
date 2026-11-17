@@ -1,4 +1,5 @@
 import re
+import time
 
 import pytest
 
@@ -52,6 +53,7 @@ class FakeClient:
         self.week_stats_errors = {}  # week -> exception
         self.results_errors = {}  # week -> exception
         self.current_week_state = "current"
+        self.fetch_delay = 0.0  # seconds each week_stats / week_results call takes
         self.calls = []
 
     def _maybe_fail(self):
@@ -71,6 +73,7 @@ class FakeClient:
     def week_stats(self, week, current_week, refresh=False):
         self.calls.append(("week", week, current_week, refresh))
         self._maybe_fail()
+        time.sleep(self.fetch_delay)
         if week in self.week_stats_errors:
             raise self.week_stats_errors[week]
         return self.week_teams.get(week, TEAMS), self.stats_result, self.state
@@ -113,6 +116,7 @@ class FakeClient:
         self.calls.append(("results", week, state, refresh))
         if self.results_error:
             raise self.results_error
+        time.sleep(self.fetch_delay)
         if week in self.results_errors:
             raise self.results_errors[week]
         return self.results, self.results_result
@@ -565,7 +569,7 @@ def test_allplay_season_counts_completed_weeks_only(http, client):
     body = http.get("/api/allplay/season").get_json()
     assert body["scope"] == "allplay-season"
     assert (body["weeks"], body["first_week"], body["last_week"]) == (6, 1, 6)
-    assert [c[1] for c in client.calls if c[0] == "week"] == [1, 2, 3, 4, 5, 6]
+    assert sorted(c[1] for c in client.calls if c[0] == "week") == [1, 2, 3, 4, 5, 6]
     assert body["teams"][0]["team_key"] == "k.1" and body["teams"][0]["wins"] == 6
     assert body["teams"][0]["record"] == {"wins": 30, "losses": 18, "ties": 6}
     assert body["fetched_at"] == "2026-10-03T04:00:00Z"
@@ -629,3 +633,12 @@ def test_allplay_season_all_final_refresh_counts_as_throttled(http, client):
     client.results_result = result(final=True)
     assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is True
     assert http.get("/api/allplay/season").get_json()["refresh_throttled"] is False
+
+
+def test_allplay_season_fetches_weeks_in_parallel(http, client):
+    # 6 weeks x (stats + scoreboard) at 0.1 s each would take 1.2 s one after another.
+    client.fetch_delay = 0.1
+    start = time.monotonic()
+    body = http.get("/api/allplay/season").get_json()
+    assert time.monotonic() - start < 0.6
+    assert body["weeks"] == 6 and body["teams"][0]["wins"] == 6

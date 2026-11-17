@@ -1,6 +1,7 @@
 """JSON API routes, cache headers and error handling (spec §5.5)."""
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -143,42 +144,47 @@ def week_rankings(week: str):
     return _respond(body, kind, result, *others)
 
 
+# Weeks fetched at once by /api/allplay/season (a cold instance makes ~2 Yahoo calls per week).
+_ALLPLAY_WORKERS = 6
+
+
 @api.get("/api/allplay/season")
 def allplay_season():
     """Weekly all-play summed over the current season's completed weeks (spec: all-play)."""
-    info, league_result = _client().league()
+    client, refresh = _client(), _refresh()  # threads below have no request context
+    info, league_result = client.league()
     current = info.current_week
-    last = current if _client().week_state(current, current) != "current" else current - 1
+    last = current if client.week_state(current, current) != "current" else current - 1
     numbers = list(range(info.start_week, last + 1))
-    weeks, week_results, inputs = [], [], []
-    results_ok = True
-    for number in numbers:
-        # A week Yahoo can't return (and that isn't cached) fails the whole request: no
-        # silently short season.
-        teams, stats_result, state = _client().week_stats(number, current, refresh=_refresh())
-        weeks.append(teams)
-        inputs.append(stats_result)
-        if not results_ok:
-            continue
+
+    def fetch(number: int):
+        # A week whose stats Yahoo can't return (and that aren't cached) raises, failing the
+        # whole request: no silently short season.
+        teams, stats_result, state = client.week_stats(number, current, refresh=refresh)
         try:
-            results, results_result = _client().week_results(number, state, refresh=_refresh())
-            week_results.append(results)
-            inputs.append(results_result)
+            results, results_result = client.week_results(number, state, refresh=refresh)
         except YahooUnavailable as exc:  # includes YahooFormatError
             # All-play still works without the real results; Record and Luck go blank.
             log.warning("Week results unavailable", extra={"week": number, "error": str(exc)})
-            results_ok = False
+            return teams, stats_result, None, None
+        return teams, stats_result, results, results_result
+
+    with ThreadPoolExecutor(max_workers=_ALLPLAY_WORKERS) as pool:
+        fetched = list(pool.map(fetch, numbers))
+    weeks = [f[0] for f in fetched]
+    inputs = [f[1] for f in fetched] + [f[3] for f in fetched if f[3] is not None]
+    results_ok = all(f[2] is not None for f in fetched)
     live = [r for r in inputs if not r.final]
     body = {
         "scope": "allplay-season",
         "fetched_at": _iso(min(r.fetched_at for r in inputs) if inputs else league_result.fetched_at),
         "stale": any(r.stale for r in inputs),
         # Final inputs ignore refresh, so with none live a refresh was ignored entirely.
-        "refresh_throttled": _refresh() and all(r.refresh_throttled for r in live),
+        "refresh_throttled": refresh and all(r.refresh_throttled for r in live),
         "weeks": len(numbers),
         "first_week": numbers[0] if numbers else None,
         "last_week": numbers[-1] if numbers else None,
-        "teams": season_all_play(weeks, week_results if results_ok else None),
+        "teams": season_all_play(weeks, [f[2] for f in fetched] if results_ok else None),
     }
     return _respond(body, "short" if results_ok else "none", *inputs)
 

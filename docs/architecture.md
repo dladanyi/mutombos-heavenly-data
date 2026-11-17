@@ -34,7 +34,8 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 
 `parsing`, `rankings` and `all_play` are pure functions, tested against saved Yahoo responses.
 `/api/allplay/season` reads each completed week's stats and scoreboard through the same
-cache as the week route, so finished weeks are fetched from Yahoo once per instance.
+cache as the week route (up to 6 weeks in parallel), so finished weeks are fetched from Yahoo
+once per instance.
 
 ## Frontend (`frontend/src/`)
 

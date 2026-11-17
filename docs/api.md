@@ -233,7 +233,8 @@ finished season: any past season, or the current one once Yahoo marks it finishe
   Both are `null` for a team with no matchup in any counted week, and for every team when any
   counted week's scoreboard couldn't be fetched (that response is sent `no-store`).
 - The week stats and scoreboards come through the same cache as the week route (final weeks
-  are kept forever), so a cold instance makes about two Yahoo calls per counted week.
+  are kept forever), so a cold instance makes about two Yahoo calls per counted week, up to
+  6 weeks at a time.
 - `fetched_at` is the oldest input's fetch time. `stale` is true when any input is stale.
   `refresh_throttled` is true on `?refresh=1` when every non-final input reported a throttled
   refresh, including when every input is final (final data ignores refresh).
