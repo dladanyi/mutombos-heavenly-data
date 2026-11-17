@@ -58,6 +58,9 @@ switching never refetches. It renders `AllPlayTable` and `HeadToHeadGrid` from t
 response's `all_play` (ordered by `all_play.order`; formatting in `allPlayFormat.ts`), then
 `AllPlaySeasonTable` from `/api/allplay/season`, which `App` loads once the tab is opened and
 reloads with Refresh.
+Their non-obvious headings (Avg Cats, All-Play, Win %, and Record and Luck on the season table)
+are `ColumnHelp` buttons: a tap opens a short explanation card (copy in `columnHelpText.ts`),
+portaled into `document.body` and closed by Close, Esc or a tap outside.
 Medal colors come from the API's `rank` and `place` fields. A finished season's medals are on
 its standings, so its rankings table doesn't colour Avg Rank.
 

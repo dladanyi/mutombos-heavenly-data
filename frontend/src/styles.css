@@ -536,3 +536,80 @@ footer {
 .h2h-self { color: var(--muted); }
 .luck-pos { color: #4ade80; }
 .luck-neg { color: #f87171; }
+
+/* Tappable column headings that explain themselves (ColumnHelp) */
+.col-help-btn {
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    /* Fill the whole heading cell so the tap target is the cell, not just the 12px label */
+    display: block;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    text-align: inherit;
+    white-space: nowrap;
+    cursor: help;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+.col-help-btn::after {
+    content: 'ⓘ';
+    margin-left: 0.25em;
+    font-size: 0.85em;
+    opacity: 0.7;
+    text-decoration: none;
+    display: inline-block;
+}
+/* Inset, because the top-row cell sits at the clipping edge of .table-wrap */
+.col-help-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+th:has(> .col-help-btn) { padding: 0; }
+@media (max-width: 768px) {
+    .col-help-btn { padding: 0.65rem 0.55rem; }
+}
+
+.col-help-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+}
+.col-help-card {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(320px, calc(100vw - 32px));
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    max-height: calc(80vh - 16px);
+    overflow-y: auto;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+}
+.col-help-card h3 {
+    margin: 0 0 0.4rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+.col-help-card p { margin: 0 0 0.8rem; font-size: 0.9rem; line-height: 1.45; }
+.col-help-close {
+    font: inherit;
+    font-size: 0.8rem;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+}
+.col-help-close:hover { color: var(--text); }
