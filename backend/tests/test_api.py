@@ -621,3 +621,11 @@ def test_allplay_season_refresh_throttled_only_when_every_live_input_is(http, cl
     assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is True
     client.stats_result = result()
     assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is False
+
+
+def test_allplay_season_all_final_refresh_counts_as_throttled(http, client):
+    # Every counted week final: nothing can be refreshed, so a refresh was effectively ignored.
+    client.stats_result = result(final=True)
+    client.results_result = result(final=True)
+    assert http.get("/api/allplay/season?refresh=1").get_json()["refresh_throttled"] is True
+    assert http.get("/api/allplay/season").get_json()["refresh_throttled"] is False

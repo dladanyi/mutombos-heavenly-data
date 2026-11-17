@@ -173,7 +173,8 @@ def allplay_season():
         "scope": "allplay-season",
         "fetched_at": _iso(min(r.fetched_at for r in inputs) if inputs else league_result.fetched_at),
         "stale": any(r.stale for r in inputs),
-        "refresh_throttled": bool(live) and all(r.refresh_throttled for r in live),
+        # Final inputs ignore refresh, so with none live a refresh was ignored entirely.
+        "refresh_throttled": _refresh() and all(r.refresh_throttled for r in live),
         "weeks": len(numbers),
         "first_week": numbers[0] if numbers else None,
         "last_week": numbers[-1] if numbers else None,
