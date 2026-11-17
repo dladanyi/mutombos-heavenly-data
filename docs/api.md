@@ -17,6 +17,7 @@ All endpoints return JSON.
 | `GET /api/seasons/<season>` | A finished season: final standings plus whole-season rankings |
 | `GET /api/stars` | Star Power: teams ranked by players in the season-to-date top 10/25/50 |
 | `GET /api/stars/<season>` | A finished season's Star Power: final full-season ranks, end-of-season rosters |
+| `GET /api/allplay/season` | Season all-play: weekly all-play summed over the current season's completed weeks, with real Record and Luck |
 | `GET /healthz` | Returns `ok`; never calls Yahoo. If a required env var is missing the function can't start, so this returns Vercel's own 500 |
 
 ## Caching headers
@@ -68,7 +69,10 @@ resource).
       "place": 1,
       "stats": {"FG%": {"value": 0.482, "rank": 3, "detail": "301/624"}},
       "result": {"outcome": "W", "wins": 5, "losses": 3, "ties": 1,
-                 "opponent": {"team_key": "466.l.46425.t.4", "name": "Team D"}}
+                 "opponent": {"team_key": "466.l.46425.t.4", "name": "Team D"}},
+      "all_play": {"avg_cats": 5.67, "wins": 9, "losses": 1, "ties": 0, "pct": 0.9,
+                   "place": 1, "order": 1,
+                   "vs": {"466.l.46425.t.4": {"wins": 6, "losses": 3, "ties": 0}}}
     }
   ]
 }
@@ -104,6 +108,17 @@ resource).
   team when the scoreboard couldn't be fetched; that response is sent `no-store` so the gap
   isn't cached. A final week only gets the long CDN cache when both its stats and its
   scoreboard were fetched as final.
+- `all_play` (week responses only) plays this team against every other team that week, using
+  the week's totals. Per category the higher value wins (lower for TO), equal values tie, a
+  value beats a missing one and two missing values tie. `vs` holds the category W–L–T against
+  each opponent, keyed by `team_key`, from this team's side. A matchup is a W when the team
+  took more categories than it lost, T when equal. `wins`/`losses`/`ties` count those all-play
+  matchups. `avg_cats` is categories won (ties count half) per opponent, 2 decimals; `pct` is
+  `(wins + ties/2) / opponents`, 3 decimals. All-play order is `avg_cats`, then `pct` (both
+  descending), then name; `order` is the 1-based position in it, and `place` is 1 + the number
+  of teams with a higher `avg_cats` (ties share a place). The `teams` list itself stays in avg
+  rank order. Clients treat `all_play` as optional: browsers may hold final-week responses
+  cached before it existed for up to a day.
 
 ## `GET /api/seasons`
 
@@ -185,6 +200,48 @@ finished season: any past season, or the current one once Yahoo marks it finishe
   an unknown season or bad input, and 503 if an outage cut the season list short.
 - A finished season is cached forever on the server, with final headers once both the players
   and the team list are final. Otherwise the 1-hour Star Power headers apply.
+
+## `GET /api/allplay/season`
+
+```json
+{
+  "scope": "allplay-season",
+  "fetched_at": "2026-11-16T05:41:00Z", "stale": false, "refresh_throttled": false,
+  "weeks": 4, "first_week": 1, "last_week": 4,
+  "teams": [
+    {"team_key": "466.l.11070.t.3", "name": "Team C", "place": 1,
+     "wins": 31, "losses": 7, "ties": 2, "pct": 0.8, "avg_cats": 5.41, "weeks": 4,
+     "record": {"wins": 22, "losses": 13, "ties": 1}, "luck": -0.21}
+  ]
+}
+```
+
+- **Weeks counted:** `start_week` to `current_week − 1`, plus the current week once its state
+  is no longer `"current"` (after the season). The live week never counts. Playoff and
+  consolation weeks count once played. Before any week has finished: `weeks: 0`,
+  `first_week`/`last_week` `null`, `teams: []`.
+- Each week is scored exactly like the week response's `all_play`. `wins`/`losses`/`ties` sum
+  the weekly all-play matchups; `pct` is `(wins + ties/2) / matchups`, 3 decimals; `avg_cats`
+  is the mean of the team's weekly Avg Cats over the `weeks` it appears in, 2 decimals.
+- Order: `pct`, then `avg_cats` (both descending), then name. `place` is 1 + the number of
+  teams with a higher `pct`.
+- `record` is the team's real category W–L–T summed from each counted week's scoreboard (not
+  Yahoo's standings, which stop at the regular season). `luck` is the mean, over weeks with a
+  real matchup, of real categories won (ties count half) minus that week's Avg Cats, 2
+  decimals; positive means the team has won more categories than its all-play strength
+  predicts. Weeks without a matchup (bye) count toward all-play but not `record` or `luck`.
+  Both are `null` for a team with no matchup in any counted week, and for every team when any
+  counted week's scoreboard couldn't be fetched (that response is sent `no-store`).
+- The week stats and scoreboards come through the same cache as the week route (final weeks
+  are kept forever), so a cold instance makes about two Yahoo calls per counted week, up to
+  6 weeks at a time.
+- `fetched_at` is the oldest input's fetch time. `stale` is true when any input is stale,
+  including the league lookup that decides which weeks count.
+  `refresh_throttled` is true on `?refresh=1` when every non-final input reported a throttled
+  refresh, including when every input is final (final data ignores refresh).
+- A counted week whose stats can't be fetched (and aren't cached) fails the request with the
+  standard 503 body rather than returning a shorter season.
+- Headers: `short` (60 s); `no-store` when stale, on `?refresh=1`, or with a scoreboard missing.
 
 ## Errors
 

@@ -2,6 +2,39 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-11-16: All-Play tab
+
+Spec: `docs/specs/2026-11-16-all-play-design.md`. Average rank can flatter a team that wins one
+category by a lot and loses the rest narrowly; all-play counts what wins head-to-head weeks.
+
+- **User's choices:** order the week by average categories won per opponent (ties count half)
+  and show the all-play W–L–T too; a head-to-head grid for every pairing; a season-so-far
+  all-play ranking ordered by Win %; Record and Luck built from each counted week's scoreboard
+  rather than Yahoo's standings (which stop at the regular season), so all three always cover
+  the same weeks.
+- **Scoring lives in Python only** (`all_play.py`), added to the week response and a new
+  `/api/allplay/season`. Computing it in the browser would have meant a second definition of
+  "who wins a category" (ties, missing values, TO).
+- **Calls made without asking:**
+  - The week arrows are shared between the Rankings and All-Play tabs.
+  - Win % is the week table's tie-break; Avg Cats is the season table's.
+  - Only completed weeks count toward the season; the live week does not. Playoff and
+    consolation weeks count once played.
+  - Luck = mean over weeks with a real matchup of (real categories won − that week's Avg Cats);
+    bye weeks count toward all-play but not Record or Luck.
+  - A week whose stats can't be fetched fails the season endpoint (no silently short season);
+    a missing scoreboard only blanks Record and Luck (sent `no-store`).
+  - Current season only.
+  - Place is a medal-coloured number in a pinned `#` column, like the standings, rather than
+    emoji medals.
+- **After the PR #15 review:** the season section shows its own "Showing data as of …
+  (Yahoo unavailable)" notice, a stale league lookup marks the season response stale, a week
+  cached before this change says "Tap Refresh to see all-play numbers" (a page reload can get
+  the same browser-cached JSON), and season averages and Win % are compared as exact fractions
+  so equal records tie-break by name. Not changed: fetching each week's stats and scoreboard
+  as separate tasks, cancelling the remaining weeks after a failure, a shared section-body
+  component, and moving "final data ignores refresh" into the cache.
+
 ## 2026-11-06: Sub-project 1 complete; start sub-project 2
 
 - **Sub-project 1 is done.** After Yahoo approved API access, the post-approval checklist

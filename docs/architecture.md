@@ -26,18 +26,22 @@ Browser ──► Vercel CDN ─┬─ /*          frontend/dist (static)
 | `parsing.py` | Yahoo JSON → `TeamStats`, `LeagueInfo`, `GameWeek`, `MatchupResult`, `Standing`, `RankedPlayer` | config |
 | `rankings.py` | `TeamStats` → ranked table (per-category ranks, avg rank, median rank, place) | config |
 | `stars.py` | Ranked players + teams → Star Power (top-10/25/50 counts, order, unowned) | parsing |
+| `all_play.py` | Every team vs every other team: week all-play (Avg Cats, W–L–T, Win %, head-to-head) and season totals with real Record and Luck from each week's scoreboard | config, parsing, rankings |
 | `api.py` | Flask routes, JSON errors, cache headers, local static serving | all of the above |
 | `logging_setup.py` | JSON log lines (Vercel runtime logs) | - |
 
 `backend/wsgi.py` is the Vercel entrypoint (`app = create_app()`).
 
-`parsing` and `rankings` are pure functions, tested against saved Yahoo responses.
+`parsing`, `rankings` and `all_play` are pure functions, tested against saved Yahoo responses.
+`/api/allplay/season` reads each completed week's stats and scoreboard through the same
+cache as the week route (up to 6 weeks in parallel), so finished weeks are fetched from Yahoo
+once per instance.
 
 ## Frontend (`frontend/src/`)
 
 React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirror
-[api.md](api.md). A tab bar (`TabBar`) switches between two screens, kept in the URL hash
-(`#stars` = Star Power) so a screen can be bookmarked and Back works. Star Power
+[api.md](api.md). A tab bar (`TabBar`) switches between three screens, kept in the URL hash
+(`#stars` = Star Power, `#allplay` = All-Play) so a screen can be bookmarked and Back works. Star Power
 (`StarPowerSection`, `StarPowerTable`) loads only when its tab is opened, and has its own ‹ › season
 arrows (a finished season via `/api/stars/<season>`). The Rankings screen has
 two sections: the week section (opens on the live week; ‹ ›
@@ -47,6 +51,13 @@ step back through finished weeks via `/api/rankings/week/<n>`) and Full Season. 
 `FullSeasonSection` (the ‹ › season arrows; today's view while a season is in progress, the
 final view once finished) and `StandingsTable` (champion line and final standings, with each team's Avg/Med Rk and
 per-category ranks next to its finish).
+All-Play (`AllPlaySection`) mounts when its tab is first opened. Its week part shows the same
+week as the Rankings screen: `App` owns the chosen week, its data and the week header (title,
+badge, ‹ ›, Refresh), and passes them to both screens, so the arrows on either tab move both and
+switching never refetches. It renders `AllPlayTable` and `HeadToHeadGrid` from the week
+response's `all_play` (ordered by `all_play.order`; formatting in `allPlayFormat.ts`), then
+`AllPlaySeasonTable` from `/api/allplay/season`, which `App` loads once the tab is opened and
+reloads with Refresh.
 Medal colors come from the API's `rank` and `place` fields. A finished season's medals are on
 its standings, so its rankings table doesn't colour Avg Rank.
 

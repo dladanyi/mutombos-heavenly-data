@@ -9,6 +9,9 @@ export type MatchupResult = {
   ties: number
   opponent: { team_key: string; name: string }
 }
+export type WLT = { wins: number; losses: number; ties: number }
+/** Week responses: this team against every other team that week (see docs/api.md). */
+export type AllPlay = WLT & { avg_cats: number; pct: number; place: number; order: number; vs: Record<string, WLT> }
 export type TeamRow = {
   team_key: string
   name: string
@@ -21,6 +24,8 @@ export type TeamRow = {
   result?: MatchupResult | null
   /** Current season only: category W–L–T over completed weeks; null when standings were unavailable. */
   record?: { wins: number; losses: number; ties: number } | null
+  /** Week responses. Optional: browsers may still hold final-week JSON cached before it existed. */
+  all_play?: AllPlay
 }
 export type Rankings = {
   scope: 'week' | 'season'
@@ -78,6 +83,28 @@ export type StarPower = {
   unowned: (StarPlayer & { status: string })[]
 }
 
+export type AllPlaySeasonRow = WLT & {
+  team_key: string
+  name: string
+  place: number
+  pct: number
+  avg_cats: number
+  weeks: number
+  /** Real category W–L–T over the counted weeks; null with no matchup or a missing scoreboard. */
+  record: WLT | null
+  luck: number | null
+}
+export type AllPlaySeason = {
+  scope: 'allplay-season'
+  fetched_at: string
+  stale: boolean
+  refresh_throttled: boolean
+  weeks: number
+  first_week: number | null
+  last_week: number | null
+  teams: AllPlaySeasonRow[]
+}
+
 export type League = {
   name: string
   current_week: number
@@ -120,3 +147,4 @@ export const getSeasons = () => getJson<SeasonsList>('/api/seasons')
 export const getFinalSeason = (season: number) => getJson<FinalSeason>(`/api/seasons/${season}`)
 export const getStars = (opts?: Options) => getJson<StarPower>('/api/stars', opts)
 export const getPastStars = (season: number) => getJson<StarPower>(`/api/stars/${season}`)
+export const getAllPlaySeason = (opts?: Options) => getJson<AllPlaySeason>('/api/allplay/season', opts)

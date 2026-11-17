@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { finalSeason, league, rankings, seasonsList, starPower } from './test/data'
+import { allPlaySeason, finalSeason, league, rankings, seasonsList, starPower, team, withAllPlay } from './test/data'
 
 type Route = { status?: number; body: unknown }
 type Routes = Record<string, Route | Route[]>
@@ -29,8 +29,20 @@ function happyRoutes(): Routes {
     '/api/rankings/week/6': { body: rankings({ week: 6, state: 'final' }) },
     '/api/seasons': { body: seasonsList() },
     '/api/stars': { body: starPower() },
+    '/api/allplay/season': { body: allPlaySeason() },
   }
 }
+
+function allPlayRoutes(): Routes {
+  const teams = withAllPlay([team('Alpha', 1), team('Beta', 2)])
+  return {
+    ...happyRoutes(),
+    '/api/rankings/week/current': { body: rankings({ state: 'current', teams }) },
+    '/api/rankings/week/6': { body: rankings({ week: 6, state: 'final', teams }) },
+  }
+}
+
+const visible = (text: string) => screen.getAllByText(text).filter((e) => !e.closest('[hidden]'))
 
 describe('App', () => {
   beforeEach(() => {
@@ -301,5 +313,47 @@ describe('App', () => {
     expect(await screen.findByText('down')).toBeInTheDocument()
     expect(screen.queryByText('Final')).toBeNull()
     expect(screen.queryByText('Settling')).toBeNull()
+  })
+
+  it('loads the season all-play only once the All-Play tab opens', async () => {
+    const calls = mockApi(allPlayRoutes())
+    render(<App />)
+    await screen.findByText('Week 7')
+    expect(calls).not.toContain('/api/allplay/season')
+    await userEvent.click(screen.getByRole('tab', { name: 'All-Play' }))
+    expect(window.location.hash).toBe('#allplay')
+    expect(await screen.findByText('Season All-Play')).toBeVisible()
+    expect(calls).toContain('/api/allplay/season')
+    expect(screen.getByText('Full Season')).not.toBeVisible()
+  })
+
+  it('shares the chosen week between Rankings and All-Play', async () => {
+    const calls = mockApi(allPlayRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('tab', { name: 'All-Play' }))
+    await screen.findByText('Head-to-head')
+    await userEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    await waitFor(() => expect(visible('Week 6')).toHaveLength(1))
+    await userEvent.click(screen.getByRole('tab', { name: 'Rankings' }))
+    expect(visible('Week 6')).toHaveLength(1)
+    expect(calls.filter((c) => c === '/api/rankings/week/6')).toHaveLength(1)
+  })
+
+  it('refreshes the season all-play with the Refresh button on All-Play', async () => {
+    const calls = mockApi(allPlayRoutes())
+    render(<App />)
+    await userEvent.click(await screen.findByRole('tab', { name: 'All-Play' }))
+    await screen.findByText('Season All-Play')
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+    await waitFor(() => expect(calls).toContain('/api/allplay/season?refresh=1'))
+  })
+
+  it('opens All-Play when the page loads with #allplay, with the week time in the header', async () => {
+    window.location.hash = '#allplay'
+    mockApi(allPlayRoutes())
+    render(<App />)
+    expect(await screen.findByRole('tab', { name: 'All-Play' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText('Season All-Play')).toBeVisible()
+    expect(await screen.findByText(/Last updated:/)).toBeInTheDocument()
   })
 })

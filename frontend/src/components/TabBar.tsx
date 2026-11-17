@@ -1,8 +1,9 @@
-export type Tab = 'rankings' | 'stars'
+export type Tab = 'rankings' | 'stars' | 'allplay'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'rankings', label: 'Rankings' },
   { id: 'stars', label: 'Star Power' },
+  { id: 'allplay', label: 'All-Play' },
 ]
 
 export default function TabBar({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {

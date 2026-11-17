@@ -4,7 +4,7 @@ import RankCell, { medal } from './RankCell'
 // Medians of whole-number ranks are whole or end in .5, so String() is enough ('3', '2.5').
 const formatMedian = (m?: number | null) => (m == null ? '–' : String(m))
 
-function ResultCell({ result, live }: { result?: MatchupResult | null; live?: boolean }) {
+export function ResultCell({ result, live }: { result?: MatchupResult | null; live?: boolean }) {
   if (!result) return <td className="result-cell">–</td>
   const score = [result.wins, result.losses, ...(result.ties ? [result.ties] : [])].join('–')
   const outcome = result.outcome ?? ''
