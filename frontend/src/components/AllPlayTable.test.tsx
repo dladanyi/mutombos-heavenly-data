@@ -43,10 +43,10 @@ describe('AllPlayTable', () => {
   })
 })
 
-async function expectHelp(help: Record<string, string>) {
+async function expectHelp(help: Readonly<Record<string, string>>) {
   const user = userEvent.setup()
   for (const [label, text] of Object.entries(help)) {
-    await user.click(screen.getByRole('button', { name: `What is ${label}?` }))
+    await user.click(screen.getByRole('button', { name: label }))
     expect(screen.getByRole('dialog', { name: label })).toHaveTextContent(text)
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -57,7 +57,7 @@ describe('column help', () => {
   it('explains Avg Cats, All-Play and Win % when their headings are tapped', async () => {
     render(<AllPlayTable teams={teams()} live />)
     await expectHelp(WEEK_HELP)
-    expect(screen.queryByRole('button', { name: 'What is Matchup?' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Matchup' })).toBeNull()
     expect(screen.getAllByRole('button')).toHaveLength(3)
   })
 

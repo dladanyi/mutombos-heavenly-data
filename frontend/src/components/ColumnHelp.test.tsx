@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import ColumnHelp from './ColumnHelp'
@@ -17,7 +17,7 @@ const setup = () => {
       </thead>
     </table>,
   )
-  return { user, trigger: screen.getByRole('button', { name: 'What is Luck?' }) }
+  return { user, trigger: screen.getByRole('button', { name: 'Luck' }) }
 }
 
 describe('ColumnHelp', () => {
@@ -63,6 +63,29 @@ describe('ColumnHelp', () => {
     expect(close).toHaveFocus()
   })
 
+  it('keeps the visible label as the button and column header name', () => {
+    const { trigger } = setup()
+    expect(trigger).toHaveAccessibleName('Luck')
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog')
+  })
+
+  it('closes when the page navigates (Back to another tab)', async () => {
+    const { user, trigger } = setup()
+    await user.click(trigger)
+    fireEvent.popState(window)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('stays open when a drag starts in the card and ends on the backdrop', async () => {
+    const { trigger, user } = setup()
+    await user.click(trigger)
+    const backdrop = document.querySelector('.col-help-backdrop')!
+    fireEvent.pointerDown(screen.getByText('Explains luck.'))
+    fireEvent.pointerUp(backdrop)
+    fireEvent.click(backdrop)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
   it('stays open when the card itself is tapped', async () => {
     const { user, trigger } = setup()
     await user.click(trigger)
@@ -73,5 +96,7 @@ describe('ColumnHelp', () => {
   it('has copy for every All-Play heading', () => {
     expect(Object.keys(WEEK_HELP)).toEqual(['Avg Cats', 'All-Play', 'Win %'])
     expect(Object.keys(SEASON_HELP)).toEqual(['All-Play', 'Win %', 'Avg Cats', 'Record', 'Luck'])
+    // @ts-expect-error a misspelt heading is a type error, not an empty card
+    expect(SEASON_HELP.Luk).toBeUndefined()
   })
 })

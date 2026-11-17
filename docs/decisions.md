@@ -12,6 +12,10 @@ tapping Avg Cats, All-Play or Win % (and Record and Luck on the season table) ex
   don't work on a tap.
 - The card is portaled into `document.body`. Inside the table it would be clipped by the
   sideways scroll, and the `.section` fade-in leaves a `transform` that traps `position: fixed`.
+- PR #16 review: the heading button keeps its label as the accessible name (not "What is X?"),
+  the card closes on Back/Forward, and only a press that starts on the backdrop closes it. "Out of
+  9" stays hardcoded in the Avg Cats copy: the league's categories are fixed, and changing
+  `CATEGORIES` would mean revisiting this copy along with the rest of the UI.
 
 ## 2026-11-16: All-Play tab
 

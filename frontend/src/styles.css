@@ -563,7 +563,8 @@ footer {
     text-decoration: none;
     display: inline-block;
 }
-.col-help-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Inset, because the top-row cell sits at the clipping edge of .table-wrap */
+.col-help-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 th:has(> .col-help-btn) { padding: 0; }
 @media (max-width: 768px) {
     .col-help-btn { padding: 0.65rem 0.55rem; }
@@ -586,11 +587,9 @@ th:has(> .col-help-btn) { padding: 0; }
     border-radius: 8px;
     padding: 1rem 1.1rem;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    max-height: calc(80vh - 16px);
+    overflow-y: auto;
     font-family: 'DM Sans', sans-serif;
-    text-transform: none;
-    letter-spacing: normal;
-    white-space: normal;
-    text-align: left;
     color: var(--text);
 }
 .col-help-card h3 {
