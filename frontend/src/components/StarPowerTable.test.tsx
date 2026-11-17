@@ -23,6 +23,17 @@ describe('StarPowerTable', () => {
     expect(playerLines()[3].textContent).toBe('No top-50 players')
   })
 
+  it('colours players by tier: gold top 10, silver 11-25, bronze 26-50', () => {
+    const base = starPower()
+    const ranks = [10, 11, 25, 26, 50]
+    const players = ranks.map((rank) => ({ ...base.teams[0].players[0], rank, player_key: `p.${rank}` }))
+    render(<StarPowerTable data={{ ...base, teams: [{ ...base.teams[0], players }] }} />)
+    const tiers = [...playerLines()[0].querySelectorAll('.star-player')].map((p) =>
+      ['star-top', 'star-silver', 'star-bronze'].filter((c) => p.classList.contains(c)),
+    )
+    expect(tiers).toEqual([['star-top'], ['star-silver'], ['star-silver'], ['star-bronze'], ['star-bronze']])
+  })
+
   it('lists top-50 players who are on no team', () => {
     render(<StarPowerTable data={starPower()} />)
     expect(screen.getByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()

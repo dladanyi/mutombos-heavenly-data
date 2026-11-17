@@ -3,6 +3,13 @@ import { medal } from './RankCell'
 
 const STATUS = { freeagents: 'FA', waivers: 'W', team: 'other team' } as Record<string, string>
 const describe = (p: StarPlayer) => `${p.rank} ${p.name} ${p.nba_team} ${p.position}`
+const TIER_CLASS = ['star-top', 'star-silver', 'star-bronze']
+
+/** Gold for the first level (top 10), silver for the second (11–25), bronze for the third (26–50). */
+const tierClass = (rank: number, levels: number[]) => {
+  const tier = levels.findIndex((level) => rank <= level)
+  return tier >= 0 && TIER_CLASS[tier] ? `star-player ${TIER_CLASS[tier]}` : 'star-player'
+}
 
 export default function StarPowerTable({ data }: { data: StarPower }) {
   const topLevel = data.levels[0]
@@ -37,7 +44,7 @@ export default function StarPowerTable({ data }: { data: StarPower }) {
                       : team.players.map((p, i) => (
                           <span key={p.player_key}>
                             {i > 0 && ' · '}
-                            <span className={p.rank <= topLevel ? 'star-player star-top' : 'star-player'}>
+                            <span className={tierClass(p.rank, data.levels)}>
                               {p.rank <= topLevel ? `★ ${describe(p)}` : describe(p)}
                             </span>
                           </span>
