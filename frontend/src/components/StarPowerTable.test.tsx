@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { starPower } from '../test/data'
 import StarPowerTable from './StarPowerTable'
@@ -23,15 +23,27 @@ describe('StarPowerTable', () => {
     expect(playerLines()[3].textContent).toBe('No top-50 players')
   })
 
-  it('colours players by tier: gold top 10, silver 11-25, bronze 26-50', () => {
+  const tiersFor = (levels: number[], ranks: number[]) => {
     const base = starPower()
-    const ranks = [10, 11, 25, 26, 50]
     const players = ranks.map((rank) => ({ ...base.teams[0].players[0], rank, player_key: `p.${rank}` }))
-    render(<StarPowerTable data={{ ...base, teams: [{ ...base.teams[0], players }] }} />)
-    const tiers = [...playerLines()[0].querySelectorAll('.star-player')].map((p) =>
-      ['star-top', 'star-silver', 'star-bronze'].filter((c) => p.classList.contains(c)),
-    )
-    expect(tiers).toEqual([['star-top'], ['star-silver'], ['star-silver'], ['star-bronze'], ['star-bronze']])
+    render(<StarPowerTable data={{ ...base, levels, teams: [{ ...base.teams[0], players }] }} />)
+    return [...playerLines()[0].querySelectorAll('.star-player')].map((p) => [
+      ['star-gold', 'star-silver', 'star-bronze'].find((c) => p.classList.contains(c)) ?? '',
+      p.textContent!.startsWith('★'),
+    ])
+  }
+
+  it('colours players by tier: gold (starred) top 10, silver 11-25, bronze 26-50', () => {
+    expect(tiersFor([10, 25, 50], [10, 11, 25, 26, 50])).toEqual([
+      ['star-gold', true], ['star-silver', false], ['star-silver', false], ['star-bronze', false], ['star-bronze', false],
+    ])
+  })
+
+  it('takes the tiers from the response levels, in any order', () => {
+    const expected = [['star-gold', true], ['star-silver', false], ['star-silver', false], ['star-bronze', false]]
+    expect(tiersFor([5, 20, 50], [5, 6, 20, 21])).toEqual(expected)
+    cleanup()
+    expect(tiersFor([50, 5, 20], [5, 6, 20, 21])).toEqual(expected)
   })
 
   it('lists top-50 players who are on no team', () => {
