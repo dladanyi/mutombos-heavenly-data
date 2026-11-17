@@ -280,7 +280,9 @@ tbody tr:hover { background: rgba(249,115,22,0.04); }
     text-align: left; white-space: normal; padding-top: 0; padding-left: 4rem;
     font-size: 0.72rem; color: var(--muted); line-height: 1.6;
 }
-.star-wrap .star-top { color: var(--gold); }
+.star-wrap .star-gold { color: var(--gold); }
+.star-wrap .star-silver { color: var(--silver); }
+.star-wrap .star-bronze { color: var(--bronze); }
 .star-unowned { margin-top: 0.6rem; }
 
 /* Full Season: season arrows, champion line, standings */

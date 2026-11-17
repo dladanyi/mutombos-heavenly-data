@@ -3,9 +3,10 @@ import { medal } from './RankCell'
 
 const STATUS = { freeagents: 'FA', waivers: 'W', team: 'other team' } as Record<string, string>
 const describe = (p: StarPlayer) => `${p.rank} ${p.name} ${p.nba_team} ${p.position}`
+/** 1 for a player within the first (smallest) level, 2 within the second, and so on; levels in any order. */
+const tier = (rank: number, levels: number[]) => 1 + levels.filter((level) => rank > level).length
 
 export default function StarPowerTable({ data }: { data: StarPower }) {
-  const topLevel = data.levels[0]
   return (
     <>
       <div className="table-wrap star-wrap">
@@ -34,14 +35,19 @@ export default function StarPowerTable({ data }: { data: StarPower }) {
                   <td colSpan={2 + data.levels.length}>
                     {team.players.length === 0
                       ? 'No top-50 players'
-                      : team.players.map((p, i) => (
-                          <span key={p.player_key}>
-                            {i > 0 && ' · '}
-                            <span className={p.rank <= topLevel ? 'star-player star-top' : 'star-player'}>
-                              {p.rank <= topLevel ? `★ ${describe(p)}` : describe(p)}
+                      : team.players.map((p, i) => {
+                          // Medal colour by tier; the ★ marks the first tier only.
+                          const t = tier(p.rank, data.levels)
+                          const color = medal(t)
+                          return (
+                            <span key={p.player_key}>
+                              {i > 0 && ' · '}
+                              <span className={color ? `star-player star-${color}` : 'star-player'}>
+                                {t === 1 ? `★ ${describe(p)}` : describe(p)}
+                              </span>
                             </span>
-                          </span>
-                        ))}
+                          )
+                        })}
                   </td>
                 </tr>,
               ]

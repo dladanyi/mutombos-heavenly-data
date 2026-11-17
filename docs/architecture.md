@@ -43,7 +43,9 @@ React + Vite + TypeScript. `api.ts` holds typed fetch functions whose types mirr
 [api.md](api.md). A tab bar (`TabBar`) switches between three screens, kept in the URL hash
 (`#stars` = Star Power, `#allplay` = All-Play) so a screen can be bookmarked and Back works. Star Power
 (`StarPowerSection`, `StarPowerTable`) loads only when its tab is opened, and has its own ‹ › season
-arrows (a finished season via `/api/stars/<season>`). The Rankings screen has
+arrows (a finished season via `/api/stars/<season>`). Each team's player list is coloured by
+tier from the response's `levels` (`medal()` colours): gold ★ within the first level, silver within
+the second, bronze within the third (10 / 25 / 50 today). The Rankings screen has
 two sections: the week section (opens on the live week; ‹ ›
 step back through finished weeks via `/api/rankings/week/<n>`) and Full Season. Components:
 `Header`, `RankingsSection`, `RankingsTable`, `RankCell`, `ArrowNav` (the shared ‹ › buttons),
