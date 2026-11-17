@@ -52,6 +52,17 @@ describe('ColumnHelp', () => {
     }
   })
 
+  it('is modal: Tab and Shift+Tab keep focus on Close', async () => {
+    const { user, trigger } = setup()
+    await user.click(trigger)
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
+    const close = screen.getByRole('button', { name: 'Close' })
+    await user.tab()
+    expect(close).toHaveFocus()
+    await user.tab({ shift: true })
+    expect(close).toHaveFocus()
+  })
+
   it('stays open when the card itself is tapped', async () => {
     const { user, trigger } = setup()
     await user.click(trigger)

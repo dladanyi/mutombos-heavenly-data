@@ -28,6 +28,10 @@ export default function ColumnHelp({ label, children }: Props) {
       if (e.key === 'Escape') {
         setOpen(false)
         trigger.current?.focus()
+      } else if (e.key === 'Tab') {
+        // Modal: Close is the card's only focusable element, so focus stays on it.
+        e.preventDefault()
+        closeBtn.current?.focus()
       }
     }
     document.addEventListener('keydown', onKey)
@@ -51,6 +55,7 @@ export default function ColumnHelp({ label, children }: Props) {
           <div className="col-help-backdrop" onClick={close}>
             <div
               role="dialog"
+              aria-modal="true"
               aria-labelledby={id}
               className="col-help-card"
               onClick={(e) => e.stopPropagation()}
