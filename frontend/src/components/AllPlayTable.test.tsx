@@ -1,7 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { team, withAllPlay } from '../test/data'
+import { allPlaySeason, team, withAllPlay } from '../test/data'
+import AllPlaySeasonTable from './AllPlaySeasonTable'
 import AllPlayTable from './AllPlayTable'
+import { SEASON_HELP, WEEK_HELP } from './columnHelpText'
 import { byAllPlayOrder, formatLuck, formatPct, formatWLT } from './allPlayFormat'
 
 const teams = () => withAllPlay([team('Alpha', 1), team('Beta', 2), team('Gamma', 3), team('Delta', 4)])
@@ -37,5 +40,30 @@ describe('AllPlayTable', () => {
   it('heads the matchup column "Result" for a finished week', () => {
     render(<AllPlayTable teams={teams()} live={false} />)
     expect(screen.getAllByRole('columnheader').at(-1)).toHaveTextContent('Result')
+  })
+})
+
+async function expectHelp(help: Record<string, string>) {
+  const user = userEvent.setup()
+  for (const [label, text] of Object.entries(help)) {
+    await user.click(screen.getByRole('button', { name: `What is ${label}?` }))
+    expect(screen.getByRole('dialog', { name: label })).toHaveTextContent(text)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  }
+}
+
+describe('column help', () => {
+  it('explains Avg Cats, All-Play and Win % when their headings are tapped', async () => {
+    render(<AllPlayTable teams={teams()} live />)
+    await expectHelp(WEEK_HELP)
+    expect(screen.queryByRole('button', { name: 'What is Matchup?' })).toBeNull()
+    expect(screen.getAllByRole('button')).toHaveLength(3)
+  })
+
+  it('explains every season heading except # and Team', async () => {
+    render(<AllPlaySeasonTable data={allPlaySeason()} />)
+    await expectHelp(SEASON_HELP)
+    expect(screen.getAllByRole('button')).toHaveLength(5)
   })
 })

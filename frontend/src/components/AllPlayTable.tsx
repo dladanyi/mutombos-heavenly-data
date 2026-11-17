@@ -1,4 +1,6 @@
 import type { TeamRow } from '../api'
+import ColumnHelp from './ColumnHelp'
+import { WEEK_HELP } from './columnHelpText'
 import { medal } from './RankCell'
 import { ResultCell } from './RankingsTable'
 import { formatPct, formatWLT } from './allPlayFormat'
@@ -19,9 +21,9 @@ export default function AllPlayTable({ teams, live }: Props) {
           <tr>
             <th>#</th>
             <th>Team</th>
-            <th>Avg Cats</th>
-            <th>All-Play</th>
-            <th>Win %</th>
+            <th><ColumnHelp label="Avg Cats">{WEEK_HELP['Avg Cats']}</ColumnHelp></th>
+            <th><ColumnHelp label="All-Play">{WEEK_HELP['All-Play']}</ColumnHelp></th>
+            <th><ColumnHelp label="Win %">{WEEK_HELP['Win %']}</ColumnHelp></th>
             <th className="result-cell">{live ? 'Matchup' : 'Result'}</th>
           </tr>
         </thead>

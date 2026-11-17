@@ -1,4 +1,6 @@
 import type { AllPlaySeason } from '../api'
+import ColumnHelp from './ColumnHelp'
+import { SEASON_HELP } from './columnHelpText'
 import { medal } from './RankCell'
 import { formatLuck, formatPct, formatWLT } from './allPlayFormat'
 
@@ -14,11 +16,11 @@ export default function AllPlaySeasonTable({ data }: { data: AllPlaySeason }) {
           <tr>
             <th>#</th>
             <th>Team</th>
-            <th>All-Play</th>
-            <th>Win %</th>
-            <th>Avg Cats</th>
-            <th>Record</th>
-            <th>Luck</th>
+            <th><ColumnHelp label="All-Play">{SEASON_HELP['All-Play']}</ColumnHelp></th>
+            <th><ColumnHelp label="Win %">{SEASON_HELP['Win %']}</ColumnHelp></th>
+            <th><ColumnHelp label="Avg Cats">{SEASON_HELP['Avg Cats']}</ColumnHelp></th>
+            <th><ColumnHelp label="Record">{SEASON_HELP['Record']}</ColumnHelp></th>
+            <th><ColumnHelp label="Luck">{SEASON_HELP['Luck']}</ColumnHelp></th>
           </tr>
         </thead>
         <tbody>

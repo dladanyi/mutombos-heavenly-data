@@ -2,6 +2,17 @@
 
 Newest first. Each entry: what we decided, and why.
 
+## 2026-11-16: All-Play column help
+
+Spec: `docs/specs/2026-11-16-column-help-design.md`. All-Play numbers are new to the league, so
+tapping Avg Cats, All-Play or Win % (and Record and Luck on the season table) explains them.
+
+- A small React component (`ColumnHelp`) rather than the native `popover` attribute or `<dialog>`:
+  jsdom implements neither, so their open and close behaviour couldn't be tested. `title` tooltips
+  don't work on a tap.
+- The card is portaled into `document.body`. Inside the table it would be clipped by the
+  sideways scroll, and the `.section` fade-in leaves a `transform` that traps `position: fixed`.
+
 ## 2026-11-16: All-Play tab
 
 Spec: `docs/specs/2026-11-16-all-play-design.md`. Average rank can flatter a team that wins one
