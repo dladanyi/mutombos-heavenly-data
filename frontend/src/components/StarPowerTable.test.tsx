@@ -46,15 +46,29 @@ describe('StarPowerTable', () => {
     expect(tiersFor([50, 5, 20], [5, 6, 20, 21])).toEqual(expected)
   })
 
+  const unownedLine = () => document.querySelector('.star-unowned')
+
   it('lists top-50 players who are on no team', () => {
     render(<StarPowerTable data={starPower()} />)
-    expect(screen.getByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()
+    expect(unownedLine()).toHaveTextContent(/^Not on a team: 37 Player X \(FA\) · 48 Player Y \(W\)$/)
   })
 
   it('labels a top-50 player whose team is not in the league list', () => {
-    const data = starPower({ unowned: [{ rank: 7, player_key: 'p.7', name: 'Player Z', nba_team: 'NYK', position: 'SF', status: 'team' }] })
+    const data = starPower({ unowned: [{ rank: 17, player_key: 'p.17', name: 'Player Z', nba_team: 'NYK', position: 'SF', status: 'team' }] })
     render(<StarPowerTable data={data} />)
-    expect(screen.getByText('Not on a team: 7 Player Z (other team)')).toBeInTheDocument()
+    expect(unownedLine()).toHaveTextContent(/^Not on a team: 17 Player Z \(other team\)$/)
+  })
+
+  it('colours unowned players by tier too, with the star for the top 10', () => {
+    const base = starPower().unowned[0]
+    const unowned = [5, 11, 26].map((rank) => ({ ...base, rank, player_key: `p.${rank}`, name: `Player ${rank}` }))
+    render(<StarPowerTable data={starPower({ unowned })} />)
+    const players = [...unownedLine()!.querySelectorAll('.star-player')]
+    expect(players.map((p) => [p.className, p.textContent])).toEqual([
+      ['star-player star-gold', '★ 5 Player 5 (FA)'],
+      ['star-player star-silver', '11 Player 11 (FA)'],
+      ['star-player star-bronze', '26 Player 26 (FA)'],
+    ])
   })
 
   it('omits the unowned line when every top-50 player is on a team', () => {

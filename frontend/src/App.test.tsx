@@ -62,7 +62,7 @@ describe('App', () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('tab', { name: 'Star Power' }))
     expect(window.location.hash).toBe('#stars')
-    expect(await screen.findByText('Not on a team: 37 Player X (FA) · 48 Player Y (W)')).toBeInTheDocument()
+    expect(await screen.findByText(/Not on a team/)).toHaveTextContent('Not on a team: 37 Player X (FA) · 48 Player Y (W)')
     expect(calls).toContain('/api/stars')
     expect(screen.getByText('Week 7')).not.toBeVisible()
     window.location.hash = ''
