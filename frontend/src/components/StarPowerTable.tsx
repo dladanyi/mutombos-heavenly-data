@@ -6,6 +6,13 @@ const describe = (p: StarPlayer) => `${p.rank} ${p.name} ${p.nba_team} ${p.posit
 /** 1 for a player within the first (smallest) level, 2 within the second, and so on; levels in any order. */
 const tier = (rank: number, levels: number[]) => 1 + levels.filter((level) => rank > level).length
 
+/** A player in their tier's medal colour; the ★ marks the first tier only. */
+function TierPlayer({ rank, levels, text }: { rank: number; levels: number[]; text: string }) {
+  const t = tier(rank, levels)
+  const color = medal(t)
+  return <span className={color ? `star-player star-${color}` : 'star-player'}>{t === 1 ? `★ ${text}` : text}</span>
+}
+
 export default function StarPowerTable({ data }: { data: StarPower }) {
   return (
     <>
@@ -35,19 +42,12 @@ export default function StarPowerTable({ data }: { data: StarPower }) {
                   <td colSpan={2 + data.levels.length}>
                     {team.players.length === 0
                       ? 'No top-50 players'
-                      : team.players.map((p, i) => {
-                          // Medal colour by tier; the ★ marks the first tier only.
-                          const t = tier(p.rank, data.levels)
-                          const color = medal(t)
-                          return (
-                            <span key={p.player_key}>
-                              {i > 0 && ' · '}
-                              <span className={color ? `star-player star-${color}` : 'star-player'}>
-                                {t === 1 ? `★ ${describe(p)}` : describe(p)}
-                              </span>
-                            </span>
-                          )
-                        })}
+                      : team.players.map((p, i) => (
+                          <span key={p.player_key}>
+                            {i > 0 && ' · '}
+                            <TierPlayer rank={p.rank} levels={data.levels} text={describe(p)} />
+                          </span>
+                        ))}
                   </td>
                 </tr>,
               ]
@@ -57,9 +57,17 @@ export default function StarPowerTable({ data }: { data: StarPower }) {
       </div>
       {data.unowned.length > 0 && (
         <div className="table-caption star-unowned">
-          {`Not on a team: ${data.unowned
-            .map((p) => `${p.rank} ${p.name}${STATUS[p.status] ? ` (${STATUS[p.status]})` : ''}`)
-            .join(' · ')}`}
+          Not on a team:{' '}
+          {data.unowned.map((p, i) => (
+            <span key={p.player_key}>
+              {i > 0 && ' · '}
+              <TierPlayer
+                rank={p.rank}
+                levels={data.levels}
+                text={`${p.rank} ${p.name}${STATUS[p.status] ? ` (${STATUS[p.status]})` : ''}`}
+              />
+            </span>
+          ))}
         </div>
       )}
     </>
